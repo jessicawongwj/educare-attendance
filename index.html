@@ -362,8 +362,8 @@ const TRAINER_COURSES = {
   "Vijeta Srivastava": ["CHC43015 Certificate IV in Ageing Support", "CHC43121 Certificate IV in Disability Support", "CHC52025 Diploma of Community Services"]
 };
 
-const CHECKIN_URL  = "https://default9d8868a5c1dc4786aff1f7d04646be.9a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/4603623f15154a70bd2560bec2c31aa2/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=XL40YUpaanK1hh_Dci1n7EEtubd41qv1Mng-Et83OpI";
-const CHECKOUT_URL = "https://default9d8868a5c1dc4786aff1f7d04646be.9a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/bcdcf6fb75f54438930f28c8e643b6a3/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ze-g9kNFEY7hFd097yppkFK5-UD6dT9Yx2CrjWKT3T4";
+const CHECKIN_URL  = "/api/checkin";
+const CHECKOUT_URL = "/api/checkout";
 
 const campuses = [
   { name:"Brisbane CBD — 316 Adelaide St", lat:-27.46509, lng:153.02871, radius:0.15 },
@@ -486,7 +486,8 @@ async function submitCheckIn(){
       method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         StudentID:elId.value, Name:elName.value, Trainer:elTrainer.value,
-        Course:elCourse.value, Campus:detectedCampus.name, CheckInTime:new Date().toISOString()
+        Course:elCourse.value, Campus:detectedCampus.name, CheckInTime:new Date().toISOString(),
+        Lat:latestLat, Lng:latestLng
       })
     });
     if(res.ok){
