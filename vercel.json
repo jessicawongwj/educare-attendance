@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/",        "destination": "/educarecheckin.html" },
+    { "source": "/portal",  "destination": "/educare-portal.html" }
+  ]
+}
