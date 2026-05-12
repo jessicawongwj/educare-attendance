@@ -1546,10 +1546,11 @@ function renderRateCheck(){
   tbody.innerHTML=rows.map(s=>{
     const rate=workDays?Math.min(100,Math.round((s.attendedDays||0)/workDays*100)):0;
     const rateClass=rate>=80?'':'mid';
+    const multiTag=(s.enrollmentCount||1)>1?`<span style="margin-left:4px;font-size:10px;font-weight:700;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;border-radius:4px;padding:1px 5px;">${s.enrollmentCount} COURSES</span>`:'';
     return `<tr>
       <td>${s.id}</td>
-      <td class="td-name">${s.name}</td>
-      <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${s.course}">${s.course}</td>
+      <td class="td-name">${s.name}${multiTag}</td>
+      <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${s.course}">${s.courseCode?'<span style="font-size:11px;color:var(--text-3);margin-right:4px;">['+s.courseCode+']</span>':''}${s.course}</td>
       <td>${s.trainer||'—'}</td>
       <td>${s.campus||'—'}</td>
       <td>${s.lastCheckin?fmtDate(s.lastCheckin):'Never'}</td>
