@@ -1303,13 +1303,33 @@ function checkPin(){
 }
 function logout(){ location.reload(); }
 
+/* ── Global Data ── */
+let allStudents=[], dailyRows=[], summaryData=[];
+const todayStr = () => new Date().toISOString().slice(0,10);
+
 /* ── Portal Init ── */
 function initPortal(){
   document.getElementById('dailyDateHeading').textContent = new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   document.getElementById('dateFilter').value = todayStr();
-  switchTab('dashboard');
+  switchTab('daily');
+  loadDailyAttendance();
+  loadSummary();
 }
-const todayStr = () => new Date().toISOString().slice(0,10);
+
+async function loadSummary(){
+  try{
+    const res = await fetch('/api/summary');
+    summaryData = await res.json();
+    populateRateFilters();
+    renderRateCheck();
+    renderMyClass();
+    renderNotStarted();
+    renderDashboard();
+  } catch(e){ console.error('summary load failed',e); }
+}
+
+function fmtTime(dt){ if(!dt) return '—'; return new Date(dt).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:true}); }
+function fmtDate(dt){ if(!dt) return '—'; return new Date(dt).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'}); }
 
 /* ── Tab Switching ── */
 const VIEWS = ['dashboard','daily','ratecheck','myclass','notstarted','holidays','settings'];
@@ -1351,36 +1371,175 @@ function setBreakdownPeriod(period,btn){
   renderDashboard();
 }
 function renderDashboard(){
-  document.getElementById('trainerCourseTableBody').innerHTML='<td colspan="10"><div class="empty-state"><div class="empty-state-icon">📊</div><div class="empty-state-title">No data available</div><div class="empty-state-sub">Connect the API to load attendance data.</div></div></td>';
+  if(!summaryData.length){ return; }
+  const byTrainer={};
+  summaryData.forEach(s=>{
+    if(!byTrainer[s.trainer]) byTrainer[s.trainer]={courses:{}};
+    if(!byTrainer[s.trainer].courses[s.course]) byTrainer[s.trainer].courses[s.course]={total:0,active:0,upcoming:0};
+    byTrainer[s.trainer].courses[s.course].total++;
+    if(s.status==='active') byTrainer[s.trainer].courses[s.course].active++;
+    if(s.status==='not-started') byTrainer[s.trainer].courses[s.course].upcoming++;
+  });
+  const presentIds=new Set(dailyRows.map(r=>r.studentId));
+  const html=Object.entries(byTrainer).map(([trainer,data])=>`
+    <div class="trainer-card">
+      <div class="trainer-card-header">
+        <span class="trainer-card-name">${trainer}</span>
+        <span class="badge badge-info">${Object.values(data.courses).reduce((a,c)=>a+c.total,0)} students</span>
+      </div>
+      <div class="trainer-card-body">
+        ${Object.entries(data.courses).map(([course,c])=>`
+          <div class="course-row">
+            <span class="course-name" title="${course}">${course}</span>
+            <span class="course-stat" style="color:var(--success)">${c.active} active</span>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+  document.getElementById('trainerCourseTableBody').innerHTML=html||'<div class="empty-state"><div class="empty-state-icon">📊</div><div class="empty-state-title">No data</div></div>';
+  document.getElementById('campusTabStats').innerHTML=`<span>${summaryData.length} total students &nbsp;·&nbsp; ${Object.keys(byTrainer).length} trainers &nbsp;·&nbsp; ${dailyRows.length} checked in today</span>`;
 }
-function refreshDashboard(){ showToast('Dashboard refreshed (no API connected)'); }
+function refreshDashboard(){ loadSummary(); showToast('Dashboard refreshed'); }
 function exportDashboardCSV(){ showToast('No data to export.',true); }
 
 /* ── Daily Attendance ── */
 let dailyCampusFilter='all', dailyStatusFilter='all';
 function setCampus(c){ dailyCampusFilter=c; applyDailyFilters(); }
 function setDailyDate(offset){ const d=new Date(); d.setDate(d.getDate()+offset); document.getElementById('dateFilter').value=d.toISOString().slice(0,10); loadDailyAttendance(); }
-function loadDailyAttendance(){ /* stub */ }
-function applyDailyFilters(){ /* stub */ }
+
+async function loadDailyAttendance(){
+  const date=document.getElementById('dateFilter').value||todayStr();
+  document.getElementById('dailyLoadedTime').textContent='Loading...';
+  try{
+    const res=await fetch('/api/attendance?date='+date);
+    dailyRows=await res.json();
+    document.getElementById('dailyLoadedTime').textContent='Loaded '+new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:true});
+    populateDailyFilters();
+    applyDailyFilters();
+    renderDashboard();
+  } catch(e){ document.getElementById('dailyLoadedTime').textContent='Failed to load'; showToast('Failed to load attendance.',true); }
+}
+
+function populateDailyFilters(){
+  const trainers=[...new Set(dailyRows.map(r=>r.trainer).filter(Boolean))].sort();
+  const tf=document.getElementById('trainerFilter'); const cur=tf.value;
+  tf.innerHTML='<option value="all">All Trainers</option>';
+  trainers.forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; tf.appendChild(o); });
+  tf.value=cur;
+  const trainer=tf.value;
+  const courses=[...new Set(dailyRows.filter(r=>trainer==='all'||r.trainer===trainer).map(r=>r.course).filter(Boolean))].sort();
+  const cf=document.getElementById('courseFilter');
+  cf.innerHTML='<option value="all">All Courses</option>';
+  courses.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; cf.appendChild(o); });
+}
+
+function applyDailyFilters(){
+  const trainer=document.getElementById('trainerFilter').value;
+  const course=document.getElementById('courseFilter').value;
+  const search=(document.getElementById('searchInput').value||'').toLowerCase();
+  let rows=[...dailyRows];
+  if(dailyCampusFilter!=='all') rows=rows.filter(r=>r.campus===dailyCampusFilter);
+  if(trainer!=='all') rows=rows.filter(r=>r.trainer===trainer);
+  if(course!=='all') rows=rows.filter(r=>r.course===course);
+  if(dailyStatusFilter==='present') rows=rows.filter(r=>r.checkinTime);
+  if(dailyStatusFilter==='absent') rows=rows.filter(r=>!r.checkinTime);
+  if(search) rows=rows.filter(r=>(r.studentName||'').toLowerCase().includes(search)||(r.studentId||'').includes(search));
+  const present=rows.filter(r=>r.checkinTime).length;
+  document.getElementById('statTotal').textContent=rows.length;
+  document.getElementById('statPresent').textContent=present;
+  document.getElementById('statAbsent').textContent=rows.length-present;
+  document.getElementById('statRate').textContent=rows.length?Math.round(present/rows.length*100)+'%':'—';
+  const tbody=document.getElementById('studentTableBody');
+  if(!rows.length){ tbody.innerHTML='<tr><td colspan="10"><div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No records for this date</div><div class="empty-state-sub">No students have checked in yet.</div></div></td></tr>'; document.getElementById('dailyPagination').style.display='none'; return; }
+  tbody.innerHTML=rows.map(r=>`<tr>
+    <td>${r.studentId}</td>
+    <td class="td-name">${r.studentName}</td>
+    <td style="max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${r.course}">${r.course}</td>
+    <td>${r.trainer||'—'}</td>
+    <td>${r.campus||'—'}</td>
+    <td>${fmtTime(r.checkinTime)}</td>
+    <td>${fmtTime(r.checkoutTime)}</td>
+    <td>${r.checkoutTime?'<span class="badge badge-present">Present</span>':'<span class="badge badge-warn">Checked In</span>'}</td>
+    <td>—</td>
+    <td></td>
+  </tr>`).join('');
+  document.getElementById('dailyPagination').style.display='none';
+}
+
 function filterByCardClick(s){ dailyStatusFilter=s; applyDailyFilters(); }
 function refreshDaily(){ loadDailyAttendance(); showToast('Refreshed'); }
-function exportCSV(){ showToast('No data to export.',true); }
+function exportCSV(){
+  if(!dailyRows.length){ showToast('No data to export.',true); return; }
+  const headers=['Student ID','Name','Course','Trainer','Campus','Check In','Check Out'];
+  const csv=[headers.join(','),...dailyRows.map(r=>[r.studentId,'"'+r.studentName+'"','"'+r.course+'"','"'+r.trainer+'"','"'+r.campus+'"',fmtTime(r.checkinTime),fmtTime(r.checkoutTime)].join(','))].join('\n');
+  const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='attendance-'+document.getElementById('dateFilter').value+'.csv'; a.click();
+}
 
 /* ── Student Attendance ── */
 let rateCampus='all', rateStatus='all';
-function setRateCampus(c){
-  rateCampus=c;
-  document.querySelectorAll('#rateCampusTabs .sub-tab').forEach(b=>b.classList.toggle('active',b.dataset.c===c));
+function setRateCampus(c){ rateCampus=c; document.querySelectorAll('#rateCampusTabs .sub-tab').forEach(b=>b.classList.toggle('active',b.dataset.c===c)); renderRateCheck(); }
+function setRateStatus(s){ rateStatus=s; document.querySelectorAll('#rateStatusTabs .sub-tab').forEach(b=>b.classList.toggle('active',b.dataset.s===s)); renderRateCheck(); }
+
+function populateRateFilters(){
+  const trainers=[...new Set(summaryData.map(s=>s.trainer).filter(Boolean))].sort();
+  const tf=document.getElementById('rateTrainerFilter');
+  tf.innerHTML='<option value="all">All Trainers</option>';
+  trainers.forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; tf.appendChild(o); });
+  updateRateCourseFilter();
+}
+
+function updateRateCourseFilter(){
+  const trainer=document.getElementById('rateTrainerFilter').value;
+  const courses=[...new Set(summaryData.filter(s=>trainer==='all'||s.trainer===trainer).map(s=>s.course).filter(Boolean))].sort();
+  const cf=document.getElementById('rateCourseFilter');
+  cf.innerHTML='<option value="all">All Courses</option>';
+  courses.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; cf.appendChild(o); });
   renderRateCheck();
 }
-function setRateStatus(s){
-  rateStatus=s;
-  document.querySelectorAll('#rateStatusTabs .sub-tab').forEach(b=>b.classList.toggle('active',b.dataset.s===s));
-  renderRateCheck();
+
+function renderRateCheck(){
+  if(!summaryData.length) return;
+  const trainer=document.getElementById('rateTrainerFilter').value;
+  const course=document.getElementById('rateCourseFilter').value;
+  const search=(document.getElementById('rateSearchInput').value||'').toLowerCase();
+  const todayCheckedIn=new Set(dailyRows.map(r=>r.studentId));
+  // Working days in last 30 days (Mon-Fri)
+  const workDays=Array.from({length:30},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); return d.getDay(); }).filter(d=>d>0&&d<6).length;
+
+  let rows=summaryData.filter(s=>{
+    if(rateCampus!=='all'&&s.campus!==rateCampus) return false;
+    if(trainer!=='all'&&s.trainer!==trainer) return false;
+    if(course!=='all'&&s.course!==course) return false;
+    if(search&&!(s.name||'').toLowerCase().includes(search)&&!(s.id||'').includes(search)) return false;
+    const rate=workDays?Math.min(100,Math.round((s.attendedDays||0)/workDays*100)):0;
+    if(rateStatus==='below80'&&rate>=80) return false;
+    if(rateStatus==='above80'&&rate<80) return false;
+    if(rateStatus==='notstarted'&&todayCheckedIn.has(s.id)) return false;
+    if(rateStatus==='upcoming'&&s.status!=='not-started') return false;
+    return true;
+  });
+
+  document.getElementById('allCount').textContent=rows.length+' students';
+  const tbody=document.getElementById('rateTableBody');
+  if(!rows.length){ tbody.innerHTML='<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-title">No students match</div></div></td></tr>'; document.getElementById('ratePagination').style.display='none'; return; }
+  tbody.innerHTML=rows.map(s=>{
+    const rate=workDays?Math.min(100,Math.round((s.attendedDays||0)/workDays*100)):0;
+    const rateClass=rate>=80?'':'mid';
+    return `<tr>
+      <td>${s.id}</td>
+      <td class="td-name">${s.name}</td>
+      <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${s.course}">${s.course}</td>
+      <td>${s.trainer||'—'}</td>
+      <td>${s.campus||'—'}</td>
+      <td>${s.lastCheckin?fmtDate(s.lastCheckin):'Never'}</td>
+      <td><div class="rate-bar-row"><div class="rate-bar-bg"><div class="rate-bar-fill ${rateClass}" style="width:${rate}%"></div></div><span class="rate-pct" style="color:${rate>=80?'var(--success)':'var(--warning)'}">${rate}%</span></div></td>
+      <td>${rate>=80?'<span class="badge badge-ok">On Track</span>':'<span class="badge badge-warn">At Risk</span>'}</td>
+      <td></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('ratePagination').style.display='none';
 }
-function updateRateCourseFilter(){ /* stub */ }
-function renderRateCheck(){ /* stub */ }
-function refreshAttendanceRates(){ showToast('Refreshed (no API connected)'); }
+function refreshAttendanceRates(){ loadSummary(); showToast('Refreshed'); }
 
 /* ── My Class ── */
 let myClassTab='current';
@@ -1389,13 +1548,48 @@ function switchMyClassTab(tab){
   ['current','notstarted','upcoming'].forEach(t=>{
     const id='myClassTab'+t.charAt(0).toUpperCase()+t.slice(1);
     const el=document.getElementById(id);
-    if(el){ el.classList.toggle('active',t===tab); }
+    if(el) el.classList.toggle('active',t===tab);
   });
   renderMyClass();
 }
-function renderMyClass(){ /* stub */ }
-function refreshMyClass(){ showToast('Refreshed (no API connected)'); }
-function exportMyClassCSV(){ showToast('No data to export.',true); }
+function renderMyClass(){
+  if(!summaryData.length) return;
+  const search=(document.getElementById('myClassSearch').value||'').toLowerCase();
+  const todayIn=new Set(dailyRows.map(r=>r.studentId));
+  let rows=summaryData.filter(s=>{
+    if(myClassTab==='current'&&s.status!=='active') return false;
+    if(myClassTab==='notstarted'&&s.status!=='not-started') return false;
+    if(myClassTab==='upcoming'&&s.status!=='not-started') return false;
+    if(search&&!(s.name||'').toLowerCase().includes(search)&&!(s.id||'').includes(search)) return false;
+    return true;
+  });
+  document.getElementById('myClassCount').textContent=rows.length+' students';
+  const tbody=document.getElementById('myClassTableBody');
+  if(!tbody) return;
+  const workDays=Array.from({length:30},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); return d.getDay(); }).filter(d=>d>0&&d<6).length;
+  if(!rows.length){ tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">📚</div><div class="empty-state-title">No students</div></div></td></tr>'; return; }
+  tbody.innerHTML=rows.map(s=>{
+    const rate=workDays?Math.min(100,Math.round((s.attendedDays||0)/workDays*100)):0;
+    const checkedIn=todayIn.has(s.id);
+    return `<tr>
+      <td>${s.id}</td>
+      <td class="td-name">${s.name}</td>
+      <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.course}</td>
+      <td>${s.trainer||'—'}</td>
+      <td>${s.campus||'—'}</td>
+      <td>${checkedIn?'<span class="badge badge-present">Present</span>':'<span class="badge badge-absent">Not In</span>'}</td>
+      <td><div class="rate-bar-row"><div class="rate-bar-bg"><div class="rate-bar-fill ${rate>=80?'':'mid'}" style="width:${rate}%"></div></div><span class="rate-pct">${rate}%</span></div></td>
+      <td></td>
+    </tr>`;
+  }).join('');
+}
+function refreshMyClass(){ loadSummary(); showToast('Refreshed'); }
+function exportMyClassCSV(){
+  if(!summaryData.length){ showToast('No data.',true); return; }
+  const headers=['Student ID','Name','Course','Trainer','Campus','Status'];
+  const csv=[headers.join(','),...summaryData.map(s=>[s.id,'"'+s.name+'"','"'+s.course+'"','"'+s.trainer+'"','"'+s.campus+'"',s.status].join(','))].join('\n');
+  const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='myclass.csv'; a.click();
+}
 
 /* ── Not Started ── */
 let notStartedTab='not-checked-in';
@@ -1403,12 +1597,32 @@ function switchNotStartedTab(tab){
   notStartedTab=tab;
   ['nsTabNotCheckedIn','nsTabTentative'].forEach(id=>{
     const el=document.getElementById(id);
+    if(!el) return;
     const isActive=(id==='nsTabNotCheckedIn'&&tab==='not-checked-in')||(id==='nsTabTentative'&&tab==='tentative');
     el.classList.toggle('active',isActive);
   });
   renderNotStarted();
 }
-function renderNotStarted(){ /* stub */ }
+function renderNotStarted(){
+  if(!summaryData.length) return;
+  const todayIn=new Set(dailyRows.map(r=>r.studentId));
+  const notIn=summaryData.filter(s=>s.status==='active'&&!todayIn.has(s.id));
+  const upcoming=summaryData.filter(s=>s.status==='not-started');
+  const badge=document.getElementById('notStartedBadge');
+  if(badge){ badge.textContent=notIn.length; badge.style.display=notIn.length?'inline':'none'; }
+  const rows=notStartedTab==='not-checked-in'?notIn:upcoming;
+  const tbody=document.getElementById('notStartedTableBody');
+  if(!tbody) return;
+  if(!rows.length){ tbody.innerHTML='<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-title">'+(notStartedTab==='not-checked-in'?'All active students have checked in':'No upcoming students')+'</div></div></td></tr>'; return; }
+  tbody.innerHTML=rows.map(s=>`<tr>
+    <td>${s.id}</td>
+    <td class="td-name">${s.name}</td>
+    <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.course}</td>
+    <td>${s.trainer||'—'}</td>
+    <td>${s.campus||'—'}</td>
+    <td>${s.lastCheckin?fmtDate(s.lastCheckin):'Never'}</td>
+  </tr>`).join('');
+}
 
 /* ── Holidays ── */
 function openAddHolidayModal(){ document.getElementById('addHolidayModal').classList.add('show'); }
