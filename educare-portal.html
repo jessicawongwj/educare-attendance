@@ -1213,7 +1213,7 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
       <button class="modal-close" onclick="document.getElementById('qrModal').classList.remove('show')">×</button>
     </div>
     <div class="modal-body" style="text-align:center;">
-      <div style="width:200px;height:200px;background:var(--surface-2);border:2px dashed var(--border);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:var(--text-sm);margin:0 auto 1.25rem;">QR Code here</div>
+      <div style="width:200px;height:200px;background:var(--surface-2);border:2px dashed var(--border);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:var(--text-sm);margin:0 auto 1.25rem;flex-direction:column;gap:0.5rem;padding:1rem;text-align:center;">QR Code<br><span style="font-size:0.7rem;word-break:break-all;">educare-attendance-portal.vercel.app/checkin</span></div>
       <div style="display:flex;gap:0.5rem;justify-content:center;">
         <button class="btn btn-primary" onclick="printCheckinPoster()">🖨 Print Poster</button>
       </div>
