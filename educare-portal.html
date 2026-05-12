@@ -1525,7 +1525,7 @@ function renderRateCheck(){
   const search=(document.getElementById('rateSearchInput').value||'').toLowerCase();
   const todayCheckedIn=new Set(dailyRows.map(r=>r.studentId));
   // Working days in last 30 days (Mon-Fri)
-  const workDays=Array.from({length:30},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); return d.getDay(); }).filter(d=>d>0&&d<6).length;
+  const workDays=Array.from({length:90},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); return d.getDay(); }).filter(d=>d>0&&d<6).length;
 
   let rows=summaryData.filter(s=>{
     if(rateCampus!=='all'&&s.campus!==rateCampus) return false;
@@ -1589,7 +1589,7 @@ function renderMyClass(){
   document.getElementById('myClassCount').textContent=rows.length+' students';
   const tbody=document.getElementById('myClassTableBody');
   if(!tbody) return;
-  const workDays=Array.from({length:30},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); return d.getDay(); }).filter(d=>d>0&&d<6).length;
+  const workDays=Array.from({length:90},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); return d.getDay(); }).filter(d=>d>0&&d<6).length;
   if(!rows.length){ tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">📚</div><div class="empty-state-title">No students</div></div></td></tr>'; return; }
   tbody.innerHTML=rows.map(s=>{
     const rate=workDays?Math.min(100,Math.round((s.attendedDays||0)/workDays*100)):0;

@@ -28,7 +28,7 @@ module.exports = async (req, res) => {
       LEFT JOIN attendance a
         ON  a.studentId = s.id
         AND a.course    = e.course
-        AND a.attendanceDate >= DATEADD(day, -30, CAST(GETDATE() AS DATE))
+        AND a.attendanceDate >= DATEADD(day, -90, CAST(GETDATE() AS DATE))
       WHERE s.withdrawn = 0
       GROUP BY
         s.id, s.name, e.course, e.courseCode, e.trainer, s.campus,
