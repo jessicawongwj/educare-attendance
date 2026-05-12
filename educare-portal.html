@@ -1305,7 +1305,7 @@ function logout(){ location.reload(); }
 
 /* ── Global Data ── */
 let allStudents=[], dailyRows=[], summaryData=[];
-const todayStr = () => new Date().toISOString().slice(0,10);
+const todayStr = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Brisbane' });
 
 /* ── Portal Init ── */
 function initPortal(){
@@ -1319,13 +1319,16 @@ function initPortal(){
 async function loadSummary(){
   try{
     const res = await fetch('/api/summary');
-    summaryData = await res.json();
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || res.statusText);
+    if(!Array.isArray(data)) throw new Error('Unexpected response from /api/summary');
+    summaryData = data;
     populateRateFilters();
     renderRateCheck();
     renderMyClass();
     renderNotStarted();
     renderDashboard();
-  } catch(e){ console.error('summary load failed',e); }
+  } catch(e){ console.error('summary load failed',e); showToast('Student data failed to load: '+e.message,true); }
 }
 
 function fmtTime(dt){ if(!dt) return '—'; return new Date(dt).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:true}); }
@@ -1411,12 +1414,15 @@ async function loadDailyAttendance(){
   document.getElementById('dailyLoadedTime').textContent='Loading...';
   try{
     const res=await fetch('/api/attendance?date='+date);
-    dailyRows=await res.json();
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||res.statusText);
+    if(!Array.isArray(data)) throw new Error('Unexpected response from /api/attendance');
+    dailyRows=data;
     document.getElementById('dailyLoadedTime').textContent='Loaded '+new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:true});
     populateDailyFilters();
     applyDailyFilters();
     renderDashboard();
-  } catch(e){ document.getElementById('dailyLoadedTime').textContent='Failed to load'; showToast('Failed to load attendance.',true); }
+  } catch(e){ document.getElementById('dailyLoadedTime').textContent='Failed to load'; showToast('Attendance failed to load: '+e.message,true); }
 }
 
 function populateDailyFilters(){
