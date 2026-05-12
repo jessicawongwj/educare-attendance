@@ -2,5 +2,19 @@
   "cleanUrls": true,
   "redirects": [
     { "source": "/", "destination": "/educare-portal", "permanent": false }
+  ],
+  "headers": [
+    {
+      "source": "/(.*).html",
+      "headers": [{ "key": "Cache-Control", "value": "no-store, must-revalidate" }]
+    },
+    {
+      "source": "/educare-portal",
+      "headers": [{ "key": "Cache-Control", "value": "no-store, must-revalidate" }]
+    },
+    {
+      "source": "/checkin",
+      "headers": [{ "key": "Cache-Control", "value": "no-store, must-revalidate" }]
+    }
   ]
 }
