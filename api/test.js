@@ -13,29 +13,19 @@ module.exports = async (req, res) => {
       WHERE TABLE_NAME IN ('students','attendance')
     `);
 
-    // Test 3: insert a dummy check-in then delete it
-    await pool.request()
-      .input('studentId',     sql.VarChar(20),  'TEST00001')
-      .input('studentName',   sql.NVarChar(200), 'Test Student')
-      .input('course',        sql.NVarChar(300), 'Test Course')
-      .input('trainer',       sql.NVarChar(200), 'Test Trainer')
-      .input('campus',        sql.NVarChar(100), 'Test Campus')
-      .input('checkinTime',   sql.DateTime2,     new Date())
-      .input('attendanceDate', sql.Date,         new Date())
-      .query(`
-        INSERT INTO attendance (studentId,studentName,course,trainer,campus,checkinTime,attendanceDate)
-        VALUES (@studentId,@studentName,@course,@trainer,@campus,@checkinTime,@attendanceDate)
-      `);
-
-    await pool.request()
-      .input('studentId', sql.VarChar(20), 'TEST00001')
-      .query(`DELETE FROM attendance WHERE studentId = @studentId`);
+    // Test 3: row counts
+    const counts = await pool.request().query(`
+      SELECT
+        (SELECT COUNT(*) FROM students)   AS studentCount,
+        (SELECT COUNT(*) FROM attendance) AS attendanceCount
+    `);
 
     res.status(200).json({
       status: 'ok',
       message: 'Database connection successful',
       tables: tables.recordset.map(r => r.TABLE_NAME),
-      writeTest: 'insert + delete passed'
+      studentCount:    counts.recordset[0].studentCount,
+      attendanceCount: counts.recordset[0].attendanceCount
     });
   } catch (err) {
     res.status(500).json({ status: 'error', message: err.message });
