@@ -1,7 +1,3 @@
 {
-  "version": 2,
-  "routes": [
-    { "src": "/portal", "dest": "/educare-portal.html" },
-    { "src": "/", "dest": "/educarecheckin.html" }
-  ]
+  "cleanUrls": true
 }

@@ -1,5 +1,562 @@
-<!DOCTYPE html>
-<html><head>
-<meta http-equiv="refresh" content="0;url=/educarecheckin.html">
-<title>Educare</title>
-</head><body></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<title>Educare — Attendance Check-In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --brand:#1E84C4;
+    --brand-dark:#1568A0;
+    --brand-light:#3A9ED4;
+    --accent:#DCDF30;
+    --accent-green:#187C46;
+    --ok:#187C46; --ok-bg:#ecfdf5; --ok-border:#a7f3d0;
+    --warn:#b45309; --warn-bg:#fffbeb; --warn-border:#fde68a;
+    --err:#b91c1c; --err-bg:#fef2f2; --err-border:#fecaca;
+    --checkout:#e05c1a; --checkout-dark:#c44d10;
+    --radius:12px;
+    --shadow:0 20px 48px rgba(0,0,0,.18);
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; color:#111;
+    font-family:'Nunito',system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:linear-gradient(150deg,#0f4c81 0%,#1568A0 40%,#1E84C4 100%);
+    min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:24px 16px;
+  }
+  .wrap{ width:100%; max-width:560px; }
+
+  /* ── Card ── */
+  .card{
+    background:#fff; border-radius:20px; padding:0;
+    box-shadow:var(--shadow); overflow:hidden;
+  }
+  .card-header{
+    background:#fff;
+    padding:16px 24px;
+    border-bottom:4px solid var(--accent);
+  }
+  .logo-container img{ max-width:100px; height:auto; display:block; }
+  .card-body-title{ margin:0 0 6px; font-size:22px; font-weight:900; color:var(--brand-dark); letter-spacing:-0.3px; line-height:1.2; }
+  .card-body-subtitle{ color:#7a8fa3; font-size:11px; margin:0 0 18px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+  .card-body{ padding:24px 24px 28px; }
+
+  /* ── Privacy notice ── */
+  .privacy-notice{
+    display:flex; align-items:flex-start; gap:9px;
+    background:#f0f8ff; border:1px solid #c6e2f5; border-radius:10px;
+    padding:10px 13px; margin-bottom:18px;
+  }
+  .privacy-icon{ flex-shrink:0; margin-top:1px; color:var(--brand); }
+  .privacy-notice p{ margin:0; font-size:11.5px; color:#4a7a9b; font-weight:600; line-height:1.6; }
+  .privacy-notice a{ color:var(--brand); text-decoration:none; font-weight:700; }
+
+  /* ── Button hint ── */
+  .btn-hint{ margin:8px 0 0; font-size:11.5px; color:#9db4c8; font-weight:600; text-align:center; min-height:16px; }
+  .btn-hint.blocking{ color:var(--warn); }
+
+  /* ── Intro text ── */
+  .intro{ color:#555; font-size:13px; margin:0 0 20px; line-height:1.5; background:#f8fafc; border-radius:8px; padding:10px 12px; border-left:3px solid var(--brand-light); }
+
+  /* ── Form ── */
+  .field-group{ margin-bottom:0; }
+  label{ display:block; margin:14px 0 6px; font-weight:700; color:var(--brand-dark); font-size:13px; letter-spacing:0.2px; text-transform:uppercase; }
+  input, select{
+    width:100%; padding:12px 14px; border:1.5px solid #d1e8f5; border-radius:var(--radius);
+    background:#fff; font-size:15px; font-family:'Nunito',sans-serif; color:#111;
+    transition:border-color 0.15s, box-shadow 0.15s;
+  }
+  input:focus, select:focus{
+    outline:none; border-color:var(--brand);
+    box-shadow:0 0 0 3px rgba(30,132,196,0.12);
+  }
+  input::placeholder{ color:#aab; }
+  .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+  /* ── Location status ── */
+  @keyframes gps-pulse{ 0%,100%{opacity:1} 50%{opacity:0.35} }
+  .loc-wrap{ margin-top:16px; }
+  .loc-status{
+    display:flex; align-items:center; gap:8px;
+    font-size:12px; color:#555; font-weight:600;
+    padding:9px 13px; background:#f4faff;
+    border-radius:var(--radius); border:1px solid #d1e8f5;
+    transition:background 0.2s, border-color 0.2s;
+  }
+  .loc-status.found{ background:var(--ok-bg); border-color:var(--ok-border); color:var(--ok); }
+  .loc-status.notfound{ background:var(--warn-bg); border-color:var(--warn-border); color:var(--warn); }
+  .loc-status.err{ background:var(--err-bg); border-color:var(--err-border); color:var(--err); }
+  .loc-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; background:#94afc7; }
+  .loc-status.checking .loc-dot{ background:var(--brand); animation:gps-pulse 1.2s infinite; }
+  .loc-status.found .loc-dot{ background:var(--ok); }
+  .loc-status.notfound .loc-dot{ background:#d97706; }
+  .loc-status.err .loc-dot{ background:var(--err); }
+  .loc-privacy{ margin:5px 0 0; font-size:11px; color:#9db4c8; font-weight:600; padding-left:2px; }
+  .loc-wrap.hidden{ display:none; }
+
+  /* ── Compliance box ── */
+  .compliance-box{
+    margin-top:18px; background:#f8faff; border:1.5px solid #d1e8f5;
+    border-radius:var(--radius); padding:14px 16px;
+  }
+  .compliance-box.hidden{ display:none; }
+  .compliance-title{
+    font-weight:800; color:var(--brand-dark); font-size:12px;
+    margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;
+  }
+  .declaration-row{ display:flex; align-items:flex-start; gap:10px; }
+  .declaration-row input[type=checkbox]{
+    width:18px; min-width:18px; height:18px; margin-top:2px;
+    accent-color:var(--brand); cursor:pointer; padding:0; border:none;
+  }
+  .declaration-row label{
+    font-size:13px; color:#333; font-weight:600; margin:0;
+    cursor:pointer; text-transform:none; letter-spacing:0;
+  }
+  .policy-details{ margin-top:10px; }
+  .policy-details details{
+    background:#fff; border:1px solid #d1e8f5; margin-top:6px;
+    border-radius:8px; padding:9px 12px; cursor:pointer;
+  }
+  .policy-details details summary{
+    color:var(--brand-dark); font-size:12px; font-weight:700; outline:none; list-style:none;
+  }
+  .policy-details details summary::-webkit-details-marker{ display:none; }
+  .policy-details details summary::before{ content:'+ '; font-weight:900; }
+  .policy-details details[open] summary::before{ content:'− '; }
+  .policy-details details div{ font-size:12px; color:#444; line-height:1.7; padding-top:8px; }
+
+  /* ── Buttons ── */
+  .button-row{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:20px; }
+  button{ border:none; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; transition:all 0.18s; letter-spacing:0.2px; border-radius:var(--radius); }
+  button:disabled{ opacity:0.4; cursor:not-allowed; }
+  .btn-checkin{ background:var(--brand); color:#fff; padding:14px; font-size:15px; }
+  .btn-checkin:not(:disabled):hover{ background:var(--brand-dark); transform:translateY(-1px); box-shadow:0 4px 14px rgba(30,132,196,0.35); }
+  .btn-checkout{ background:var(--checkout); color:#fff; padding:14px; font-size:15px; }
+  .btn-checkout:not(:disabled):hover{ background:var(--checkout-dark); transform:translateY(-1px); box-shadow:0 4px 14px rgba(224,92,26,0.35); }
+  .btn-checkin:active, .btn-checkout:active{ transform:translateY(0); box-shadow:none; }
+
+  /* ── Session card ── */
+  .session-info{
+    background:linear-gradient(135deg,#f0f8ff 0%,#e8f4fc 100%);
+    border-radius:var(--radius); padding:16px 18px; margin-top:18px;
+    display:none; border:1.5px solid #b3d9f0;
+    border-left:4px solid var(--brand);
+  }
+  .session-info.active{ display:block; }
+  .session-status{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .session-dot{
+    width:8px; height:8px; border-radius:50%; background:var(--ok);
+    box-shadow:0 0 0 3px rgba(24,124,70,0.2);
+    animation:pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 0 0 3px rgba(24,124,70,0.2); }
+    50%{ box-shadow:0 0 0 6px rgba(24,124,70,0.08); }
+  }
+  .session-status-label{ font-weight:800; color:var(--brand-dark); font-size:14px; }
+  .session-detail{ font-size:13px; color:#444; margin-bottom:4px; }
+  .session-detail b{ color:var(--brand-dark); }
+  .session-checkin-time{ font-size:12px; color:#666; margin-top:2px; }
+
+  /* ── Messages ── */
+  .msg{ margin-top:14px; padding:12px 14px; border-radius:var(--radius); font-size:13px; font-weight:600; display:none; line-height:1.5; }
+  .msg.ok{ display:block; background:var(--ok-bg); color:var(--ok); border:1px solid var(--ok-border); }
+  .msg.warn{ display:block; background:var(--warn-bg); color:var(--warn); border:1px solid var(--warn-border); }
+  .msg.err{ display:block; background:var(--err-bg); color:var(--err); border:1px solid var(--err-border); }
+  .msg.info{ display:block; background:#e8f4fc; color:var(--brand-dark); border:1px solid #b3d9f0; }
+
+  /* ── Help section ── */
+  .help-section{
+    margin-top:22px; padding-top:18px;
+    border-top:1px solid #e8f0f7;
+  }
+  .help-title{ font-weight:800; color:var(--brand-dark); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; margin:0 0 10px; }
+  details{
+    cursor:pointer; background:#f8faff; padding:10px 12px;
+    border-radius:8px; border:1px solid #d1e8f5; margin-top:8px;
+  }
+  summary{ font-weight:700; color:var(--brand-dark); font-size:12px; outline:none; list-style:none; }
+  summary::-webkit-details-marker{ display:none; }
+  summary::before{ content:'+ '; font-weight:900; color:var(--brand); }
+  details[open] summary::before{ content:'− '; }
+  details div{ font-size:12px; color:#444; line-height:1.7; padding-top:8px; }
+
+  /* ── Footer ── */
+  .card-footer{
+    background:#f4f8fb; border-top:1px solid #e0ecf5;
+    padding:20px 24px; text-align:center;
+  }
+  .footer-name{
+    font-weight:800; color:var(--brand-dark); font-size:11.5px;
+    line-height:1.5; margin-bottom:4px;
+  }
+  .footer-codes{
+    color:#7a8fa3; font-size:10.5px; line-height:1.5;
+    margin-bottom:14px; font-weight:600;
+  }
+  .footer-divider{
+    width:40px; height:2px; background:var(--accent); margin:0 auto 14px; border-radius:2px;
+  }
+  .footer-acknowledgment{
+    color:#6b7c8f; font-size:10.5px; line-height:1.7;
+    font-style:italic; font-weight:600;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+
+      <!-- Header -->
+      <div class="card-header">
+        <div class="logo-container">
+          <img src="images.png" alt="Educare College">
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="card-body">
+
+        <h1 class="card-body-title">Attendance Check-In</h1>
+        <p class="card-body-subtitle">Attendance Monitoring</p>
+
+        <!-- Privacy notice -->
+        <div class="privacy-notice">
+          <svg class="privacy-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <p><b>Privacy Notice:</b> Educare College collects your name, Student ID, and attendance details for the purpose of recording class attendance. Your location is captured only at the moment of check-in and check-out to verify on-campus presence — it is not stored, tracked, or used for any other purpose. Attendance records may be disclosed to the Australian Skills Quality Authority (ASQA), NCVER, and relevant government agencies in accordance with the <i>Data Provision Requirements 2012</i>. All personal information is handled in compliance with the <i>Privacy Act 1988</i> (Cth) and the Australian Privacy Principles (APPs). For privacy concerns, contact <a href="mailto:admin@educare.edu.au">admin@educare.edu.au</a>.</p>
+        </div>
+
+        <p class="intro">Enter your <b>Student ID</b> exactly as shown on your Offer Letter. Your details will be remembered for next time.</p>
+
+        <form onsubmit="return false;">
+
+          <label>Student ID <span style="font-weight:600;color:#888;">(8 digits)</span></label>
+          <input id="studentId" type="text" inputmode="numeric" maxlength="8" placeholder="e.g. 12345678" required />
+
+          <label>Full Name</label>
+          <input id="name" placeholder="e.g. Wilson So" required />
+
+          <div class="two-col">
+            <div>
+              <label>Trainer</label>
+              <select id="trainer" required><option value="">Select trainer</option></select>
+            </div>
+            <div>
+              <label>Course</label>
+              <select id="course" required><option value="">Select course</option></select>
+            </div>
+          </div>
+
+          <!-- Location status -->
+          <div id="locWrap" class="loc-wrap">
+            <div id="locStatus" class="loc-status checking">
+              <span class="loc-dot"></span>
+              <span id="locText">Acquiring location...</span>
+            </div>
+            <p class="loc-privacy">Your location is only used to verify you are on campus. It is not stored or tracked.</p>
+          </div>
+
+          <!-- Declaration & Compliance -->
+          <div id="complianceBox" class="compliance-box">
+            <div class="compliance-title">Declaration &amp; Compliance</div>
+
+            <div class="declaration-row">
+              <input type="checkbox" id="declarePresent" onchange="updateButtonStates()">
+              <label for="declarePresent">I confirm that I am <b>physically present</b> at this campus and attending today's class.</label>
+            </div>
+
+            <div class="policy-details">
+              <details>
+                <summary>Attendance Policy</summary>
+                <div>
+                  Educare College requires a <b>minimum of 80% attendance</b> for all enrolled courses.<br><br>
+                  Failure to meet this requirement may result in:
+                  <ul style="margin:6px 0 0 16px; padding:0;">
+                    <li>Course progress review</li>
+                    <li>Intervention support meeting</li>
+                    <li>Risk of course cancellation</li>
+                  </ul>
+                  If you are unable to attend, please notify your trainer or contact <a href="mailto:studentservices@educare.edu.au" style="color:var(--brand);">studentservices@educare.edu.au</a> in advance.
+                </div>
+              </details>
+              <details>
+                <summary>ESOS &amp; Visa Compliance (International Students)</summary>
+                <div>
+                  As an international student, your attendance is monitored under the <b>Education Services for Overseas Students (ESOS) Act 2000</b> and the <b>National Code of Practice</b>.<br><br>
+                  <b>Your attendance is directly linked to your student visa conditions.</b> Consistently low attendance may be reported to the Department of Home Affairs (<b>DHA</b>), which could affect your visa status.<br><br>
+                  For support or concerns: <a href="mailto:studentservices@educare.edu.au" style="color:var(--brand);">studentservices@educare.edu.au</a>
+                </div>
+              </details>
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button type="button" id="btnCheckIn" class="btn-checkin" disabled onclick="submitCheckIn()">Check In</button>
+            <button type="button" id="btnCheckOut" class="btn-checkout" disabled onclick="submitCheckOut()">Check Out</button>
+          </div>
+          <p id="btnHint" class="btn-hint"></p>
+        </form>
+
+        <!-- Active session card -->
+        <div id="sessionInfo" class="session-info">
+          <div class="session-status">
+            <div class="session-dot"></div>
+            <div class="session-status-label">Active Session</div>
+          </div>
+          <div class="session-detail"><b>Campus:</b> <span id="sessionCampus"></span></div>
+          <div id="sessionCheckinTime" class="session-checkin-time"></div>
+        </div>
+
+        <div id="msg" class="msg"></div>
+
+        <!-- Help -->
+        <div class="help-section">
+          <p class="help-title">Need Help?</p>
+          <details>
+            <summary>How to find my Student ID</summary>
+            <div>
+              Your <b>8-digit Student ID</b> can be found on your <b>Offer Letter</b> sent by Educare College.<br><br>
+              Can't locate it? Email <a href="mailto:studentservices@educare.edu.au" style="color:var(--brand);font-weight:700;">studentservices@educare.edu.au</a>
+            </div>
+          </details>
+          <details>
+            <summary>Trouble with Location / GPS</summary>
+            <div>
+              Your location is used <b>only at the moment of check-in/out</b>. We do not track you.<br><br>
+              <b>iOS:</b> Settings &rarr; Privacy &rarr; Location Services &rarr; Safari &rarr; "While Using the App".<br><br>
+              <b>Android:</b> Settings &rarr; Location &rarr; Chrome &rarr; Permissions &rarr; "Allow only while using app".
+            </div>
+          </details>
+        </div>
+
+      </div><!-- /card-body -->
+
+      <!-- Footer -->
+      <div class="card-footer">
+        <div class="footer-name">Educare Training Institute Australasia PTY LTD t/a Educare College</div>
+        <div class="footer-codes">CRICOS Provider Code 03669G &nbsp;|&nbsp; RTO 40699 &nbsp;|&nbsp; ABN 85 160 864 586</div>
+        <div class="footer-divider"></div>
+        <div class="footer-acknowledgment">
+          Educare acknowledges the Traditional Custodians of the lands on which we work and live.<br>
+          We pay our respects to Elders both past, present and future; and extend that respect to all Aboriginal and Torres Strait Islander Peoples.
+        </div>
+      </div>
+
+    </div><!-- /card -->
+  </div><!-- /wrap -->
+
+<script>
+const TRAINER_COURSES = {
+  "Alessandro Tavian": ["CPC30220 Certificate III in Carpentry"],
+  "Colleen Schmidt": ["CHC33021 Certificate III in Individual Support"],
+  "Maggie Yu Huang": ["CHC30121 Certificate III in Early Childhood Education and Care", "CHC50121 Diploma of Early Childhood Education and Care"],
+  "Nati Belen": ["CHC30121 Certificate III in Early Childhood Education and Care", "CHC50121 Diploma of Early Childhood Education and Care"],
+  "Sherwin Thiarhia": ["CHC33021 Certificate III in Individual Support", "CHC43015 Certificate IV in Ageing Support"],
+  "Toriqul Mozumder": ["CHC33021 Certificate III in Individual Support"],
+  "Troy Scott": ["CHC33021 Certificate III in Individual Support", "CHC52021 Diploma of Community Services", "CHC52025 Diploma of Community Services"],
+  "Vijeta Srivastava": ["CHC43015 Certificate IV in Ageing Support", "CHC43121 Certificate IV in Disability Support", "CHC52025 Diploma of Community Services"]
+};
+
+const CHECKIN_URL  = "https://default9d8868a5c1dc4786aff1f7d04646be.9a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/4603623f15154a70bd2560bec2c31aa2/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=XL40YUpaanK1hh_Dci1n7EEtubd41qv1Mng-Et83OpI";
+const CHECKOUT_URL = "https://default9d8868a5c1dc4786aff1f7d04646be.9a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/bcdcf6fb75f54438930f28c8e643b6a3/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ze-g9kNFEY7hFd097yppkFK5-UD6dT9Yx2CrjWKT3T4";
+
+const campuses = [
+  { name:"Brisbane CBD — 316 Adelaide St", lat:-27.46509, lng:153.02871, radius:0.15 },
+  { name:"Brisbane CBD — 102 Adelaide St", lat:-27.46835, lng:153.02490, radius:0.15 },
+  { name:"Southport GC",                   lat:-27.97258, lng:153.41584, radius:0.15 },
+  { name:"Woolloongabba Studio",            lat:-27.49135, lng:153.04249, radius:0.15 }
+];
+
+let gpsReady=false, latestLat=null, latestLng=null, detectedCampus=null, activeSession=null;
+const elId=document.getElementById('studentId'), elName=document.getElementById('name'),
+      elTrainer=document.getElementById('trainer'), elCourse=document.getElementById('course'),
+      elBtnIn=document.getElementById('btnCheckIn'), elBtnOut=document.getElementById('btnCheckOut');
+
+function setMsg(txt, cls){
+  const el = document.getElementById('msg');
+  el.innerHTML = txt; el.className = 'msg ' + cls;
+}
+
+function isFormFilled(){
+  return elId.value.trim().length === 8 && elName.value.trim() && elTrainer.value && elCourse.value;
+}
+
+function setLocStatus(state, text){
+  const el = document.getElementById('locStatus');
+  el.className = 'loc-status' + (state ? ' ' + state : '');
+  document.getElementById('locText').textContent = text;
+}
+
+function updateButtonStates(){
+  const declared = document.getElementById('declarePresent').checked;
+  const hint = document.getElementById('btnHint');
+  if(activeSession){
+    elBtnIn.disabled  = true;
+    elBtnOut.disabled = false;
+    hint.textContent  = '';
+    hint.className    = 'btn-hint';
+  } else {
+    const canCheckIn = isFormFilled() && declared && gpsReady && detectedCampus;
+    elBtnIn.disabled  = !canCheckIn;
+    elBtnOut.disabled = true;
+    if(canCheckIn){ hint.textContent=''; hint.className='btn-hint'; }
+    else if(!isFormFilled()){ hint.textContent='Please fill in all fields above.'; hint.className='btn-hint blocking'; }
+    else if(!gpsReady || !detectedCampus){ hint.textContent='Check-in requires confirmed on-campus location.'; hint.className='btn-hint blocking'; }
+    else if(!declared){ hint.textContent='Please read and tick the declaration above.'; hint.className='btn-hint blocking'; }
+    else { hint.textContent=''; hint.className='btn-hint'; }
+  }
+}
+
+function formatCheckinTime(ts){
+  return new Date(ts).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:true});
+}
+
+function formatDuration(minutes){
+  const h = Math.floor(minutes/60), m = minutes%60;
+  if(h > 0 && m > 0) return `${h} hr${h>1?'s':''} ${m} min${m>1?'s':''}`;
+  if(h > 0) return `${h} hr${h>1?'s':''}`;
+  return `${m} min${m>1?'s':''}`;
+}
+
+function showSessionCard(){
+  document.getElementById('sessionInfo').classList.add('active');
+  document.getElementById('sessionCampus').textContent = activeSession.campus;
+  document.getElementById('sessionCheckinTime').textContent = `Checked in at ${formatCheckinTime(activeSession.checkInTime)}`;
+  document.getElementById('complianceBox').classList.add('hidden');
+  document.getElementById('locWrap').classList.add('hidden');
+}
+
+function hideSessionCard(){
+  document.getElementById('sessionInfo').classList.remove('active');
+  document.getElementById('complianceBox').classList.remove('hidden');
+  document.getElementById('locWrap').classList.remove('hidden');
+}
+
+const haversine = (lat1,lon1,lat2,lon2) => {
+  const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+};
+
+function onGPSSuccess(pos){
+  latestLat=pos.coords.latitude; latestLng=pos.coords.longitude;
+  gpsReady=true;
+  detectedCampus = campuses.find(c => haversine(latestLat,latestLng,c.lat,c.lng) <= c.radius);
+  if(detectedCampus){
+    setLocStatus('found', 'On campus: ' + detectedCampus.name);
+    document.getElementById('msg').className = 'msg';
+  } else {
+    setLocStatus('notfound', 'Not on campus — check-in unavailable');
+  }
+  updateButtonStates();
+}
+
+function onGPSError(err){
+  gpsReady=false; detectedCampus=null;
+  const denied = err.code === 1;
+  setLocStatus('err', denied ? 'Location access denied — enable in settings' : 'Unable to get location');
+  updateButtonStates();
+}
+
+Object.keys(TRAINER_COURSES).sort().forEach(t => {
+  const opt=document.createElement('option'); opt.value=t; opt.textContent=t; elTrainer.appendChild(opt);
+});
+
+elTrainer.onchange = () => {
+  elCourse.innerHTML = '<option value="">Select course</option>';
+  (TRAINER_COURSES[elTrainer.value]||[]).forEach(c => {
+    const opt=document.createElement('option'); opt.value=c; opt.textContent=c; elCourse.appendChild(opt);
+  });
+  updateButtonStates();
+};
+
+[elId, elName, elCourse].forEach(el => el.oninput = updateButtonStates);
+
+async function submitCheckIn(){
+  if(new Date().getHours() >= 17){ setMsg("Check-in is unavailable after 5:00 PM.", "warn"); return; }
+  setMsg("Submitting attendance...", "info");
+  elBtnIn.disabled = true;
+  try {
+    const res = await fetch(CHECKIN_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        StudentID:elId.value, Name:elName.value, Trainer:elTrainer.value,
+        Course:elCourse.value, Campus:detectedCampus.name, CheckInTime:new Date().toISOString()
+      })
+    });
+    if(res.ok){
+      ['r_id','r_name','r_trainer','r_course'].forEach((k,i)=>localStorage.setItem(k,[elId.value,elName.value,elTrainer.value,elCourse.value][i]));
+      activeSession = { studentId:elId.value, name:elName.value, trainer:elTrainer.value, course:elCourse.value, campus:detectedCampus.name, checkInTime:Date.now() };
+      localStorage.setItem('activeSession', JSON.stringify(activeSession));
+      showSessionCard();
+      setMsg("Check-in recorded successfully. Welcome!", "ok");
+      updateButtonStates();
+    } else if(res.status === 409){
+      ['r_id','r_name','r_trainer','r_course'].forEach((k,i)=>localStorage.setItem(k,[elId.value,elName.value,elTrainer.value,elCourse.value][i]));
+      if(!activeSession){
+        activeSession = { studentId:elId.value, name:elName.value, trainer:elTrainer.value, course:elCourse.value, campus:detectedCampus.name, checkInTime:Date.now() };
+        localStorage.setItem('activeSession', JSON.stringify(activeSession));
+        showSessionCard();
+      }
+      setMsg("Your attendance has already been recorded for today. You are all set!", "ok");
+      updateButtonStates();
+    } else { setMsg(`Submission failed (${res.status}). Please try again.`, "err"); elBtnIn.disabled=false; }
+  } catch(e){ setMsg("Network error. Please check your connection and try again.", "err"); elBtnIn.disabled=false; }
+}
+
+async function submitCheckOut(){
+  if(!activeSession){ setMsg("No active session found. Please check in first.", "warn"); return; }
+  setMsg("Processing check-out...", "info");
+  elBtnOut.disabled = true;
+  try {
+    const durationMin = Math.floor((Date.now()-activeSession.checkInTime)/60000);
+    const res = await fetch(CHECKOUT_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ StudentID:activeSession.studentId, Name:activeSession.name, DurationMinutes:durationMin, Hours:Math.round(durationMin/60) })
+    });
+    if(res.ok){
+      const label = formatDuration(durationMin);
+      localStorage.removeItem('activeSession');
+      activeSession = null;
+      hideSessionCard();
+      setMsg(`Checked out successfully. Total session: <b>${label}</b>`, "ok");
+      updateButtonStates();
+    } else { setMsg("Check-out failed. Please try again.", "err"); elBtnOut.disabled=false; }
+  } catch(e){ setMsg("Network error. Please check your connection and try again.", "err"); elBtnOut.disabled=false; }
+}
+
+function init(){
+  const saved = localStorage.getItem('activeSession');
+  const now   = new Date();
+  if(saved){
+    const session = JSON.parse(saved);
+    const sessionDate = new Date(session.checkInTime);
+    if(sessionDate.toDateString() !== now.toDateString() || now.getHours() >= 18){
+      localStorage.removeItem('activeSession');
+    } else {
+      activeSession = session;
+      showSessionCard();
+    }
+  }
+  const r_id=localStorage.getItem('r_id'), r_name=localStorage.getItem('r_name'),
+        r_trainer=localStorage.getItem('r_trainer'), r_course=localStorage.getItem('r_course');
+  if(r_id) elId.value=r_id;
+  if(r_name) elName.value=r_name;
+  if(r_trainer){
+    elTrainer.value=r_trainer; elTrainer.dispatchEvent(new Event('change'));
+    setTimeout(()=>{ if(r_course) elCourse.value=r_course; updateButtonStates(); }, 150);
+  } else {
+    updateButtonStates();
+  }
+}
+
+init();
+navigator.geolocation.watchPosition(onGPSSuccess, onGPSError, {enableHighAccuracy:true});
+</script>
+</body>
+</html>
