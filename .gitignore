@@ -1,0 +1,6 @@
+.DS_Store
+.vscode/
+node_modules/
+*.log
+attendancecb copy.html
+attendanceportal copy.html
