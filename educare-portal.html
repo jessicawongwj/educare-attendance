@@ -1600,7 +1600,7 @@ function renderDashboard(){
     if(s.status==='active') byTrainer[s.trainer].courses[s.course].active++;
     if(s.status==='not-started') byTrainer[s.trainer].courses[s.course].upcoming++;
   });
-  const presentIds=new Set(dailyRows.filter(r=>TRAINER_CAMPUS[r.trainer]===currentCampus).map(r=>r.studentId));
+  const presentIds=new Set(dailyRows.filter(r=>r.campus&&r.campus.includes(currentCampus)).map(r=>r.studentId));
   const html=Object.entries(byTrainer).map(([trainer,data])=>`
     <div class="trainer-card">
       <div class="trainer-card-header">
