@@ -1577,15 +1577,16 @@ function setBreakdownPeriod(period,btn){
 }
 function renderDashboard(){
   if(!summaryData.length){ return; }
+  const filtered = summaryData.filter(s => s.campus && s.campus.includes(currentCampus));
   const byTrainer={};
-  summaryData.forEach(s=>{
+  filtered.forEach(s=>{
     if(!byTrainer[s.trainer]) byTrainer[s.trainer]={courses:{}};
     if(!byTrainer[s.trainer].courses[s.course]) byTrainer[s.trainer].courses[s.course]={total:0,active:0,upcoming:0};
     byTrainer[s.trainer].courses[s.course].total++;
     if(s.status==='active') byTrainer[s.trainer].courses[s.course].active++;
     if(s.status==='not-started') byTrainer[s.trainer].courses[s.course].upcoming++;
   });
-  const presentIds=new Set(dailyRows.map(r=>r.studentId));
+  const presentIds=new Set(dailyRows.filter(r=>r.campus&&r.campus.includes(currentCampus)).map(r=>r.studentId));
   const html=Object.entries(byTrainer).map(([trainer,data])=>`
     <div class="trainer-card">
       <div class="trainer-card-header">
@@ -1600,8 +1601,8 @@ function renderDashboard(){
           </div>`).join('')}
       </div>
     </div>`).join('');
-  document.getElementById('trainerCourseTableBody').innerHTML=html||'<div class="empty-state"><div class="empty-state-icon">📊</div><div class="empty-state-title">No data</div></div>';
-  document.getElementById('campusTabStats').innerHTML=`<span>${summaryData.length} total students &nbsp;·&nbsp; ${Object.keys(byTrainer).length} trainers &nbsp;·&nbsp; ${dailyRows.length} checked in today</span>`;
+  document.getElementById('trainerCourseTableBody').innerHTML=html||'<div class="empty-state"><div class="empty-state-icon">📊</div><div class="empty-state-title">No trainers found for this campus</div></div>';
+  document.getElementById('campusTabStats').innerHTML=`<span>${filtered.length} total students &nbsp;·&nbsp; ${Object.keys(byTrainer).length} trainers &nbsp;·&nbsp; ${presentIds.size} checked in today</span>`;
 }
 function refreshDashboard(){ loadSummary(); showToast('Dashboard refreshed'); }
 function exportDashboardCSV(){ showToast('No data to export.',true); }
