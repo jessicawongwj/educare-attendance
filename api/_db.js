@@ -6,12 +6,15 @@ const config = {
   user:     process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   options:  { encrypt: true, trustServerCertificate: false },
-  pool:     { max: 10, min: 0, idleTimeoutMillis: 30000 }
+  pool:     { max: 10, min: 0, idleTimeoutMillis: 30000 },
+  connectionTimeout: 30000,
+  requestTimeout:    30000,
 };
 
 let pool;
 async function getPool() {
-  if (!pool) pool = await sql.connect(config);
+  if (pool && pool.connected) return pool;
+  pool = await sql.connect(config);
   return pool;
 }
 

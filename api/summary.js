@@ -1,4 +1,4 @@
-const { getPool, sql } = require('./_db');
+const { getPool } = require('./_db');
 
 module.exports = async (req, res) => {
   if (req.method !== 'GET') return res.status(405).end();
@@ -27,7 +27,7 @@ module.exports = async (req, res) => {
       JOIN enrollments e ON e.studentId = s.id
       LEFT JOIN attendance a
         ON  a.studentId = s.id
-        AND a.course    = e.course
+        AND (a.course = e.course OR (a.courseCode = e.courseCode AND a.courseCode != ''))
         AND a.attendanceDate >= DATEADD(day, -90, CAST(GETDATE() AS DATE))
       WHERE s.withdrawn = 0
       GROUP BY

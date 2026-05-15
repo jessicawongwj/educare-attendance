@@ -4,3 +4,5 @@ node_modules/
 *.log
 attendancecb copy.html
 attendanceportal copy.html
+.vercel
+.env*.local

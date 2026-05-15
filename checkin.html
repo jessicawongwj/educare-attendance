@@ -25,7 +25,7 @@
   body{
     margin:0; color:#111;
     font-family:'Nunito',system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
-    background:linear-gradient(150deg,#0f4c81 0%,#1568A0 40%,#1E84C4 100%);
+    background:linear-gradient(150deg,#0a3352 0%,#1464a0 30%,#198c6c 65%,#3ab84a 100%);
     min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:24px 16px;
   }
   .wrap{ width:100%; max-width:560px; }
@@ -477,19 +477,32 @@ elTrainer.onchange = () => {
 
 [elId, elName, elCourse].forEach(el => el.oninput = updateButtonStates);
 
+async function fetchWithRetry(url, body, onRetry, maxRetries=3){
+  for(let attempt=1; attempt<=maxRetries; attempt++){
+    try{
+      const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      if(res.ok || res.status===409 || res.status===400 || res.status===404) return res;
+      if(attempt < maxRetries){ onRetry(attempt, maxRetries); await new Promise(r=>setTimeout(r, 5000)); }
+      else return res;
+    } catch(e){
+      if(attempt < maxRetries){ onRetry(attempt, maxRetries); await new Promise(r=>setTimeout(r, 5000)); }
+      else throw e;
+    }
+  }
+}
+
 async function submitCheckIn(){
   if(new Date().getHours() >= 17){ setMsg("Check-in is unavailable after 5:00 PM.", "warn"); return; }
   setMsg("Submitting attendance...", "info");
   elBtnIn.disabled = true;
   try {
-    const res = await fetch(CHECKIN_URL, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        StudentID:elId.value, Name:elName.value, Trainer:elTrainer.value,
+    const res = await fetchWithRetry(
+      CHECKIN_URL,
+      { StudentID:elId.value, Name:elName.value, Trainer:elTrainer.value,
         Course:elCourse.value, Campus:detectedCampus.name, CheckInTime:new Date().toISOString(),
-        Lat:latestLat, Lng:latestLng
-      })
-    });
+        Lat:latestLat, Lng:latestLng },
+      (attempt, max) => setMsg(`Server is starting up — please wait (attempt ${attempt+1} of ${max})...`, "info")
+    );
     if(res.ok){
       ['r_id','r_name','r_trainer','r_course'].forEach((k,i)=>localStorage.setItem(k,[elId.value,elName.value,elTrainer.value,elCourse.value][i]));
       activeSession = { studentId:elId.value, name:elName.value, trainer:elTrainer.value, course:elCourse.value, campus:detectedCampus.name, checkInTime:Date.now() };
@@ -506,7 +519,11 @@ async function submitCheckIn(){
       }
       setMsg("Your attendance has already been recorded for today. You are all set!", "ok");
       updateButtonStates();
-    } else { setMsg(`Submission failed (${res.status}). Please try again.`, "err"); elBtnIn.disabled=false; }
+    } else {
+      const body = await res.json().catch(()=>({}));
+      setMsg(`Check-in failed: ${body.error || 'please try again'}.`, "err");
+      elBtnIn.disabled=false;
+    }
   } catch(e){ setMsg("Network error. Please check your connection and try again.", "err"); elBtnIn.disabled=false; }
 }
 
@@ -516,10 +533,11 @@ async function submitCheckOut(){
   elBtnOut.disabled = true;
   try {
     const durationMin = Math.floor((Date.now()-activeSession.checkInTime)/60000);
-    const res = await fetch(CHECKOUT_URL, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ StudentID:activeSession.studentId, Name:activeSession.name, DurationMinutes:durationMin, Hours:Math.round(durationMin/60) })
-    });
+    const res = await fetchWithRetry(
+      CHECKOUT_URL,
+      { StudentID:activeSession.studentId, Name:activeSession.name, DurationMinutes:durationMin, Hours:Math.round(durationMin/60) },
+      (attempt, max) => setMsg(`Server is starting up — please wait (attempt ${attempt+1} of ${max})...`, "info")
+    );
     if(res.ok){
       const label = formatDuration(durationMin);
       localStorage.removeItem('activeSession');
@@ -527,7 +545,10 @@ async function submitCheckOut(){
       hideSessionCard();
       setMsg(`Checked out successfully. Total session: <b>${label}</b>`, "ok");
       updateButtonStates();
-    } else { setMsg("Check-out failed. Please try again.", "err"); elBtnOut.disabled=false; }
+    } else {
+      setMsg("Check-out failed. Please try again.", "err");
+      elBtnOut.disabled=false;
+    }
   } catch(e){ setMsg("Network error. Please check your connection and try again.", "err"); elBtnOut.disabled=false; }
 }
 

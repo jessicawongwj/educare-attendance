@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
       .input('date', sql.Date, date)
       .query(`
         SELECT
-          a.id, a.studentId, a.studentName, a.course, a.trainer, a.campus,
+          a.id, a.studentId, a.studentName, a.course, a.courseCode, a.trainer, a.campus,
           a.checkinTime, a.checkoutTime, a.attendanceDate
         FROM attendance a
         WHERE a.attendanceDate = @date
