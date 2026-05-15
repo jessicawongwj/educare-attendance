@@ -1599,6 +1599,8 @@ function initPortal(){
 async function loadSummary(){
   const loadingRow='<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-2);">Loading students…</td></tr>';
   ['rateTableBody','myClassTableBody','notStartedTableBody'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=loadingRow;});
+  document.getElementById('campusTabStats').innerHTML='<span style="color:var(--text-2);">Loading…</span>';
+  document.getElementById('trainerCourseTableBody').innerHTML='<div style="padding:2rem;text-align:center;color:var(--text-2);">Loading attendance data…</div>';
   try{
     const res = await fetch('/api/summary');
     const data = await res.json();
@@ -1614,7 +1616,9 @@ async function loadSummary(){
     console.error('summary load failed',e);
     const errRow=`<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--danger);">Failed to load: ${e.message}</td></tr>`;
     ['rateTableBody','myClassTableBody','notStartedTableBody'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=errRow;});
-    showToast('Student data failed to load: '+e.message,true);
+    document.getElementById('campusTabStats').innerHTML=`<span style="color:var(--danger);">Failed to load data — <a href="javascript:loadSummary()" style="color:var(--brand);">try again</a></span>`;
+    document.getElementById('trainerCourseTableBody').innerHTML=`<div style="padding:2rem;text-align:center;color:var(--danger);">Could not load attendance data: ${e.message}<br><br><button class="btn btn-primary" onclick="loadSummary()">↻ Retry</button></div>`;
+    showToast('Data failed to load: '+e.message,true);
   }
 }
 

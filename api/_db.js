@@ -14,7 +14,8 @@ const config = {
 let pool;
 async function getPool() {
   if (pool && pool.connected) return pool;
-  pool = await sql.connect(config);
+  if (pool) { try { await pool.close(); } catch(_) {} pool = null; }
+  pool = await new sql.ConnectionPool(config).connect();
   return pool;
 }
 
