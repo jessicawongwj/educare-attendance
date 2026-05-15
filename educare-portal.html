@@ -1438,38 +1438,6 @@ function parseJwt(token){
   } catch(e){ return null; }
 }
 
-// Check URL hash for auth response, or existing session
-(function(){
-  var hash   = window.location.hash.slice(1);
-  var params = new URLSearchParams(hash);
-
-  if(params.has('id_token')){
-    history.replaceState(null, '', window.location.pathname);
-    var claims = parseJwt(params.get('id_token'));
-    if(claims){
-      sessionStorage.setItem('ms_session', JSON.stringify({ name: claims.name, username: claims.preferred_username || claims.email }));
-      showPortal(claims.name, claims.preferred_username);
-    } else {
-      setLoginError('Sign-in failed — invalid token.');
-    }
-    return;
-  }
-
-  if(params.has('error')){
-    history.replaceState(null, '', window.location.pathname);
-    setLoginError('Sign-in error: ' + (params.get('error_description') || params.get('error')));
-    return;
-  }
-
-  var stored = sessionStorage.getItem('ms_session');
-  if(stored){
-    try {
-      var s = JSON.parse(stored);
-      showPortal(s.name, s.username);
-    } catch(e){ sessionStorage.removeItem('ms_session'); }
-  }
-})();
-
 /* ── Global Data ── */
 let allStudents=[], dailyRows=[], summaryData=[];
 const todayStr = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Brisbane' });
@@ -2154,6 +2122,38 @@ document.querySelectorAll('.modal-overlay').forEach(o=>{
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape') document.querySelectorAll('.modal-overlay.show').forEach(o=>o.classList.remove('show'));
 });
+
+// Check URL hash for auth response, or existing session — runs AFTER all let/const declarations
+(function(){
+  var hash   = window.location.hash.slice(1);
+  var params = new URLSearchParams(hash);
+
+  if(params.has('id_token')){
+    history.replaceState(null, '', window.location.pathname);
+    var claims = parseJwt(params.get('id_token'));
+    if(claims){
+      sessionStorage.setItem('ms_session', JSON.stringify({ name: claims.name, username: claims.preferred_username || claims.email }));
+      showPortal(claims.name, claims.preferred_username);
+    } else {
+      setLoginError('Sign-in failed — invalid token.');
+    }
+    return;
+  }
+
+  if(params.has('error')){
+    history.replaceState(null, '', window.location.pathname);
+    setLoginError('Sign-in error: ' + (params.get('error_description') || params.get('error')));
+    return;
+  }
+
+  var stored = sessionStorage.getItem('ms_session');
+  if(stored){
+    try {
+      var s = JSON.parse(stored);
+      showPortal(s.name, s.username);
+    } catch(e){ sessionStorage.removeItem('ms_session'); }
+  }
+})();
 </script>
 </body>
 </html>
