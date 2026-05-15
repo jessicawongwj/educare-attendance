@@ -604,7 +604,7 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
       </svg>
       Sign in with Microsoft
     </button>
-    <div class="ms-loading" id="msLoading" style="display:none;">Signing in…</div>
+    <div class="ms-loading" id="msLoading" style="display:none;">Redirecting to Microsoft…</div>
 
     <hr class="login-divider-line">
     <div class="login-footer">Can't log in? Contact <a href="mailto:admin@educare.edu.au" style="color:var(--brand);text-decoration:none;font-weight:600;">admin@educare.edu.au</a></div>
@@ -1388,14 +1388,16 @@ const CAMPUSES = ['Brisbane CBD — 316 Adelaide St','Brisbane CBD — 102 Adela
 const CHECKIN_URL  = ''; // TODO
 const CHECKOUT_URL = ''; // TODO
 
-/* ── Microsoft Login (MSAL) ── */
+/* ── Microsoft Login (MSAL — redirect flow) ── */
 const msalInstance = new msal.PublicClientApplication({
   auth: {
     clientId: '2e958225-a191-405f-93a0-a78be04d96d5',
     authority: 'https://login.microsoftonline.com/common',
     redirectUri: 'https://edc-attendance.com/educare-portal',
+    navigateToLoginRequestUrl: false,
   },
-  cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
+  cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: true },
+  system: { loggerOptions: { logLevel: msal.LogLevel.Warning } }
 });
 
 function showPortal(account){
@@ -1409,29 +1411,39 @@ function showPortal(account){
   initPortal();
 }
 
+function setLoginError(msg){
+  document.getElementById('msLoginError').textContent = msg;
+  document.getElementById('msLoading').style.display = 'none';
+  document.getElementById('msSigninBtn').disabled = false;
+}
+
 async function signInWithMicrosoft(){
   document.getElementById('msLoginError').textContent = '';
   document.getElementById('msSigninBtn').disabled = true;
   document.getElementById('msLoading').style.display = 'block';
   try {
-    const resp = await msalInstance.loginPopup({ scopes: ['openid','profile','email'] });
-    msalInstance.setActiveAccount(resp.account);
-    showPortal(resp.account);
+    await msalInstance.loginRedirect({ scopes: ['openid','profile','email'] });
   } catch(e) {
-    document.getElementById('msLoading').style.display = 'none';
-    document.getElementById('msSigninBtn').disabled = false;
-    if(e.errorCode !== 'user_cancelled'){
-      document.getElementById('msLoginError').textContent = 'Sign-in failed — please try again.';
-    }
+    setLoginError('Sign-in error: ' + (e.errorCode || e.message || 'unknown'));
   }
 }
 
 async function logout(){
-  try { await msalInstance.logoutPopup(); } catch(e) {}
-  location.reload();
+  try { await msalInstance.logoutRedirect(); } catch(e) { location.reload(); }
 }
 
-msalInstance.initialize().then(() => {
+msalInstance.initialize().then(async () => {
+  try {
+    const resp = await msalInstance.handleRedirectPromise();
+    if(resp && resp.account){
+      msalInstance.setActiveAccount(resp.account);
+      showPortal(resp.account);
+      return;
+    }
+  } catch(e){
+    setLoginError('Sign-in error: ' + (e.errorCode || e.message || 'unknown'));
+    return;
+  }
   const accounts = msalInstance.getAllAccounts();
   if(accounts.length > 0){
     msalInstance.setActiveAccount(accounts[0]);
