@@ -604,7 +604,7 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
       </svg>
       Sign in with Microsoft
     </button>
-    <div class="ms-loading" id="msLoading" style="display:none;">Redirecting to Microsoft…</div>
+    <div class="ms-loading" id="msLoading" style="display:none;">Opening Microsoft sign-in…</div>
 
     <hr class="login-divider-line">
     <div class="login-footer">Can't log in? Contact <a href="mailto:admin@educare.edu.au" style="color:var(--brand);text-decoration:none;font-weight:600;">admin@educare.edu.au</a></div>
@@ -1419,30 +1419,32 @@ function signInWithMicrosoft(){
   document.getElementById('msLoginError').textContent = '';
   document.getElementById('msSigninBtn').disabled = true;
   document.getElementById('msLoading').style.display = 'block';
-  msalInstance.loginRedirect({ scopes: ['openid','profile','email'] });
+  msalInstance.loginPopup({ scopes: ['openid','profile','email'] })
+    .then(function(resp){
+      msalInstance.setActiveAccount(resp.account);
+      showPortal(resp.account);
+    })
+    .catch(function(e){
+      document.getElementById('msLoading').style.display = 'none';
+      document.getElementById('msSigninBtn').disabled = false;
+      if(e.errorCode && e.errorCode !== 'user_cancelled'){
+        setLoginError('Sign-in error: ' + e.errorCode);
+      }
+    });
 }
 
 function logout(){
-  msalInstance.logoutRedirect({ postLogoutRedirectUri: 'https://edc-attendance.com/educare-portal' });
+  msalInstance.logoutPopup().catch(function(){}).finally(function(){ location.reload(); });
 }
 
-// Handle redirect response on every page load (MSAL v2 — no initialize() needed)
-msalInstance.handleRedirectPromise()
-  .then(function(resp){
-    if(resp && resp.account){
-      msalInstance.setActiveAccount(resp.account);
-      showPortal(resp.account);
-      return;
-    }
-    var accounts = msalInstance.getAllAccounts();
-    if(accounts.length > 0){
-      msalInstance.setActiveAccount(accounts[0]);
-      showPortal(accounts[0]);
-    }
-  })
-  .catch(function(e){
-    setLoginError('Sign-in error: ' + (e.errorCode || e.message || 'unknown'));
-  });
+// Check for existing session on load
+(function(){
+  var accounts = msalInstance.getAllAccounts();
+  if(accounts.length > 0){
+    msalInstance.setActiveAccount(accounts[0]);
+    showPortal(accounts[0]);
+  }
+})();
 
 /* ── Global Data ── */
 let allStudents=[], dailyRows=[], summaryData=[];
