@@ -74,24 +74,20 @@ input,select,textarea,button{ font-family:inherit; }
 .login-heading{ font-size:var(--text-md); font-weight:700; color:var(--brand-dark); margin-bottom:0.3rem; }
 .login-sub{ font-size:var(--text-sm); color:var(--text-2); margin-bottom:1.75rem; }
 
-/* PIN ui */
-.pin-dots{ display:flex; gap:0.75rem; justify-content:center; margin:0 0 0.5rem; }
-.pin-dot{
-  width:13px; height:13px; border-radius:50%;
-  background:var(--border); transition:background var(--transition);
+/* Microsoft login */
+.ms-signin-btn{
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  width:100%; padding:0.75rem 1rem; margin:1.25rem 0 0;
+  background:#fff; border:1.5px solid #d1d5db; border-radius:var(--radius-md);
+  font-size:var(--text-base); font-weight:600; color:#1a1a1a;
+  cursor:pointer; transition:all var(--transition); font-family:inherit;
+  box-shadow:0 1px 3px rgba(0,0,0,.08);
 }
-.pin-dot.filled{ background:var(--brand); }
-.pin-error{ font-size:var(--text-sm); color:var(--danger); font-weight:600; min-height:1.25rem; margin:0.4rem 0; }
-
-.pin-keypad{ display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem; margin:0.75rem 0; max-width:210px; margin-left:auto; margin-right:auto; }
-.pin-key{
-  padding:0.9rem 0.5rem; border:1.5px solid var(--border); border-radius:var(--radius-md);
-  font-size:1.05rem; font-weight:700; background:var(--surface);
-  cursor:pointer; transition:all var(--transition); color:var(--brand-dark);
-}
-.pin-key:hover{ background:var(--surface-2); border-color:var(--brand); }
-.pin-key:active{ background:var(--brand); color:white; border-color:var(--brand); }
-.pin-key.del{ color:var(--danger); font-size:var(--text-sm); }
+.ms-signin-btn:hover{ background:#f5f5f5; border-color:#aaa; box-shadow:0 2px 6px rgba(0,0,0,.12); }
+.ms-signin-btn:active{ background:#efefef; }
+.ms-signin-btn:disabled{ opacity:0.55; cursor:not-allowed; }
+.ms-error{ font-size:var(--text-sm); color:var(--danger); font-weight:600; min-height:1.25rem; margin:0.75rem 0 0; text-align:center; }
+.ms-loading{ font-size:var(--text-sm); color:var(--text-2); text-align:center; margin-top:1rem; }
 .login-footer{ font-size:var(--text-xs); color:var(--text-3); margin-top:1.25rem; }
 
 /* ══════════════════════════════════════════
@@ -546,6 +542,7 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
   .filter-select{ min-width:120px; font-size:var(--text-xs); }
 }
 </style>
+<script src="https://alcdn.msauth.net/browser/3.28.1/js/msal-browser.min.js"></script>
 </head>
 <body>
 
@@ -565,29 +562,19 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
     </div>
     <div class="login-divider"></div>
     <div class="login-heading">Attendance Monitoring Portal</div>
-    <div class="login-sub">Enter your 4-digit PIN to continue</div>
-    <div class="pin-dots" id="pinDots">
-      <div class="pin-dot" id="pd0"></div>
-      <div class="pin-dot" id="pd1"></div>
-      <div class="pin-dot" id="pd2"></div>
-      <div class="pin-dot" id="pd3"></div>
-    </div>
-    <div class="pin-error" id="pinError"></div>
-    <div class="pin-keypad">
-      <button class="pin-key" onclick="pinPress('1')">1</button>
-      <button class="pin-key" onclick="pinPress('2')">2</button>
-      <button class="pin-key" onclick="pinPress('3')">3</button>
-      <button class="pin-key" onclick="pinPress('4')">4</button>
-      <button class="pin-key" onclick="pinPress('5')">5</button>
-      <button class="pin-key" onclick="pinPress('6')">6</button>
-      <button class="pin-key" onclick="pinPress('7')">7</button>
-      <button class="pin-key" onclick="pinPress('8')">8</button>
-      <button class="pin-key" onclick="pinPress('9')">9</button>
-      <div></div>
-      <button class="pin-key" onclick="pinPress('0')">0</button>
-      <button class="pin-key del" onclick="pinDelete()">⌫</button>
-    </div>
-    <div class="login-footer">Contact <a href="mailto:admin@educare.edu.au" style="color:var(--brand);text-decoration:none;font-weight:600;">admin@educare.edu.au</a> for access</div>
+    <div class="login-sub">Sign in with your Microsoft account to continue</div>
+    <div class="ms-error" id="msLoginError"></div>
+    <button class="ms-signin-btn" id="msSigninBtn" onclick="signInWithMicrosoft()">
+      <svg width="20" height="20" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+        <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+        <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+        <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+      </svg>
+      Sign in with Microsoft
+    </button>
+    <div class="ms-loading" id="msLoading" style="display:none;">Signing in…</div>
+    <div class="login-footer">Only authorised staff can access this portal.<br>Contact <a href="mailto:admin@educare.edu.au" style="color:var(--brand);text-decoration:none;font-weight:600;">admin@educare.edu.au</a> for access.</div>
   </div>
 </div>
 
@@ -1368,22 +1355,56 @@ const CAMPUSES = ['Brisbane CBD — 316 Adelaide St','Brisbane CBD — 102 Adela
 const CHECKIN_URL  = ''; // TODO
 const CHECKOUT_URL = ''; // TODO
 
-/* ── PIN Login ── */
-let pinBuffer = '';
-function pinPress(d){ if(pinBuffer.length>=4) return; pinBuffer+=d; updatePinDots(); if(pinBuffer.length===4) setTimeout(checkPin,120); }
-function pinDelete(){ pinBuffer=pinBuffer.slice(0,-1); updatePinDots(); document.getElementById('pinError').textContent=''; }
-function updatePinDots(){ for(let i=0;i<4;i++) document.getElementById('pd'+i).classList.toggle('filled',i<pinBuffer.length); }
-function checkPin(){
-  if(pinBuffer===PORTAL_PIN){
-    document.getElementById('loginScreen').style.display='none';
-    const p=document.getElementById('portalContent'); p.style.display='flex'; p.style.flexDirection='column';
-    initPortal();
-  } else {
-    document.getElementById('pinError').textContent='Incorrect PIN — please try again.';
-    pinBuffer=''; updatePinDots();
+/* ── Microsoft Login (MSAL) ── */
+const msalInstance = new msal.PublicClientApplication({
+  auth: {
+    clientId: '2e958225-a191-405f-93a0-a78be04d96d5',
+    authority: 'https://login.microsoftonline.com/common',
+    redirectUri: 'https://edc-attendance.com/educare-portal',
+  },
+  cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
+});
+
+function showPortal(account){
+  document.getElementById('loginScreen').style.display = 'none';
+  const p = document.getElementById('portalContent');
+  p.style.display = 'flex'; p.style.flexDirection = 'column';
+  const name = account.name || account.username || 'Staff';
+  const initials = name.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('headerAvatar').textContent = initials;
+  document.getElementById('headerUserName').textContent = name.split(' ')[0];
+  initPortal();
+}
+
+async function signInWithMicrosoft(){
+  document.getElementById('msLoginError').textContent = '';
+  document.getElementById('msSigninBtn').disabled = true;
+  document.getElementById('msLoading').style.display = 'block';
+  try {
+    const resp = await msalInstance.loginPopup({ scopes: ['openid','profile','email'] });
+    msalInstance.setActiveAccount(resp.account);
+    showPortal(resp.account);
+  } catch(e) {
+    document.getElementById('msLoading').style.display = 'none';
+    document.getElementById('msSigninBtn').disabled = false;
+    if(e.errorCode !== 'user_cancelled'){
+      document.getElementById('msLoginError').textContent = 'Sign-in failed — please try again.';
+    }
   }
 }
-function logout(){ location.reload(); }
+
+async function logout(){
+  try { await msalInstance.logoutPopup(); } catch(e) {}
+  location.reload();
+}
+
+msalInstance.initialize().then(() => {
+  const accounts = msalInstance.getAllAccounts();
+  if(accounts.length > 0){
+    msalInstance.setActiveAccount(accounts[0]);
+    showPortal(accounts[0]);
+  }
+});
 
 /* ── Global Data ── */
 let allStudents=[], dailyRows=[], summaryData=[];
