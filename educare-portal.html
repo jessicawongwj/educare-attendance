@@ -1393,7 +1393,7 @@ const todayStr = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Austr
 const SCHED_DEFAULTS = {
   "Brisbane CBD": [
     { name:"Troy Scott",        days:["Mon","Tue","Wed","Thu"] },
-    { name:"Maggie Huang",      days:["Thu","Fri"] },
+    { name:"Maggie Yu Huang",   days:["Thu","Fri"] },
     { name:"Carol Ly",          days:["Fri"] },
     { name:"Zeyun Ma",          days:["Wed"] },
     { name:"Sherwin Thiarhia",  days:["Mon","Tue"] },
@@ -1575,9 +1575,23 @@ function setBreakdownPeriod(period,btn){
   document.getElementById('tcTablePeriodLabel').textContent='Trainer / Course — '+(L[period]||period);
   renderDashboard();
 }
+const TRAINER_CAMPUS = {
+  "Troy Scott":        "Brisbane CBD",
+  "Maggie Yu Huang":  "Brisbane CBD",
+  "Carol Ly":         "Brisbane CBD",
+  "Zeyun Ma":         "Brisbane CBD",
+  "Zeyun MA":         "Brisbane CBD",
+  "Sherwin Thiarhia": "Brisbane CBD",
+  "Nati Belen":       "Southport GC",
+  "Vijeta Srivastava":"Southport GC",
+  "Toriqul Mozumder": "Southport GC",
+  "Alessandro Tavian":"Woolloongabba",
+  "Benjamin Akari":   "Woolloongabba",
+};
+
 function renderDashboard(){
   if(!summaryData.length){ return; }
-  const filtered = summaryData.filter(s => s.campus && s.campus.includes(currentCampus));
+  const filtered = summaryData.filter(s => TRAINER_CAMPUS[s.trainer] === currentCampus);
   const byTrainer={};
   filtered.forEach(s=>{
     if(!byTrainer[s.trainer]) byTrainer[s.trainer]={courses:{}};
@@ -1586,7 +1600,7 @@ function renderDashboard(){
     if(s.status==='active') byTrainer[s.trainer].courses[s.course].active++;
     if(s.status==='not-started') byTrainer[s.trainer].courses[s.course].upcoming++;
   });
-  const presentIds=new Set(dailyRows.filter(r=>r.campus&&r.campus.includes(currentCampus)).map(r=>r.studentId));
+  const presentIds=new Set(dailyRows.filter(r=>TRAINER_CAMPUS[r.trainer]===currentCampus).map(r=>r.studentId));
   const html=Object.entries(byTrainer).map(([trainer,data])=>`
     <div class="trainer-card">
       <div class="trainer-card-header">
