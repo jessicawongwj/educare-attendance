@@ -563,7 +563,6 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
   .filter-select{ min-width:120px; font-size:var(--text-xs); }
 }
 </style>
-<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
 </head>
 <body>
 
@@ -604,7 +603,7 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
       </svg>
       Sign in with Microsoft
     </button>
-    <div class="ms-loading" id="msLoading" style="display:none;">Opening Microsoft sign-in…</div>
+    <div class="ms-loading" id="msLoading" style="display:none;">Redirecting to Microsoft…</div>
 
     <hr class="login-divider-line">
     <div class="login-footer">Can't log in? Contact <a href="mailto:admin@educare.edu.au" style="color:var(--brand);text-decoration:none;font-weight:600;">admin@educare.edu.au</a></div>
@@ -1388,24 +1387,19 @@ const CAMPUSES = ['Brisbane CBD — 316 Adelaide St','Brisbane CBD — 102 Adela
 const CHECKIN_URL  = ''; // TODO
 const CHECKOUT_URL = ''; // TODO
 
-/* ── Microsoft Login (MSAL v2 — redirect flow) ── */
-const msalInstance = new msal.PublicClientApplication({
-  auth: {
-    clientId: '2e958225-a191-405f-93a0-a78be04d96d5',
-    authority: 'https://login.microsoftonline.com/common',
-    redirectUri: 'https://edc-attendance.com/educare-portal',
-  },
-  cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: true }
-});
+/* ── Microsoft OAuth2 Login (no library) ── */
+const MS_CLIENT_ID   = '2e958225-a191-405f-93a0-a78be04d96d5';
+const MS_REDIRECT    = 'https://edc-attendance.com/educare-portal';
+const MS_AUTH_URL    = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize';
 
-function showPortal(account){
+function showPortal(name, username){
   document.getElementById('loginScreen').style.display = 'none';
   const p = document.getElementById('portalContent');
   p.style.display = 'flex'; p.style.flexDirection = 'column';
-  const name = account.name || account.username || 'Staff';
-  const initials = name.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const displayName = name || username || 'Staff';
+  const initials = displayName.trim().split(/\s+/).map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
   document.getElementById('headerAvatar').textContent = initials;
-  document.getElementById('headerUserName').textContent = name.split(' ')[0];
+  document.getElementById('headerUserName').textContent = displayName.split(' ')[0];
   initPortal();
 }
 
@@ -1419,30 +1413,60 @@ function signInWithMicrosoft(){
   document.getElementById('msLoginError').textContent = '';
   document.getElementById('msSigninBtn').disabled = true;
   document.getElementById('msLoading').style.display = 'block';
-  msalInstance.loginPopup({ scopes: ['openid','profile','email'] })
-    .then(function(resp){
-      msalInstance.setActiveAccount(resp.account);
-      showPortal(resp.account);
-    })
-    .catch(function(e){
-      document.getElementById('msLoading').style.display = 'none';
-      document.getElementById('msSigninBtn').disabled = false;
-      if(e.errorCode && e.errorCode !== 'user_cancelled'){
-        setLoginError('Sign-in error: ' + e.errorCode);
-      }
-    });
+  var nonce = Math.random().toString(36).slice(2) + Date.now();
+  sessionStorage.setItem('ms_nonce', nonce);
+  var params = new URLSearchParams({
+    client_id:     MS_CLIENT_ID,
+    response_type: 'id_token',
+    redirect_uri:  MS_REDIRECT,
+    scope:         'openid profile email',
+    response_mode: 'fragment',
+    nonce:         nonce
+  });
+  window.location.href = MS_AUTH_URL + '?' + params.toString();
 }
 
 function logout(){
-  msalInstance.logoutPopup().catch(function(){}).finally(function(){ location.reload(); });
+  sessionStorage.removeItem('ms_session');
+  window.location.href = 'https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri=' + encodeURIComponent(MS_REDIRECT);
 }
 
-// Check for existing session on load
+function parseJwt(token){
+  try {
+    var b64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    return JSON.parse(atob(b64));
+  } catch(e){ return null; }
+}
+
+// Check URL hash for auth response, or existing session
 (function(){
-  var accounts = msalInstance.getAllAccounts();
-  if(accounts.length > 0){
-    msalInstance.setActiveAccount(accounts[0]);
-    showPortal(accounts[0]);
+  var hash   = window.location.hash.slice(1);
+  var params = new URLSearchParams(hash);
+
+  if(params.has('id_token')){
+    history.replaceState(null, '', window.location.pathname);
+    var claims = parseJwt(params.get('id_token'));
+    if(claims){
+      sessionStorage.setItem('ms_session', JSON.stringify({ name: claims.name, username: claims.preferred_username || claims.email }));
+      showPortal(claims.name, claims.preferred_username);
+    } else {
+      setLoginError('Sign-in failed — invalid token.');
+    }
+    return;
+  }
+
+  if(params.has('error')){
+    history.replaceState(null, '', window.location.pathname);
+    setLoginError('Sign-in error: ' + (params.get('error_description') || params.get('error')));
+    return;
+  }
+
+  var stored = sessionStorage.getItem('ms_session');
+  if(stored){
+    try {
+      var s = JSON.parse(stored);
+      showPortal(s.name, s.username);
+    } catch(e){ sessionStorage.removeItem('ms_session'); }
   }
 })();
 
