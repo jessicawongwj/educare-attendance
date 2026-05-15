@@ -563,7 +563,7 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
   .filter-select{ min-width:120px; font-size:var(--text-xs); }
 }
 </style>
-<script src="https://alcdn.msauth.net/browser/3.28.1/js/msal-browser.min.js"></script>
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
 </head>
 <body>
 
@@ -1388,16 +1388,14 @@ const CAMPUSES = ['Brisbane CBD — 316 Adelaide St','Brisbane CBD — 102 Adela
 const CHECKIN_URL  = ''; // TODO
 const CHECKOUT_URL = ''; // TODO
 
-/* ── Microsoft Login (MSAL — redirect flow) ── */
+/* ── Microsoft Login (MSAL v2 — redirect flow) ── */
 const msalInstance = new msal.PublicClientApplication({
   auth: {
     clientId: '2e958225-a191-405f-93a0-a78be04d96d5',
     authority: 'https://login.microsoftonline.com/common',
     redirectUri: 'https://edc-attendance.com/educare-portal',
-    navigateToLoginRequestUrl: false,
   },
-  cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: true },
-  system: { loggerOptions: { logLevel: msal.LogLevel.Warning } }
+  cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: true }
 });
 
 function showPortal(account){
@@ -1417,39 +1415,34 @@ function setLoginError(msg){
   document.getElementById('msSigninBtn').disabled = false;
 }
 
-async function signInWithMicrosoft(){
+function signInWithMicrosoft(){
   document.getElementById('msLoginError').textContent = '';
   document.getElementById('msSigninBtn').disabled = true;
   document.getElementById('msLoading').style.display = 'block';
-  try {
-    await msalInstance.loginRedirect({ scopes: ['openid','profile','email'] });
-  } catch(e) {
-    setLoginError('Sign-in error: ' + (e.errorCode || e.message || 'unknown'));
-  }
+  msalInstance.loginRedirect({ scopes: ['openid','profile','email'] });
 }
 
-async function logout(){
-  try { await msalInstance.logoutRedirect(); } catch(e) { location.reload(); }
+function logout(){
+  msalInstance.logoutRedirect({ postLogoutRedirectUri: 'https://edc-attendance.com/educare-portal' });
 }
 
-msalInstance.initialize().then(async () => {
-  try {
-    const resp = await msalInstance.handleRedirectPromise();
+// Handle redirect response on every page load (MSAL v2 — no initialize() needed)
+msalInstance.handleRedirectPromise()
+  .then(function(resp){
     if(resp && resp.account){
       msalInstance.setActiveAccount(resp.account);
       showPortal(resp.account);
       return;
     }
-  } catch(e){
+    var accounts = msalInstance.getAllAccounts();
+    if(accounts.length > 0){
+      msalInstance.setActiveAccount(accounts[0]);
+      showPortal(accounts[0]);
+    }
+  })
+  .catch(function(e){
     setLoginError('Sign-in error: ' + (e.errorCode || e.message || 'unknown'));
-    return;
-  }
-  const accounts = msalInstance.getAllAccounts();
-  if(accounts.length > 0){
-    msalInstance.setActiveAccount(accounts[0]);
-    showPortal(accounts[0]);
-  }
-});
+  });
 
 /* ── Global Data ── */
 let allStudents=[], dailyRows=[], summaryData=[];
