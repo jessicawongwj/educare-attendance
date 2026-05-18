@@ -15,6 +15,10 @@
     {
       "source": "/checkin",
       "headers": [{ "key": "Cache-Control", "value": "no-store, must-revalidate" }]
+    },
+    {
+      "source": "/trainer-portal",
+      "headers": [{ "key": "Cache-Control", "value": "no-store, must-revalidate" }]
     }
   ]
 }

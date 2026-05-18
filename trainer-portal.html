@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<title>Educare — Trainer Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<style>
+:root {
+  --grad: linear-gradient(150deg,#0a3352 0%,#1464a0 30%,#198c6c 65%,#3ab84a 100%);
+  --brand: #1464a0;
+  --brand-dark: #0a3352;
+  --green: #198c6c;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --text: #111827;
+  --text-2: #6b7280;
+  --border: #e5e7eb;
+  --bg: #f3f4f6;
+  --white: #ffffff;
+  --radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.14);
+  --transition: 0.15s ease;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Nunito', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── Login ── */
+#loginScreen {
+  position: fixed; inset: 0;
+  background: var(--grad);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999; padding: 1rem;
+}
+.login-card {
+  background: #fff; border-radius: 20px;
+  padding: 2rem 1.75rem;
+  width: 100%; max-width: 380px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.28);
+  text-align: center;
+}
+.login-logo { margin-bottom: 1rem; }
+.login-logo img { height: 60px; border-radius: 10px; }
+.login-title { font-size: 1.2rem; font-weight: 900; color: var(--brand-dark); margin-bottom: 0.2rem; }
+.login-sub { font-size: 0.78rem; color: var(--text-2); margin-bottom: 1.5rem; }
+.how-to {
+  background: #f0f8ff; border: 1px solid #c6e2f5;
+  border-radius: 10px; padding: 0.85rem 1rem;
+  text-align: left; margin-bottom: 1.25rem;
+}
+.how-to-title { font-size: 0.7rem; font-weight: 800; color: var(--brand); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.4rem; }
+.how-to ol { padding-left: 1.1rem; font-size: 0.77rem; color: var(--text-2); line-height: 1.9; }
+.how-to strong { color: var(--text); }
+.ms-btn {
+  display: flex; align-items: center; justify-content: center; gap: 0.65rem;
+  width: 100%; padding: 0.75rem 1rem;
+  background: #fff; border: 1.5px solid #8c8c8c;
+  border-radius: 4px; font-size: 0.88rem; font-weight: 700;
+  color: #444; cursor: pointer; font-family: 'Segoe UI', 'Nunito', sans-serif;
+  transition: background var(--transition), box-shadow var(--transition);
+}
+.ms-btn:hover { background: #f5f5f5; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+.ms-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.login-error { color: var(--danger); font-size: 0.78rem; font-weight: 700; min-height: 1.1rem; margin-top: 0.75rem; }
+.spinner {
+  display: none; width: 16px; height: 16px;
+  border: 2px solid #ddd; border-top-color: var(--brand);
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Header ── */
+header {
+  background: var(--grad);
+  color: #fff;
+  padding: 0.9rem 1.25rem 0;
+  box-shadow: 0 4px 20px rgba(0,0,0,.2);
+}
+.header-top {
+  display: flex; align-items: center;
+  justify-content: space-between; gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.header-brand { display: flex; align-items: center; gap: 0.75rem; }
+.header-brand img { height: 42px; border-radius: 8px; }
+.brand-text .brand-name { font-size: 1rem; font-weight: 900; line-height: 1.2; }
+.brand-text .brand-sub { font-size: 0.7rem; opacity: 0.75; font-weight: 600; }
+.header-right { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.trainer-badge {
+  display: flex; align-items: center; gap: 0.4rem;
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18);
+  border-radius: 20px; padding: 0.25rem 0.8rem 0.25rem 0.35rem;
+  font-size: 0.78rem; font-weight: 700; color: #fff;
+}
+.trainer-avatar {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(255,255,255,.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem; font-weight: 900; flex-shrink: 0;
+}
+.icon-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 20px;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18);
+  color: rgba(255,255,255,.9); cursor: pointer;
+  transition: background var(--transition);
+}
+.icon-btn:hover { background: rgba(255,255,255,.22); }
+.signout-btn {
+  display: flex; align-items: center; gap: 0.35rem;
+  height: 34px; padding: 0 0.85rem;
+  border-radius: 20px; background: transparent;
+  border: 1px solid rgba(255,255,255,.15);
+  color: rgba(255,255,255,.55); cursor: pointer; font-size: 0.76rem; font-weight: 700;
+  transition: all var(--transition);
+}
+.signout-btn:hover { background: rgba(220,38,38,.18); border-color: rgba(220,38,38,.5); color: #fca5a5; }
+
+/* ── Course Switcher (below header brand) ── */
+.course-switcher {
+  margin-top: 0.75rem;
+  display: flex; align-items: center; gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.course-chip {
+  padding: 0.3rem 0.85rem;
+  border-radius: 20px;
+  font-size: 0.72rem; font-weight: 800;
+  cursor: pointer; white-space: nowrap;
+  background: rgba(255,255,255,.12);
+  border: 1.5px solid rgba(255,255,255,.2);
+  color: rgba(255,255,255,.75);
+  transition: all var(--transition);
+}
+.course-chip:hover { background: rgba(255,255,255,.2); color: #fff; }
+.course-chip.active { background: rgba(255,255,255,.9); color: var(--brand-dark); border-color: transparent; }
+.course-label { font-size: 0.7rem; color: rgba(255,255,255,.55); font-weight: 700; white-space: nowrap; }
+
+/* ── Tab Nav ── */
+.tab-nav {
+  display: flex; gap: 0;
+  background: rgba(0,0,0,.12);
+  margin-top: 0.75rem;
+}
+.tab-btn {
+  flex: 1; padding: 0.7rem 0.5rem;
+  font-size: 0.78rem; font-weight: 800;
+  border: none; background: transparent;
+  color: rgba(255,255,255,.6); cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.tab-btn:hover { color: rgba(255,255,255,.9); }
+.tab-btn.active { color: #fff; border-bottom-color: #fff; background: rgba(255,255,255,.08); }
+.tab-btn svg { vertical-align: -2px; margin-right: 4px; }
+
+/* ── Content ── */
+.content { padding: 1.25rem 1rem; max-width: 900px; margin: 0 auto; }
+
+/* ── Stat Cards ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.stat-card {
+  background: #fff; border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+  box-shadow: var(--shadow);
+  border-top: 3px solid var(--brand);
+  cursor: pointer; transition: box-shadow var(--transition), transform var(--transition);
+}
+.stat-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+.stat-card.green { border-top-color: var(--success); }
+.stat-card.red { border-top-color: var(--danger); }
+.stat-label { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-2); margin-bottom: 0.3rem; }
+.stat-value { font-size: 1.8rem; font-weight: 900; line-height: 1; color: var(--brand-dark); }
+.stat-card.green .stat-value { color: var(--success); }
+.stat-card.red .stat-value { color: var(--danger); }
+.stat-sub { font-size: 0.65rem; color: var(--text-2); margin-top: 0.25rem; font-weight: 700; }
+
+/* ── Card ── */
+.card {
+  background: #fff; border-radius: var(--radius);
+  box-shadow: var(--shadow); overflow: hidden;
+  margin-bottom: 1rem;
+}
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.85rem 1rem;
+  background: #f9fafb; border-bottom: 1px solid var(--border);
+  flex-wrap: wrap; gap: 0.5rem;
+}
+.card-title { font-size: 0.88rem; font-weight: 800; color: var(--text); }
+.card-sub { font-size: 0.72rem; color: var(--text-2); margin-top: 0.1rem; }
+
+/* ── Table ── */
+.table { width: 100%; border-collapse: collapse; }
+.table th {
+  padding: 0.65rem 0.85rem;
+  text-align: left; font-size: 0.68rem; font-weight: 800;
+  color: var(--text-2); text-transform: uppercase; letter-spacing: 0.4px;
+  background: #f9fafb; white-space: nowrap;
+}
+.table td {
+  padding: 0.75rem 0.85rem;
+  font-size: 0.83rem; border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.table tbody tr:last-child td { border-bottom: none; }
+.table tbody tr:hover { background: #f0f8ff; }
+
+/* ── Badges ── */
+.badge {
+  display: inline-block; padding: 0.18rem 0.6rem;
+  border-radius: 20px; font-size: 0.7rem; font-weight: 800;
+  white-space: nowrap; line-height: 1.4;
+}
+.badge-present { background: #d1fae5; color: #065f46; }
+.badge-absent { background: #fee2e2; color: #991b1b; }
+.badge-na { background: #f3f4f6; color: var(--text-2); }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.35rem 0.8rem; border-radius: 8px;
+  font-size: 0.75rem; font-weight: 800; font-family: inherit;
+  cursor: pointer; border: 1.5px solid transparent;
+  transition: all var(--transition); white-space: nowrap;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+.btn-primary:hover:not(:disabled) { background: var(--brand-dark); }
+.btn-success { background: var(--success); color: #fff; border-color: var(--success); }
+.btn-success:hover:not(:disabled) { background: #15803d; }
+.btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+.btn-danger:hover:not(:disabled) { background: #b91c1c; }
+.btn-ghost { background: transparent; color: var(--text-2); border-color: var(--border); }
+.btn-ghost:hover:not(:disabled) { background: var(--bg); color: var(--text); }
+.btn-sm { padding: 0.22rem 0.55rem; font-size: 0.68rem; border-radius: 6px; }
+
+/* ── QR View ── */
+.qr-container {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 1.5rem 1rem 2rem;
+  text-align: center;
+}
+.qr-box {
+  background: #fff; border-radius: 18px;
+  padding: 1.5rem; box-shadow: var(--shadow-lg);
+  border: 2px solid var(--border);
+  margin-bottom: 1.25rem;
+  display: inline-block;
+}
+#qrCanvas { display: block; }
+.qr-title { font-size: 1.1rem; font-weight: 900; color: var(--brand-dark); margin-bottom: 0.4rem; }
+.qr-desc { font-size: 0.82rem; color: var(--text-2); line-height: 1.6; max-width: 320px; }
+.qr-url { font-size: 0.75rem; color: var(--brand); font-weight: 700; margin-top: 0.5rem; word-break: break-all; }
+.qr-actions { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; justify-content: center; }
+
+/* ── Not checked in strip ── */
+.absent-strip {
+  background: #fff7ed; border: 1.5px solid #fed7aa;
+  border-radius: 10px; padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  display: flex; align-items: center; gap: 0.6rem;
+}
+.absent-strip-icon { font-size: 1.1rem; flex-shrink: 0; }
+.absent-strip-text { font-size: 0.8rem; color: #9a3412; font-weight: 700; }
+.absent-strip-names { font-size: 0.75rem; color: var(--text-2); margin-top: 0.2rem; }
+
+/* ── Empty state ── */
+.empty { text-align: center; padding: 2.5rem 1rem; color: var(--text-2); }
+.empty-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+.empty-msg { font-size: 0.85rem; font-weight: 700; }
+.empty-sub { font-size: 0.75rem; margin-top: 0.25rem; }
+
+/* ── Toast ── */
+#toast {
+  position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: #1e293b; color: #fff;
+  padding: 0.7rem 1.25rem; border-radius: 10px;
+  font-size: 0.82rem; font-weight: 700;
+  box-shadow: var(--shadow-lg); z-index: 8000;
+  opacity: 0; transition: all 0.3s ease;
+  white-space: nowrap; max-width: 90vw;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast.error { background: #7f1d1d; }
+
+/* ── Refresh bar ── */
+.refresh-bar {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-size: 0.72rem; color: var(--text-2); font-weight: 700;
+}
+.refresh-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--success); animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* ── No-trainer state ── */
+.trainer-picker { padding: 1.5rem; }
+.trainer-picker select {
+  width: 100%; padding: 0.65rem 0.85rem;
+  border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: 0.9rem; font-family: inherit; font-weight: 700;
+  background: #fff; color: var(--text); margin-top: 0.5rem;
+  appearance: auto;
+}
+
+/* ── Rate bar ── */
+.rate-bar { display: flex; align-items: center; gap: 0.5rem; }
+.rate-bg { flex: 1; height: 5px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.rate-fill { height: 100%; border-radius: 99px; background: var(--success); transition: width 0.4s; }
+.rate-fill.mid { background: var(--warning); }
+.rate-fill.low { background: var(--danger); }
+.rate-pct { font-size: 0.72rem; font-weight: 800; min-width: 32px; text-align: right; }
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  .stats-row { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+  .stat-value { font-size: 1.4rem; }
+  .stat-card { padding: 0.7rem 0.65rem; }
+  .content { padding: 0.85rem 0.65rem; }
+  .table th, .table td { padding: 0.55rem 0.6rem; font-size: 0.78rem; }
+  .hide-mobile { display: none !important; }
+  .brand-text .brand-sub { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Login Screen ── -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="https://edc-attendance.com/images.png" alt="Educare" onerror="this.style.display='none'">
+    </div>
+    <div class="login-title">Trainer Portal</div>
+    <div class="login-sub">Educare College — Attendance Management</div>
+
+    <div class="how-to">
+      <div class="how-to-title">How to log in</div>
+      <ol>
+        <li>Click <strong>Sign in with Microsoft</strong> below</li>
+        <li>Use your <strong>work or Microsoft email</strong></li>
+        <li>Enter your usual <strong>Microsoft password</strong></li>
+      </ol>
+    </div>
+
+    <button class="ms-btn" id="msSigninBtn" onclick="signInWithMicrosoft()">
+      <svg width="18" height="18" viewBox="0 0 21 21" fill="none">
+        <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
+        <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
+        <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
+        <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
+      </svg>
+      <div class="spinner" id="msLoading"></div>
+      <span id="msSigninLabel">Sign in with Microsoft</span>
+    </button>
+    <div class="login-error" id="msLoginError"></div>
+  </div>
+</div>
+
+<!-- ── Portal ── -->
+<div id="portalContent" style="display:none; flex-direction:column; min-height:100vh;">
+
+  <header>
+    <div class="header-top">
+      <div class="header-brand">
+        <img src="https://edc-attendance.com/images.png" alt="Educare" style="height:38px;border-radius:7px;" onerror="this.style.display='none'">
+        <div class="brand-text">
+          <div class="brand-name">Educare College</div>
+          <div class="brand-sub">Trainer Portal</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="trainer-badge">
+          <div class="trainer-avatar" id="trainerAvatar">?</div>
+          <span id="trainerDisplayName">Trainer</span>
+        </div>
+        <button onclick="openQrTab()" class="icon-btn" title="Show QR Code">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/></svg>
+        </button>
+        <button onclick="logout()" class="signout-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Sign Out
+        </button>
+      </div>
+    </div>
+
+    <!-- Course switcher (shown when trainer has 2+ courses) -->
+    <div class="course-switcher" id="courseSwitcher" style="display:none;">
+      <span class="course-label">CLASS:</span>
+      <div id="courseChips"></div>
+    </div>
+
+    <!-- Tab nav -->
+    <div class="tab-nav">
+      <button class="tab-btn active" id="tabRoll" onclick="switchTab('roll')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Today's Roll
+      </button>
+      <button class="tab-btn" id="tabQr" onclick="switchTab('qr')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/></svg>
+        QR Code
+      </button>
+      <button class="tab-btn" id="tabStudents" onclick="switchTab('students')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg>
+        My Students
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Today's Roll Tab ── -->
+  <div class="content" id="rollView">
+
+    <!-- Trainer not detected: show picker -->
+    <div id="trainerNotFoundPanel" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Select Your Name</div>
+            <div class="card-sub">Your account wasn't automatically matched — pick your name below.</div>
+          </div>
+        </div>
+        <div class="trainer-picker">
+          <select id="trainerPickerSelect" onchange="applyTrainerPick()">
+            <option value="">— Select trainer —</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row" id="rollStats" style="display:none;">
+      <div class="stat-card" onclick="filterRoll('all')" title="Show all">
+        <div class="stat-label">Enrolled</div>
+        <div class="stat-value" id="statEnrolled">–</div>
+        <div class="stat-sub" id="statDate">Today</div>
+      </div>
+      <div class="stat-card green" onclick="filterRoll('present')" title="Show present">
+        <div class="stat-label">Present</div>
+        <div class="stat-value" id="statPresent">–</div>
+        <div class="stat-sub" id="statRate">–</div>
+      </div>
+      <div class="stat-card red" onclick="filterRoll('absent')" title="Show absent">
+        <div class="stat-label">Absent</div>
+        <div class="stat-value" id="statAbsent">–</div>
+        <div class="stat-sub">Not checked in</div>
+      </div>
+    </div>
+
+    <!-- Absent alert strip -->
+    <div class="absent-strip" id="absentStrip" style="display:none;">
+      <div class="absent-strip-icon">⚠️</div>
+      <div>
+        <div class="absent-strip-text" id="absentStripMsg"></div>
+        <div class="absent-strip-names" id="absentStripNames"></div>
+      </div>
+    </div>
+
+    <!-- Roll card -->
+    <div class="card" id="rollCard" style="display:none;">
+      <div class="card-header">
+        <div>
+          <div class="card-title" id="rollCardTitle">Today's Attendance</div>
+          <div class="card-sub" id="rollCardSub"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+          <div class="refresh-bar" id="refreshBar">
+            <div class="refresh-dot"></div>
+            <span id="lastRefreshed">–</span>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="loadRoll()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Refresh
+          </button>
+          <input type="date" id="rollDate" style="padding:0.3rem 0.6rem;border:1.5px solid var(--border);border-radius:8px;font-size:0.78rem;font-family:inherit;font-weight:700;" onchange="loadRoll()">
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Student ID</th>
+              <th>Name</th>
+              <th class="hide-mobile">Check In</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rollTableBody">
+            <tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text-2);">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /rollView -->
+
+  <!-- ── QR Code Tab ── -->
+  <div class="content" id="qrView" style="display:none;">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Student Check-In QR Code</div>
+          <div class="card-sub">Display this for students to scan when they arrive</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="downloadQr()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </button>
+      </div>
+      <div class="qr-container">
+        <div class="qr-box">
+          <canvas id="qrCanvas"></canvas>
+        </div>
+        <div class="qr-title">Scan to Check In</div>
+        <div class="qr-desc">
+          Students scan this code with their phone camera when they arrive on campus.
+          The form will auto-fill their campus location.
+        </div>
+        <div class="qr-url" id="qrUrlLabel"></div>
+
+        <div style="margin-top:1.5rem;background:#f0f8ff;border:1px solid #c6e2f5;border-radius:12px;padding:1rem 1.25rem;max-width:380px;text-align:left;">
+          <div style="font-size:0.72rem;font-weight:800;color:var(--brand);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.5rem;">How students use this</div>
+          <ol style="padding-left:1.1rem;font-size:0.78rem;color:var(--text-2);line-height:1.9;">
+            <li>Open phone camera and point at QR code</li>
+            <li>Tap the link that appears</li>
+            <li>Fill in Student ID, select trainer & course</li>
+            <li>Confirm location and tap <strong style="color:var(--text);">Check In</strong></li>
+          </ol>
+        </div>
+
+        <div class="qr-actions">
+          <button class="btn btn-primary" onclick="downloadQr()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download QR Image
+          </button>
+          <a href="https://edc-attendance.com/checkin" target="_blank" class="btn btn-ghost">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Open Check-In Page
+          </a>
+        </div>
+      </div>
+    </div>
+  </div><!-- /qrView -->
+
+  <!-- ── My Students Tab ── -->
+  <div class="content" id="studentsView" style="display:none;">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title" id="studentsCardTitle">My Students</div>
+          <div class="card-sub" id="studentsCardSub"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <input type="text" id="studentSearch" placeholder="Search name or ID…"
+            style="padding:0.35rem 0.75rem;border:1.5px solid var(--border);border-radius:8px;font-size:0.78rem;font-family:inherit;font-weight:700;outline:none;width:160px;"
+            oninput="renderStudents()">
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Student ID</th>
+              <th>Name</th>
+              <th class="hide-mobile">Course</th>
+              <th>Status</th>
+              <th>Attendance (90d)</th>
+            </tr>
+          </thead>
+          <tbody id="studentsTableBody">
+            <tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text-2);">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /studentsView -->
+
+</div><!-- /portalContent -->
+
+<!-- Toast -->
+<div id="toast"><span id="toastMsg"></span></div>
+
+<script>
+/* ── Constants ── */
+const MS_CLIENT_ID = '2e958225-a191-405f-93a0-a78be04d96d5';
+const MS_REDIRECT  = 'https://edc-attendance.com/trainer-portal';
+const MS_AUTH_URL  = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize';
+const CHECKIN_URL  = 'https://edc-attendance.com/checkin';
+
+const TRAINER_COURSES = {
+  "Alessandro Tavian":  ["CPC30220 Certificate III in Carpentry"],
+  "Carol Ly":           ["CHC30121 Certificate III in Early Childhood Education and Care"],
+  "Colleen Schmidt":    ["CHC33021 Certificate III in Individual Support"],
+  "Maggie Yu Huang":    ["CHC30121 Certificate III in Early Childhood Education and Care","CHC50121 Diploma of Early Childhood Education and Care"],
+  "Nati Belen":         ["CHC30121 Certificate III in Early Childhood Education and Care","CHC50121 Diploma of Early Childhood Education and Care"],
+  "Sherwin Thiarhia":   ["CHC33021 Certificate III in Individual Support","CHC43015 Certificate IV in Ageing Support"],
+  "Toriqul Mozumder":   ["CHC33021 Certificate III in Individual Support"],
+  "Troy Scott":         ["CHC33021 Certificate III in Individual Support","CHC52021 Diploma of Community Services","CHC52025 Diploma of Community Services"],
+  "Vijeta Srivastava":  ["CHC43015 Certificate IV in Ageing Support","CHC43121 Certificate IV in Disability Support","CHC52025 Diploma of Community Services"],
+  "Zeyun Ma":           ["CHC30121 Certificate III in Early Childhood Education and Care"],
+  "Benjamin Akari":     ["CPC30220 Certificate III in Carpentry"],
+};
+
+const TRAINER_CAMPUS = {
+  "Troy Scott": "Brisbane CBD", "Maggie Yu Huang": "Brisbane CBD",
+  "Carol Ly": "Brisbane CBD", "Zeyun Ma": "Brisbane CBD",
+  "Sherwin Thiarhia": "Brisbane CBD", "Colleen Schmidt": "Brisbane CBD",
+  "Nati Belen": "Southport GC", "Vijeta Srivastava": "Southport GC",
+  "Toriqul Mozumder": "Southport GC",
+  "Alessandro Tavian": "Woolloongabba", "Benjamin Akari": "Woolloongabba",
+};
+
+/* ── State ── */
+let trainerName    = null;
+let msDisplayName  = null;
+let currentCourse  = null;
+let summaryData    = [];
+let rollData       = [];
+let rollFilter     = 'all';
+let refreshTimer   = null;
+
+/* ── Auth ── */
+function signInWithMicrosoft() {
+  document.getElementById('msLoginError').textContent = '';
+  document.getElementById('msSigninBtn').disabled = true;
+  document.getElementById('msLoading').style.display = 'inline-block';
+  document.getElementById('msSigninLabel').textContent = 'Opening Microsoft sign-in…';
+  var nonce = Math.random().toString(36).slice(2) + Date.now();
+  sessionStorage.setItem('ms_nonce', nonce);
+  var params = new URLSearchParams({
+    client_id: MS_CLIENT_ID, response_type: 'id_token',
+    redirect_uri: MS_REDIRECT, scope: 'openid profile email',
+    response_mode: 'fragment', nonce: nonce
+  });
+  window.location.href = MS_AUTH_URL + '?' + params.toString();
+}
+
+function logout() {
+  sessionStorage.removeItem('ms_session_trainer');
+  clearInterval(refreshTimer);
+  window.location.href = 'https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri=' + encodeURIComponent(MS_REDIRECT);
+}
+
+function parseJwt(token) {
+  try { return JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); }
+  catch(e) { return null; }
+}
+
+function setLoginError(msg) {
+  document.getElementById('msLoginError').textContent = msg;
+  document.getElementById('msLoading').style.display = 'none';
+  document.getElementById('msSigninBtn').disabled = false;
+  document.getElementById('msSigninLabel').textContent = 'Sign in with Microsoft';
+}
+
+/* ── Trainer detection ── */
+function detectTrainer(displayName) {
+  if (!displayName) return null;
+  const dn = displayName.toLowerCase().trim();
+  for (const name of Object.keys(TRAINER_COURSES)) {
+    if (dn === name.toLowerCase()) return name;
+    const parts = name.toLowerCase().split(' ');
+    if (parts.every(p => dn.includes(p))) return name;
+    if (dn.split(' ').some(p => parts[parts.length-1] === p && p.length > 3)) {
+      const matches = Object.keys(TRAINER_COURSES).filter(n => {
+        const np = n.toLowerCase().split(' ');
+        return np[np.length-1] === p && p.length > 3;
+      });
+      if (matches.length === 1) return matches[0];
+    }
+  }
+  return null;
+}
+
+/* ── Portal init ── */
+function showPortal(name, username) {
+  document.getElementById('loginScreen').style.display = 'none';
+  const p = document.getElementById('portalContent');
+  p.style.display = 'flex';
+
+  msDisplayName = name || username || 'Trainer';
+  const initials = msDisplayName.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('trainerAvatar').textContent = initials;
+  document.getElementById('trainerDisplayName').textContent = msDisplayName.split(' ')[0];
+
+  trainerName = detectTrainer(msDisplayName);
+  if (trainerName) {
+    initTrainer(trainerName);
+  } else {
+    showTrainerPicker();
+  }
+}
+
+function showTrainerPicker() {
+  document.getElementById('rollStats').style.display = 'none';
+  document.getElementById('rollCard').style.display = 'none';
+  document.getElementById('trainerNotFoundPanel').style.display = 'block';
+  const sel = document.getElementById('trainerPickerSelect');
+  Object.keys(TRAINER_COURSES).sort().forEach(n => {
+    const o = document.createElement('option');
+    o.value = n; o.textContent = n;
+    sel.appendChild(o);
+  });
+}
+
+function applyTrainerPick() {
+  const val = document.getElementById('trainerPickerSelect').value;
+  if (!val) return;
+  document.getElementById('trainerNotFoundPanel').style.display = 'none';
+  trainerName = val;
+  initTrainer(val);
+}
+
+function initTrainer(name) {
+  trainerName = name;
+  const courses = TRAINER_COURSES[name] || [];
+  currentCourse = courses[0] || null;
+
+  // Set trainer display name in badge
+  document.getElementById('trainerDisplayName').textContent = name.split(' ')[0];
+
+  // Course switcher
+  if (courses.length > 1) {
+    document.getElementById('courseSwitcher').style.display = 'flex';
+    renderCourseChips();
+  }
+
+  // Today's date
+  const today = todayStr();
+  document.getElementById('rollDate').value = today;
+  document.getElementById('statDate').textContent = new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'short'});
+
+  document.getElementById('rollStats').style.display = 'grid';
+  document.getElementById('rollCard').style.display = 'block';
+
+  loadSummary();
+  loadRoll();
+  renderQr();
+
+  // Auto-refresh every 90 seconds
+  refreshTimer = setInterval(loadRoll, 90000);
+}
+
+function renderCourseChips() {
+  const courses = TRAINER_COURSES[trainerName] || [];
+  const wrap = document.getElementById('courseChips');
+  wrap.innerHTML = '';
+  courses.forEach(c => {
+    const code = c.match(/^([A-Z]{3}\d+)/)?.[1] || c.slice(0,8);
+    const label = c.replace(/^[A-Z]{3}\d+\s*/, '').replace(/Certificate (III|IV) in /,'Cert $1 ').replace(/Diploma of /,'Dip. ');
+    const btn = document.createElement('button');
+    btn.className = 'course-chip' + (c === currentCourse ? ' active' : '');
+    btn.title = c;
+    btn.innerHTML = `<strong>${code}</strong> ${label.length > 28 ? label.slice(0,28)+'…' : label}`;
+    btn.onclick = () => { currentCourse = c; renderCourseChips(); loadRoll(); renderStudents(); };
+    wrap.appendChild(btn);
+  });
+}
+
+/* ── Data loading ── */
+function todayStr() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Brisbane' });
+}
+
+async function loadSummary() {
+  try {
+    const res = await fetch('/api/summary');
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      summaryData = data;
+      renderStudents();
+    }
+  } catch(e) {
+    console.warn('Summary load failed', e);
+  }
+}
+
+async function loadRoll() {
+  if (!trainerName) return;
+  const date = document.getElementById('rollDate').value || todayStr();
+  try {
+    const res = await fetch('/api/attendance?date=' + date);
+    const data = await res.json();
+    rollData = Array.isArray(data) ? data : [];
+    renderRoll();
+    document.getElementById('lastRefreshed').textContent = 'Updated ' + new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+  } catch(e) {
+    showToast('Failed to load roll: ' + e.message, true);
+  }
+}
+
+/* ── Render: Roll ── */
+function myStudentsInSummary() {
+  if (!trainerName) return [];
+  return summaryData.filter(s =>
+    s.trainer === trainerName &&
+    (!currentCourse || s.course === currentCourse) &&
+    s.status === 'active'
+  );
+}
+
+function parseCourse(raw) {
+  const m = (raw||'').trim().match(/^([A-Z]{3}\d+)\s+(.+)$/);
+  return m ? { code: m[1], name: m[2] } : { code: '', name: (raw||'').trim() };
+}
+
+function renderRoll() {
+  if (!trainerName) return;
+  const date = document.getElementById('rollDate').value || todayStr();
+  const enrolled = myStudentsInSummary();
+
+  // Match roll records to this trainer's class
+  const checkedIn = rollData.filter(r => r.trainer === trainerName && (!currentCourse || r.course === currentCourse || (parseCourse(r.course).name && currentCourse && currentCourse.includes(parseCourse(r.course).name))));
+  const checkedInIds = new Set(checkedIn.map(r => r.studentId));
+
+  // Build combined list: enrolled students + any checked-in not in enrolled list
+  const enrolled_ids = new Set(enrolled.map(s => s.id));
+  const extraCheckins = checkedIn.filter(r => !enrolled_ids.has(r.studentId));
+
+  // Merge: enrolled students as base, mark present if checked in
+  let rows = enrolled.map(s => {
+    const record = checkedIn.find(r => r.studentId === s.id);
+    return { id: s.id, name: s.name, course: s.course, courseCode: s.courseCode, present: !!record, checkinTime: record?.checkinTime || null };
+  });
+
+  // Add extra check-ins
+  extraCheckins.forEach(r => {
+    rows.push({ id: r.studentId, name: r.studentName, course: r.course, courseCode: r.courseCode, present: true, checkinTime: r.checkinTime });
+  });
+
+  // If no summary data yet, fall back to roll data only
+  if (enrolled.length === 0 && checkedIn.length > 0) {
+    rows = checkedIn.map(r => ({ id: r.studentId, name: r.studentName, course: r.course, courseCode: r.courseCode, present: true, checkinTime: r.checkinTime }));
+  }
+
+  const total   = rows.length;
+  const present = rows.filter(r => r.present).length;
+  const absent  = total - present;
+  const rate    = total > 0 ? Math.round(present/total*100) : 0;
+
+  document.getElementById('statEnrolled').textContent = total;
+  document.getElementById('statPresent').textContent  = present;
+  document.getElementById('statAbsent').textContent   = absent;
+  document.getElementById('statRate').textContent     = total > 0 ? rate + '% rate' : '';
+
+  // Course info in card header
+  const courseShort = currentCourse ? currentCourse.replace(/^[A-Z]{3}\d+\s*/,'').replace(/Certificate (III|IV) in /,'Cert $1 ').replace(/Diploma of /,'Dip. ') : 'All Classes';
+  document.getElementById('rollCardTitle').textContent = courseShort;
+  document.getElementById('rollCardSub').textContent   = trainerName + ' · ' + new Date(date).toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});
+
+  // Absent strip
+  const absentStudents = rows.filter(r => !r.present);
+  if (absentStudents.length > 0 && total > 0) {
+    document.getElementById('absentStrip').style.display = 'flex';
+    document.getElementById('absentStripMsg').textContent = absentStudents.length + ' student' + (absentStudents.length>1?'s':'') + ' not yet checked in';
+    const names = absentStudents.slice(0,4).map(r=>r.name.split(' ')[0]).join(', ') + (absentStudents.length>4?' +more':'');
+    document.getElementById('absentStripNames').textContent = names;
+  } else {
+    document.getElementById('absentStrip').style.display = 'none';
+  }
+
+  // Filter
+  const filtered = rollFilter === 'all' ? rows :
+    rollFilter === 'present' ? rows.filter(r=>r.present) :
+    rows.filter(r=>!r.present);
+
+  const tbody = document.getElementById('rollTableBody');
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">${rollFilter==='present'?'✓':'📋'}</div><div class="empty-msg">${rollFilter==='present'?'No check-ins yet':'No students to show'}</div><div class="empty-sub">Try refreshing or check back later</div></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(r => {
+    const time = r.checkinTime ? new Date(r.checkinTime).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:true}) : '–';
+    const badge = r.present
+      ? '<span class="badge badge-present">Present</span>'
+      : '<span class="badge badge-absent">Absent</span>';
+    const actions = r.present
+      ? `<button class="btn btn-danger btn-sm" onclick="markStudent('${r.id}','${escHtml(r.name)}','${escHtml(r.course)}','absent')" title="Mark absent">✕ Absent</button>`
+      : `<button class="btn btn-success btn-sm" onclick="markStudent('${r.id}','${escHtml(r.name)}','${escHtml(r.course)}','present')" title="Mark present">✓ Present</button>`;
+    return `<tr>
+      <td style="font-family:monospace;font-size:0.78rem;color:var(--text-2);">${escHtml(r.id)}</td>
+      <td style="font-weight:800;">${escHtml(r.name)}</td>
+      <td class="hide-mobile" style="color:var(--text-2);font-size:0.75rem;">${time}</td>
+      <td>${badge}</td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterRoll(f) {
+  rollFilter = f;
+  renderRoll();
+}
+
+/* ── Mark attendance ── */
+async function markStudent(studentId, name, course, status) {
+  const date = document.getElementById('rollDate').value || todayStr();
+  const campus = TRAINER_CAMPUS[trainerName] || '';
+  const { code: courseCode } = parseCourse(course);
+  try {
+    const res = await fetch('/api/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ studentId, studentName: name, course, courseCode, trainer: trainerName, campus, dates: [date], status, markedBy: msDisplayName })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || res.statusText);
+    showToast(name.split(' ')[0] + ' marked ' + status);
+    await loadRoll();
+  } catch(e) {
+    showToast('Failed: ' + e.message, true);
+  }
+}
+
+/* ── Render: Students ── */
+function renderStudents() {
+  const enrolled = summaryData.filter(s => s.trainer === trainerName && (!currentCourse || s.course === currentCourse));
+  const query = (document.getElementById('studentSearch')?.value || '').toLowerCase();
+  const filtered = query ? enrolled.filter(s => s.name.toLowerCase().includes(query) || (s.id||'').toLowerCase().includes(query)) : enrolled;
+
+  document.getElementById('studentsCardTitle').textContent = 'My Students' + (currentCourse ? ' — ' + (currentCourse.match(/^[A-Z]{3}\d+/)?.[0] || '') : '');
+  document.getElementById('studentsCardSub').textContent   = filtered.length + ' enrolled student' + (filtered.length!==1?'s':'');
+
+  const tbody = document.getElementById('studentsTableBody');
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">📚</div><div class="empty-msg">No students found</div><div class="empty-sub">Data loads when students check in or from the roster</div></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(s => {
+    const rate = s.attendedDays && s.attendedDays > 0
+      ? Math.min(100, Math.round(s.attendedDays / Math.max(1, workDaysInRange(s.commenced, null, 90)) * 100))
+      : null;
+    const pct = rate !== null ? rate : null;
+    const cls = pct === null ? '' : pct >= 80 ? '' : pct >= 60 ? 'mid' : 'low';
+    const rateBar = pct !== null
+      ? `<div class="rate-bar"><div class="rate-bg"><div class="rate-fill ${cls}" style="width:${pct}%"></div></div><div class="rate-pct" style="color:${pct>=80?'var(--success)':pct>=60?'var(--warning)':'var(--danger)'}">${pct}%</div></div>`
+      : '<span style="font-size:0.72rem;color:var(--text-2);">–</span>';
+    const statusBadge = s.status === 'active'
+      ? '<span class="badge badge-present">Active</span>'
+      : s.status === 'not-started'
+      ? '<span class="badge badge-na">Not Started</span>'
+      : `<span class="badge badge-na">${s.status||'–'}</span>`;
+    const courseShort = (s.course||'').replace(/^[A-Z]{3}\d+\s*/,'').replace(/Certificate (III|IV) in /,'Cert $1 ').replace(/Diploma of /,'Dip. ');
+    return `<tr>
+      <td style="font-family:monospace;font-size:0.78rem;color:var(--text-2);">${escHtml(s.id||'')}</td>
+      <td style="font-weight:800;">${escHtml(s.name||'')}</td>
+      <td class="hide-mobile" style="font-size:0.75rem;color:var(--text-2);">${escHtml(courseShort)}</td>
+      <td>${statusBadge}</td>
+      <td>${rateBar}</td>
+    </tr>`;
+  }).join('');
+}
+
+function workDaysInRange(start, end, maxDays) {
+  let count = 0;
+  const s = new Date(start || Date.now());
+  const e = new Date(end || Date.now());
+  const d = new Date(Math.max(s, new Date(e - maxDays*86400000)));
+  while (d <= e) {
+    const day = d.getDay();
+    if (day >= 1 && day <= 5) count++;
+    d.setDate(d.getDate() + 1);
+  }
+  return Math.max(count, 1);
+}
+
+/* ── Render: QR ── */
+function renderQr() {
+  const url = CHECKIN_URL;
+  document.getElementById('qrUrlLabel').textContent = url;
+  try {
+    QRCode.toCanvas(document.getElementById('qrCanvas'), url, {
+      width: 260, margin: 2,
+      color: { dark: '#0a3352', light: '#ffffff' }
+    }, err => { if (err) console.error(err); });
+  } catch(e) { console.error(e); }
+}
+
+function downloadQr() {
+  const canvas = document.getElementById('qrCanvas');
+  const a = document.createElement('a');
+  a.download = 'educare-checkin-qr.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+function openQrTab() { switchTab('qr'); }
+
+/* ── Tabs ── */
+const TABS = ['roll','qr','students'];
+function switchTab(tab) {
+  TABS.forEach(t => {
+    document.getElementById(t + 'View').style.display = t === tab ? 'block' : 'none';
+    document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
+  });
+  if (tab === 'students') renderStudents();
+}
+
+/* ── Toast ── */
+function showToast(msg, isErr) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.className = isErr ? 'error show' : 'show';
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/* ── Utils ── */
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── Dark mode ── */
+if (localStorage.getItem('tp_dm')) document.body.style.filter = 'invert(0.92) hue-rotate(180deg)';
+
+/* ── Auth IIFE — runs AFTER all declarations ── */
+(function() {
+  const hash   = window.location.hash.slice(1);
+  const params = new URLSearchParams(hash);
+
+  if (params.has('id_token')) {
+    history.replaceState(null, '', window.location.pathname);
+    const claims = parseJwt(params.get('id_token'));
+    if (claims) {
+      sessionStorage.setItem('ms_session_trainer', JSON.stringify({ name: claims.name, username: claims.preferred_username || claims.email }));
+      showPortal(claims.name, claims.preferred_username);
+    } else {
+      setLoginError('Sign-in failed — invalid token.');
+    }
+    return;
+  }
+
+  if (params.has('error')) {
+    history.replaceState(null, '', window.location.pathname);
+    setLoginError('Sign-in error: ' + (params.get('error_description') || params.get('error')));
+    return;
+  }
+
+  const stored = sessionStorage.getItem('ms_session_trainer');
+  if (stored) {
+    try {
+      const s = JSON.parse(stored);
+      showPortal(s.name, s.username);
+    } catch(e) { sessionStorage.removeItem('ms_session_trainer'); }
+  }
+})();
+</script>
+</body>
+</html>
