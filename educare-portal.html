@@ -644,9 +644,9 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
         <span id="headerUserName">Admin</span>
         <span class="view-mode-badge" id="viewModeBadge">Admin View</span>
       </div>
-      <button class="switch-view-btn" id="switchViewBtn" onclick="switchRole()" style="display:none;">
+      <button class="switch-view-btn" id="switchViewBtn" onclick="onSwitchViewBtn()" style="display:none;">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-        <span id="switchViewLabel">Switch to My Class</span>
+        <span id="switchViewLabel">View as Trainer</span>
       </button>
       <button class="icon-btn icon-only" onclick="openQrModal()" title="Check-In QR Code">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/></svg>
@@ -1126,6 +1126,29 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
      MODALS
 ══════════════════════════════════════════ -->
 
+<!-- Trainer Picker Modal (admin "View as Trainer") -->
+<div class="modal-overlay" id="trainerPickerModal" onclick="if(event.target===this)closeTrainerPicker()">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">View as Trainer</div>
+        <div class="modal-subtitle">Select a trainer to view their class</div>
+      </div>
+      <button class="modal-close" onclick="closeTrainerPicker()">×</button>
+    </div>
+    <div class="modal-body">
+      <label style="display:block;font-size:.75rem;font-weight:800;color:var(--text-2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:.5rem;">Trainer</label>
+      <select id="trainerPickerSelect" style="width:100%;padding:.6rem .8rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.88rem;font-family:inherit;background:var(--surface);color:var(--text);">
+        <option value="">— Select trainer —</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeTrainerPicker()">Cancel</button>
+      <button class="btn btn-primary" onclick="applyTrainerView()">View Class</button>
+    </div>
+  </div>
+</div>
+
 <!-- Student Detail Modal -->
 <div class="modal-overlay" id="studentModal">
   <div class="modal">
@@ -1427,6 +1450,12 @@ function detectLoggedInTrainer(displayName, email){
 }
 
 function showPortal(name, username){
+  // Trainers belong on trainer-portal — redirect them unless they're also admin
+  const email = (username || '').toLowerCase().trim();
+  if(TRAINER_EMAIL_MAP[email] && !ADMIN_EMAILS.has(email)){
+    window.location.href = '/trainer-portal';
+    return;
+  }
   document.getElementById('loginScreen').style.display = 'none';
   const p = document.getElementById('portalContent');
   p.style.display = 'flex'; p.style.flexDirection = 'column';
@@ -1434,29 +1463,59 @@ function showPortal(name, username){
   const initials = displayName.trim().split(/\s+/).map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
   document.getElementById('headerAvatar').textContent = initials;
   document.getElementById('headerUserName').textContent = displayName.split(' ')[0];
-  // Detect if logged-in user is a trainer
-  loggedInTrainerName = detectLoggedInTrainer(displayName, username);
-  if(loggedInTrainerName){
-    document.getElementById('switchViewBtn').style.display = 'inline-flex';
-  }
+  loggedInTrainerName = null;
+  document.getElementById('switchViewBtn').style.display = 'inline-flex';
   initPortal();
 }
 
-function switchRole(){
-  viewMode = viewMode === 'admin' ? 'trainer' : 'admin';
-  const isTrainer = viewMode === 'trainer';
-  document.getElementById('viewModeBadge').textContent = isTrainer ? 'My Class' : 'Admin View';
-  document.getElementById('switchViewLabel').textContent = isTrainer ? 'Switch to Admin View' : 'Switch to My Class';
-  if(isTrainer && loggedInTrainerName){
-    // Find which campus this trainer belongs to and switch to it
-    const campus = TRAINER_CAMPUS[loggedInTrainerName];
-    if(campus){
-      currentCampus = campus;
-      document.querySelectorAll('[data-campus]').forEach(b => b.classList.toggle('active', b.dataset.campus === campus));
-    }
+function onSwitchViewBtn(){
+  if(viewMode === 'trainer'){ exitTrainerView(); }
+  else { openTrainerPickerModal(); }
+}
+function openTrainerPickerModal(){
+  const sel = document.getElementById('trainerPickerSelect');
+  // Build grouped options by campus
+  sel.innerHTML = '<option value="">— Select trainer —</option>';
+  const byCampus = {};
+  Object.entries(TRAINER_CAMPUS).forEach(([name, campus]) => {
+    if(!byCampus[campus]) byCampus[campus] = [];
+    // Deduplicate (Zeyun MA / Zeyun Ma entries)
+    if(!byCampus[campus].includes(name)) byCampus[campus].push(name);
+  });
+  Object.entries(byCampus).forEach(([campus, names]) => {
+    const grp = document.createElement('optgroup'); grp.label = campus;
+    names.sort().forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; grp.appendChild(o); });
+    sel.appendChild(grp);
+  });
+  if(loggedInTrainerName) sel.value = loggedInTrainerName;
+  document.getElementById('trainerPickerModal').classList.add('show');
+}
+function closeTrainerPicker(){
+  document.getElementById('trainerPickerModal').classList.remove('show');
+}
+function applyTrainerView(){
+  const val = document.getElementById('trainerPickerSelect').value;
+  if(!val) return;
+  closeTrainerPicker();
+  loggedInTrainerName = val;
+  viewMode = 'trainer';
+  const first = val.split(' ')[0];
+  document.getElementById('viewModeBadge').textContent = 'Viewing: ' + first;
+  document.getElementById('switchViewLabel').textContent = '← Admin View';
+  const campus = TRAINER_CAMPUS[val];
+  if(campus){
+    currentCampus = campus;
+    document.querySelectorAll('[data-campus]').forEach(b => b.classList.toggle('active', b.dataset.campus === campus));
   }
   renderDashboard();
   switchTab('dashboard');
+}
+function exitTrainerView(){
+  viewMode = 'admin';
+  loggedInTrainerName = null;
+  document.getElementById('viewModeBadge').textContent = 'Admin View';
+  document.getElementById('switchViewLabel').textContent = 'View as Trainer';
+  renderDashboard();
 }
 
 function setLoginError(msg){
@@ -1713,6 +1772,13 @@ const TRAINER_EMAIL_MAP = {
   "alessandro.tavian@educare.edu.au": "Alessandro Tavian",
   "benjamin.akari@educare.edu.au":    "Benjamin Akari",
 };
+const ADMIN_EMAILS = new Set([
+  "jessica.wong@niet.edu.au",
+  "shuang.wu@niet.edu.au",
+  "nicole@charltonbrown.edu.au",
+  "jason.yang@niet.edu.au",
+  "maria.a.b@educare.edu.au",
+]);
 
 function parseCourseCode(raw){ const m=(raw||'').trim().match(/^([A-Z]{3}\d+)\s+(.+)$/); return m?{code:m[1],name:m[2]}:{code:'',name:(raw||'').trim()}; }
 
