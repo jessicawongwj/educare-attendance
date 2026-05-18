@@ -10,348 +10,203 @@
 <style>
 :root {
   --grad: linear-gradient(150deg,#0a3352 0%,#1464a0 30%,#198c6c 65%,#3ab84a 100%);
-  --brand: #1464a0;
-  --brand-dark: #0a3352;
-  --green: #198c6c;
-  --success: #16a34a;
-  --danger: #dc2626;
-  --warning: #d97706;
-  --text: #111827;
-  --text-2: #6b7280;
-  --border: #e5e7eb;
-  --bg: #f3f4f6;
-  --white: #ffffff;
-  --radius: 12px;
-  --shadow: 0 2px 8px rgba(0,0,0,.08);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,.14);
-  --transition: 0.15s ease;
+  --brand:#1464a0; --brand-dark:#0a3352; --green:#198c6c;
+  --success:#16a34a; --danger:#dc2626; --warning:#d97706;
+  --text:#111827; --text-2:#6b7280; --text-3:#9ca3af;
+  --border:#e5e7eb; --bg:#f3f4f6; --surface:#ffffff;
+  --radius:12px; --radius-sm:8px;
+  --shadow:0 2px 8px rgba(0,0,0,.08); --shadow-lg:0 8px 32px rgba(0,0,0,.14);
+  --transition:.15s ease;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'Nunito', system-ui, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 
 /* ── Login ── */
-#loginScreen {
-  position: fixed; inset: 0;
-  background: var(--grad);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 9999; padding: 1rem;
-}
-.login-card {
-  background: #fff; border-radius: 20px;
-  padding: 2rem 1.75rem;
-  width: 100%; max-width: 380px;
-  box-shadow: 0 24px 64px rgba(0,0,0,.28);
-  text-align: center;
-}
-.login-logo { margin-bottom: 1rem; }
-.login-logo img { height: 60px; border-radius: 10px; }
-.login-title { font-size: 1.2rem; font-weight: 900; color: var(--brand-dark); margin-bottom: 0.2rem; }
-.login-sub { font-size: 0.78rem; color: var(--text-2); margin-bottom: 1.5rem; }
-.how-to {
-  background: #f0f8ff; border: 1px solid #c6e2f5;
-  border-radius: 10px; padding: 0.85rem 1rem;
-  text-align: left; margin-bottom: 1.25rem;
-}
-.how-to-title { font-size: 0.7rem; font-weight: 800; color: var(--brand); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.4rem; }
-.how-to ol { padding-left: 1.1rem; font-size: 0.77rem; color: var(--text-2); line-height: 1.9; }
-.how-to strong { color: var(--text); }
-.ms-btn {
-  display: flex; align-items: center; justify-content: center; gap: 0.65rem;
-  width: 100%; padding: 0.75rem 1rem;
-  background: #fff; border: 1.5px solid #8c8c8c;
-  border-radius: 4px; font-size: 0.88rem; font-weight: 700;
-  color: #444; cursor: pointer; font-family: 'Segoe UI', 'Nunito', sans-serif;
-  transition: background var(--transition), box-shadow var(--transition);
-}
-.ms-btn:hover { background: #f5f5f5; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
-.ms-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.login-error { color: var(--danger); font-size: 0.78rem; font-weight: 700; min-height: 1.1rem; margin-top: 0.75rem; }
-.spinner {
-  display: none; width: 16px; height: 16px;
-  border: 2px solid #ddd; border-top-color: var(--brand);
-  border-radius: 50%; animation: spin 0.7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+#loginScreen{position:fixed;inset:0;background:var(--grad);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;}
+.login-card{background:#fff;border-radius:20px;padding:2rem 1.75rem;width:100%;max-width:380px;box-shadow:0 24px 64px rgba(0,0,0,.28);text-align:center;}
+.login-logo img{height:56px;border-radius:10px;margin-bottom:1rem;}
+.login-title{font-size:1.2rem;font-weight:900;color:var(--brand-dark);margin-bottom:.2rem;}
+.login-sub{font-size:.78rem;color:var(--text-2);margin-bottom:1.5rem;}
+.how-to{background:#f0f8ff;border:1px solid #c6e2f5;border-radius:10px;padding:.85rem 1rem;text-align:left;margin-bottom:1.25rem;}
+.how-to-title{font-size:.7rem;font-weight:800;color:var(--brand);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem;}
+.how-to ol{padding-left:1.1rem;font-size:.77rem;color:var(--text-2);line-height:1.9;}
+.how-to strong{color:var(--text);}
+.ms-btn{display:flex;align-items:center;justify-content:center;gap:.65rem;width:100%;padding:.75rem 1rem;background:#fff;border:1.5px solid #8c8c8c;border-radius:4px;font-size:.88rem;font-weight:700;color:#444;cursor:pointer;font-family:'Segoe UI','Nunito',sans-serif;transition:background var(--transition),box-shadow var(--transition);}
+.ms-btn:hover{background:#f5f5f5;box-shadow:0 2px 8px rgba(0,0,0,.12);}
+.ms-btn:disabled{opacity:.6;cursor:not-allowed;}
+.login-error{color:var(--danger);font-size:.78rem;font-weight:700;min-height:1.1rem;margin-top:.75rem;}
+.spinner{display:none;width:16px;height:16px;border:2px solid #ddd;border-top-color:var(--brand);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
 
 /* ── Header ── */
-header {
-  background: var(--grad);
-  color: #fff;
-  padding: 0.9rem 1.25rem 0;
-  box-shadow: 0 4px 20px rgba(0,0,0,.2);
-}
-.header-top {
-  display: flex; align-items: center;
-  justify-content: space-between; gap: 0.75rem;
-  flex-wrap: wrap;
-}
-.header-brand { display: flex; align-items: center; gap: 0.75rem; }
-.header-brand img { height: 42px; border-radius: 8px; }
-.brand-text .brand-name { font-size: 1rem; font-weight: 900; line-height: 1.2; }
-.brand-text .brand-sub { font-size: 0.7rem; opacity: 0.75; font-weight: 600; }
-.header-right { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-.trainer-badge {
-  display: flex; align-items: center; gap: 0.4rem;
-  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18);
-  border-radius: 20px; padding: 0.25rem 0.8rem 0.25rem 0.35rem;
-  font-size: 0.78rem; font-weight: 700; color: #fff;
-}
-.trainer-avatar {
-  width: 24px; height: 24px; border-radius: 50%;
-  background: rgba(255,255,255,.25);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.65rem; font-weight: 900; flex-shrink: 0;
-}
-.icon-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 34px; height: 34px; border-radius: 20px;
-  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18);
-  color: rgba(255,255,255,.9); cursor: pointer;
-  transition: background var(--transition);
-}
-.icon-btn:hover { background: rgba(255,255,255,.22); }
-.signout-btn {
-  display: flex; align-items: center; gap: 0.35rem;
-  height: 34px; padding: 0 0.85rem;
-  border-radius: 20px; background: transparent;
-  border: 1px solid rgba(255,255,255,.15);
-  color: rgba(255,255,255,.55); cursor: pointer; font-size: 0.76rem; font-weight: 700;
-  transition: all var(--transition);
-}
-.signout-btn:hover { background: rgba(220,38,38,.18); border-color: rgba(220,38,38,.5); color: #fca5a5; }
+header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4px 20px rgba(0,0,0,.2);}
+.header-top{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;}
+.header-brand{display:flex;align-items:center;gap:.75rem;}
+.header-brand img{height:38px;border-radius:7px;}
+.brand-name{font-size:1rem;font-weight:900;line-height:1.2;}
+.brand-sub{font-size:.7rem;opacity:.75;font-weight:600;}
+.header-right{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
+.trainer-badge{display:flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:.25rem .75rem .25rem .35rem;font-size:.78rem;font-weight:700;color:#fff;}
+.trainer-avatar{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:900;flex-shrink:0;}
+.view-badge{display:inline-flex;align-items:center;padding:.15rem .6rem;border-radius:20px;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.4px;background:rgba(255,255,255,.15);color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.2);}
+.header-btn{display:inline-flex;align-items:center;gap:.4rem;height:32px;padding:0 .9rem;border-radius:20px;font-size:.76rem;font-weight:700;cursor:pointer;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.25);color:rgba(255,255,255,.92);transition:all var(--transition);white-space:nowrap;}
+.header-btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45);color:#fff;}
+.icon-btn{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:20px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.9);cursor:pointer;transition:background var(--transition);}
+.icon-btn:hover{background:rgba(255,255,255,.22);}
+.signout-btn{display:flex;align-items:center;gap:.35rem;height:32px;padding:0 .85rem;border-radius:20px;background:transparent;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.55);cursor:pointer;font-size:.76rem;font-weight:700;transition:all var(--transition);}
+.signout-btn:hover{background:rgba(220,38,38,.18);border-color:rgba(220,38,38,.5);color:#fca5a5;}
 
-/* ── Course Switcher (below header brand) ── */
-.course-switcher {
-  margin-top: 0.75rem;
-  display: flex; align-items: center; gap: 0.5rem;
-  flex-wrap: wrap;
-}
-.course-chip {
-  padding: 0.3rem 0.85rem;
-  border-radius: 20px;
-  font-size: 0.72rem; font-weight: 800;
-  cursor: pointer; white-space: nowrap;
-  background: rgba(255,255,255,.12);
-  border: 1.5px solid rgba(255,255,255,.2);
-  color: rgba(255,255,255,.75);
-  transition: all var(--transition);
-}
-.course-chip:hover { background: rgba(255,255,255,.2); color: #fff; }
-.course-chip.active { background: rgba(255,255,255,.9); color: var(--brand-dark); border-color: transparent; }
-.course-label { font-size: 0.7rem; color: rgba(255,255,255,.55); font-weight: 700; white-space: nowrap; }
+/* ── Course Switcher ── */
+.course-switcher{margin-top:.65rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
+.course-chip{padding:.28rem .85rem;border-radius:20px;font-size:.72rem;font-weight:800;cursor:pointer;white-space:nowrap;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.75);transition:all var(--transition);}
+.course-chip:hover{background:rgba(255,255,255,.2);color:#fff;}
+.course-chip.active{background:rgba(255,255,255,.9);color:var(--brand-dark);border-color:transparent;}
+.course-label{font-size:.7rem;color:rgba(255,255,255,.55);font-weight:700;white-space:nowrap;}
 
 /* ── Tab Nav ── */
-.tab-nav {
-  display: flex; gap: 0;
-  background: rgba(0,0,0,.12);
-  margin-top: 0.75rem;
-}
-.tab-btn {
-  flex: 1; padding: 0.7rem 0.5rem;
-  font-size: 0.78rem; font-weight: 800;
-  border: none; background: transparent;
-  color: rgba(255,255,255,.6); cursor: pointer;
-  border-bottom: 3px solid transparent;
-  transition: all var(--transition);
-  white-space: nowrap;
-}
-.tab-btn:hover { color: rgba(255,255,255,.9); }
-.tab-btn.active { color: #fff; border-bottom-color: #fff; background: rgba(255,255,255,.08); }
-.tab-btn svg { vertical-align: -2px; margin-right: 4px; }
+.tab-nav{display:flex;background:rgba(0,0,0,.12);margin-top:.65rem;}
+.tab-btn{flex:1;padding:.7rem .5rem;font-size:.78rem;font-weight:800;border:none;background:transparent;color:rgba(255,255,255,.6);cursor:pointer;border-bottom:3px solid transparent;transition:all var(--transition);white-space:nowrap;}
+.tab-btn:hover{color:rgba(255,255,255,.9);}
+.tab-btn.active{color:#fff;border-bottom-color:#fff;background:rgba(255,255,255,.08);}
+.tab-btn svg{vertical-align:-2px;margin-right:4px;}
 
 /* ── Content ── */
-.content { padding: 1.25rem 1rem; max-width: 900px; margin: 0 auto; }
+.content{padding:1.25rem 1rem;max-width:1100px;margin:0 auto;}
 
 /* ── Stat Cards ── */
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
-}
-.stat-card {
-  background: #fff; border-radius: var(--radius);
-  padding: 0.9rem 1rem;
-  box-shadow: var(--shadow);
-  border-top: 3px solid var(--brand);
-  cursor: pointer; transition: box-shadow var(--transition), transform var(--transition);
-}
-.stat-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
-.stat-card.green { border-top-color: var(--success); }
-.stat-card.red { border-top-color: var(--danger); }
-.stat-label { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-2); margin-bottom: 0.3rem; }
-.stat-value { font-size: 1.8rem; font-weight: 900; line-height: 1; color: var(--brand-dark); }
-.stat-card.green .stat-value { color: var(--success); }
-.stat-card.red .stat-value { color: var(--danger); }
-.stat-sub { font-size: 0.65rem; color: var(--text-2); margin-top: 0.25rem; font-weight: 700; }
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1.25rem;}
+.stat-card{background:#fff;border-radius:var(--radius);padding:1rem 1.25rem;box-shadow:var(--shadow);border:1px solid var(--border);transition:box-shadow var(--transition);}
+.stat-card:hover{box-shadow:var(--shadow-lg);}
+.stat-label{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-2);margin-bottom:.4rem;}
+.stat-value{font-size:2rem;font-weight:900;line-height:1;color:var(--text);}
+.stat-value.red{color:var(--danger);}
+.stat-value.green{color:var(--success);}
 
 /* ── Card ── */
-.card {
-  background: #fff; border-radius: var(--radius);
-  box-shadow: var(--shadow); overflow: hidden;
-  margin-bottom: 1rem;
-}
-.card-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0.85rem 1rem;
-  background: #f9fafb; border-bottom: 1px solid var(--border);
-  flex-wrap: wrap; gap: 0.5rem;
-}
-.card-title { font-size: 0.88rem; font-weight: 800; color: var(--text); }
-.card-sub { font-size: 0.72rem; color: var(--text-2); margin-top: 0.1rem; }
+.card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;margin-bottom:1rem;}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.1rem;background:#f9fafb;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:.5rem;}
+.card-title{font-size:.9rem;font-weight:800;color:var(--text);}
+
+/* ── Sub-tabs ── */
+.sub-tabs{display:flex;border-bottom:2px solid var(--border);padding:0 1.1rem;background:#fff;}
+.sub-tab{padding:.6rem 1rem;font-size:.8rem;font-weight:800;border:none;background:transparent;color:var(--text-2);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all var(--transition);}
+.sub-tab:hover{color:var(--brand);}
+.sub-tab.active{color:var(--brand);border-bottom-color:var(--brand);}
+.sub-tab-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:20px;font-size:.65rem;font-weight:800;background:var(--brand);color:#fff;margin-left:5px;}
+.sub-tab-badge.warn{background:var(--warning);}
 
 /* ── Table ── */
-.table { width: 100%; border-collapse: collapse; }
-.table th {
-  padding: 0.65rem 0.85rem;
-  text-align: left; font-size: 0.68rem; font-weight: 800;
-  color: var(--text-2); text-transform: uppercase; letter-spacing: 0.4px;
-  background: #f9fafb; white-space: nowrap;
-}
-.table td {
-  padding: 0.75rem 0.85rem;
-  font-size: 0.83rem; border-bottom: 1px solid var(--border);
-  vertical-align: middle;
-}
-.table tbody tr:last-child td { border-bottom: none; }
-.table tbody tr:hover { background: #f0f8ff; }
+.table{width:100%;border-collapse:collapse;}
+.table th{padding:.6rem .85rem;text-align:left;font-size:.67rem;font-weight:800;color:var(--text-2);text-transform:uppercase;letter-spacing:.4px;background:#f9fafb;white-space:nowrap;}
+.table td{padding:.8rem .85rem;font-size:.82rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+.table tbody tr:last-child td{border-bottom:none;}
+.table tbody tr:hover{background:#f0f8ff;}
+.student-name{font-weight:800;font-size:.85rem;}
+.student-last{font-size:.72rem;color:var(--text-2);margin-top:1px;font-weight:600;}
+
+/* ── Rate Bar ── */
+.rate-wrap{display:flex;align-items:center;gap:.4rem;}
+.rate-bg{flex:1;min-width:60px;height:5px;background:var(--border);border-radius:99px;overflow:hidden;}
+.rate-fill{height:100%;border-radius:99px;transition:width .4s;}
+.rate-pct{font-size:.78rem;font-weight:800;min-width:36px;text-align:right;}
 
 /* ── Badges ── */
-.badge {
-  display: inline-block; padding: 0.18rem 0.6rem;
-  border-radius: 20px; font-size: 0.7rem; font-weight: 800;
-  white-space: nowrap; line-height: 1.4;
-}
-.badge-present { background: #d1fae5; color: #065f46; }
-.badge-absent { background: #fee2e2; color: #991b1b; }
-.badge-na { background: #f3f4f6; color: var(--text-2); }
+.badge{display:inline-flex;align-items:center;padding:.2rem .65rem;border-radius:20px;font-size:.7rem;font-weight:800;white-space:nowrap;}
+.badge-risk{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;}
+.badge-track{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;}
+.badge-pending{background:#fffbeb;color:#92400e;border:1px solid #fde68a;}
+.badge-info{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;}
 
 /* ── Buttons ── */
-.btn {
-  display: inline-flex; align-items: center; gap: 0.3rem;
-  padding: 0.35rem 0.8rem; border-radius: 8px;
-  font-size: 0.75rem; font-weight: 800; font-family: inherit;
-  cursor: pointer; border: 1.5px solid transparent;
-  transition: all var(--transition); white-space: nowrap;
-}
-.btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.btn-primary { background: var(--brand); color: #fff; border-color: var(--brand); }
-.btn-primary:hover:not(:disabled) { background: var(--brand-dark); }
-.btn-success { background: var(--success); color: #fff; border-color: var(--success); }
-.btn-success:hover:not(:disabled) { background: #15803d; }
-.btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
-.btn-danger:hover:not(:disabled) { background: #b91c1c; }
-.btn-ghost { background: transparent; color: var(--text-2); border-color: var(--border); }
-.btn-ghost:hover:not(:disabled) { background: var(--bg); color: var(--text); }
-.btn-sm { padding: 0.22rem 0.55rem; font-size: 0.68rem; border-radius: 6px; }
+.btn{display:inline-flex;align-items:center;gap:.3rem;padding:.35rem .8rem;border-radius:var(--radius-sm);font-size:.75rem;font-weight:800;font-family:inherit;cursor:pointer;border:1.5px solid transparent;transition:all var(--transition);white-space:nowrap;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn-primary{background:var(--brand-dark);color:#fff;border-color:var(--brand-dark);}
+.btn-primary:hover:not(:disabled){background:#071e33;}
+.btn-success{background:var(--success);color:#fff;border-color:var(--success);}
+.btn-success:hover:not(:disabled){background:#15803d;}
+.btn-danger{background:var(--danger);color:#fff;border-color:var(--danger);}
+.btn-danger:hover:not(:disabled){background:#b91c1c;}
+.btn-ghost{background:transparent;color:var(--text-2);border-color:var(--border);}
+.btn-ghost:hover:not(:disabled){background:var(--bg);color:var(--text);}
+.btn-outline{background:#fff;color:var(--brand);border-color:var(--brand);}
+.btn-outline:hover:not(:disabled){background:var(--brand);color:#fff;}
+.btn-sm{padding:.2rem .55rem;font-size:.7rem;border-radius:6px;}
+.btn-edit{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;padding:.2rem .65rem;font-size:.72rem;border-radius:6px;font-weight:800;font-family:inherit;cursor:pointer;transition:all var(--transition);}
+.btn-edit:hover{background:#dbeafe;}
+.btn-remove{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;padding:.2rem .65rem;font-size:.72rem;border-radius:6px;font-weight:800;font-family:inherit;cursor:pointer;transition:all var(--transition);}
+.btn-remove:hover{background:#fee2e2;}
 
-/* ── QR View ── */
-.qr-container {
-  display: flex; flex-direction: column; align-items: center;
-  padding: 1.5rem 1rem 2rem;
-  text-align: center;
-}
-.qr-box {
-  background: #fff; border-radius: 18px;
-  padding: 1.5rem; box-shadow: var(--shadow-lg);
-  border: 2px solid var(--border);
-  margin-bottom: 1.25rem;
-  display: inline-block;
-}
-#qrCanvas { display: block; }
-.qr-title { font-size: 1.1rem; font-weight: 900; color: var(--brand-dark); margin-bottom: 0.4rem; }
-.qr-desc { font-size: 0.82rem; color: var(--text-2); line-height: 1.6; max-width: 320px; }
-.qr-url { font-size: 0.75rem; color: var(--brand); font-weight: 700; margin-top: 0.5rem; word-break: break-all; }
-.qr-actions { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; justify-content: center; }
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:1000;padding:1rem;}
+.modal-overlay.show{display:flex;animation:fadeIn .18s ease;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:#fff;border-radius:18px;max-width:520px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.25);animation:slideUp .2s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.4rem;border-bottom:1px solid var(--border);}
+.modal-title{font-size:1rem;font-weight:800;color:var(--text);}
+.modal-close{background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-2);line-height:1;padding:0;}
+.modal-body{padding:1.25rem 1.4rem;}
+.field{margin-bottom:1rem;}
+.field label{display:block;font-size:.78rem;font-weight:800;color:var(--text);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.3px;}
+.field input,.field select{width:100%;padding:.6rem .85rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.88rem;font-family:inherit;color:var(--text);background:#fff;transition:border-color var(--transition);}
+.field input:focus,.field select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(20,100,160,.1);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+.field-note{background:#f0f8ff;border:1px solid #c6e2f5;border-radius:8px;padding:.7rem .9rem;font-size:.75rem;color:#1e40af;font-weight:600;line-height:1.5;margin-bottom:1rem;}
+.modal-footer{display:flex;gap:.75rem;padding:1.1rem 1.4rem;border-top:1px solid var(--border);}
+.remove-option{display:flex;flex-direction:column;gap:.5rem;}
+.remove-opt-btn{padding:.7rem 1rem;border-radius:10px;font-size:.82rem;cursor:pointer;text-align:left;border:1.5px solid;transition:all var(--transition);background:transparent;font-family:inherit;width:100%;}
+.remove-opt-btn:hover{transform:translateY(-1px);}
+.remove-opt-btn.yellow{border-color:#fde68a;color:#92400e;background:#fffbeb;}
+.remove-opt-btn.yellow:hover{background:#fef3c7;}
+.remove-opt-btn.green{border-color:#bbf7d0;color:#14532d;background:#f0fdf4;}
+.remove-opt-btn.green:hover{background:#dcfce7;}
+.remove-opt-btn.purple{border-color:#ddd6fe;color:#3b0764;background:#f5f3ff;}
+.remove-opt-btn.purple:hover{background:#ede9fe;}
+.remove-opt-label{font-weight:800;margin-bottom:.2rem;}
+.remove-opt-sub{font-size:.72rem;opacity:.8;}
 
-/* ── Not checked in strip ── */
-.absent-strip {
-  background: #fff7ed; border: 1.5px solid #fed7aa;
-  border-radius: 10px; padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-  display: flex; align-items: center; gap: 0.6rem;
-}
-.absent-strip-icon { font-size: 1.1rem; flex-shrink: 0; }
-.absent-strip-text { font-size: 0.8rem; color: #9a3412; font-weight: 700; }
-.absent-strip-names { font-size: 0.75rem; color: var(--text-2); margin-top: 0.2rem; }
+/* ── QR ── */
+.qr-container{display:flex;flex-direction:column;align-items:center;padding:1.5rem 1rem 2rem;text-align:center;}
+.qr-box{background:#fff;border-radius:18px;padding:1.5rem;box-shadow:var(--shadow-lg);border:2px solid var(--border);margin-bottom:1.25rem;display:inline-block;}
+.qr-actions{display:flex;gap:.75rem;margin-top:1rem;flex-wrap:wrap;justify-content:center;}
+.qr-how{margin-top:1.5rem;background:#f0f8ff;border:1px solid #c6e2f5;border-radius:12px;padding:1rem 1.25rem;max-width:380px;text-align:left;}
 
-/* ── Empty state ── */
-.empty { text-align: center; padding: 2.5rem 1rem; color: var(--text-2); }
-.empty-icon { font-size: 2rem; margin-bottom: 0.5rem; }
-.empty-msg { font-size: 0.85rem; font-weight: 700; }
-.empty-sub { font-size: 0.75rem; margin-top: 0.25rem; }
+/* ── Roll ── */
+.refresh-bar{display:flex;align-items:center;gap:.6rem;font-size:.72rem;color:var(--text-2);font-weight:700;}
+.refresh-dot{width:8px;height:8px;border-radius:50%;background:var(--success);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── Empty ── */
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--text-2);}
+.empty-icon{font-size:2rem;margin-bottom:.5rem;}
+.empty-msg{font-size:.85rem;font-weight:800;}
+.empty-sub{font-size:.75rem;margin-top:.25rem;}
 
 /* ── Toast ── */
-#toast {
-  position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%) translateY(80px);
-  background: #1e293b; color: #fff;
-  padding: 0.7rem 1.25rem; border-radius: 10px;
-  font-size: 0.82rem; font-weight: 700;
-  box-shadow: var(--shadow-lg); z-index: 8000;
-  opacity: 0; transition: all 0.3s ease;
-  white-space: nowrap; max-width: 90vw;
-  display: flex; align-items: center; gap: 0.5rem;
-}
-#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-#toast.error { background: #7f1d1d; }
-
-/* ── Refresh bar ── */
-.refresh-bar {
-  display: flex; align-items: center; gap: 0.6rem;
-  font-size: 0.72rem; color: var(--text-2); font-weight: 700;
-}
-.refresh-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--success); animation: pulse 2s infinite;
-}
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-
-/* ── No-trainer state ── */
-.trainer-picker { padding: 1.5rem; }
-.trainer-picker select {
-  width: 100%; padding: 0.65rem 0.85rem;
-  border: 1.5px solid var(--border); border-radius: 8px;
-  font-size: 0.9rem; font-family: inherit; font-weight: 700;
-  background: #fff; color: var(--text); margin-top: 0.5rem;
-  appearance: auto;
-}
-
-/* ── Rate bar ── */
-.rate-bar { display: flex; align-items: center; gap: 0.5rem; }
-.rate-bg { flex: 1; height: 5px; background: var(--border); border-radius: 99px; overflow: hidden; }
-.rate-fill { height: 100%; border-radius: 99px; background: var(--success); transition: width 0.4s; }
-.rate-fill.mid { background: var(--warning); }
-.rate-fill.low { background: var(--danger); }
-.rate-pct { font-size: 0.72rem; font-weight: 800; min-width: 32px; text-align: right; }
+#toast{position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%) translateY(80px);background:#1e293b;color:#fff;padding:.7rem 1.25rem;border-radius:10px;font-size:.82rem;font-weight:700;box-shadow:var(--shadow-lg);z-index:8000;opacity:0;transition:all .3s ease;white-space:nowrap;max-width:90vw;display:flex;align-items:center;gap:.5rem;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.error{background:#7f1d1d;}
 
 /* ── Mobile ── */
-@media (max-width: 600px) {
-  .stats-row { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
-  .stat-value { font-size: 1.4rem; }
-  .stat-card { padding: 0.7rem 0.65rem; }
-  .content { padding: 0.85rem 0.65rem; }
-  .table th, .table td { padding: 0.55rem 0.6rem; font-size: 0.78rem; }
-  .hide-mobile { display: none !important; }
-  .brand-text .brand-sub { display: none; }
+@media(max-width:640px){
+  .stats-row{grid-template-columns:repeat(3,1fr);gap:.4rem;}
+  .stat-value{font-size:1.5rem;}
+  .stat-card{padding:.75rem .85rem;}
+  .content{padding:.85rem .65rem;}
+  .table th,.table td{padding:.5rem .55rem;font-size:.75rem;}
+  .hide-sm{display:none!important;}
+  .brand-sub{display:none;}
 }
 </style>
 </head>
 <body>
 
-<!-- ── Login Screen ── -->
+<!-- ── Login ── -->
 <div id="loginScreen">
   <div class="login-card">
-    <div class="login-logo">
-      <img src="https://edc-attendance.com/images.png" alt="Educare" onerror="this.style.display='none'">
-    </div>
+    <div class="login-logo"><img src="https://edc-attendance.com/images.png" alt="Educare" onerror="this.style.display='none'"></div>
     <div class="login-title">Trainer Portal</div>
     <div class="login-sub">Educare College — Attendance Management</div>
-
     <div class="how-to">
       <div class="how-to-title">How to log in</div>
       <ol>
@@ -360,14 +215,8 @@ header {
         <li>Enter your usual <strong>Microsoft password</strong></li>
       </ol>
     </div>
-
     <button class="ms-btn" id="msSigninBtn" onclick="signInWithMicrosoft()">
-      <svg width="18" height="18" viewBox="0 0 21 21" fill="none">
-        <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
-        <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
-        <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
-        <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
-      </svg>
+      <svg width="18" height="18" viewBox="0 0 21 21" fill="none"><rect x="1" y="1" width="9" height="9" fill="#F25022"/><rect x="11" y="1" width="9" height="9" fill="#7FBA00"/><rect x="1" y="11" width="9" height="9" fill="#00A4EF"/><rect x="11" y="11" width="9" height="9" fill="#FFB900"/></svg>
       <div class="spinner" id="msLoading"></div>
       <span id="msSigninLabel">Sign in with Microsoft</span>
     </button>
@@ -376,24 +225,25 @@ header {
 </div>
 
 <!-- ── Portal ── -->
-<div id="portalContent" style="display:none; flex-direction:column; min-height:100vh;">
-
+<div id="portalContent" style="display:none;flex-direction:column;min-height:100vh;">
   <header>
     <div class="header-top">
       <div class="header-brand">
-        <img src="https://edc-attendance.com/images.png" alt="Educare" style="height:38px;border-radius:7px;" onerror="this.style.display='none'">
-        <div class="brand-text">
-          <div class="brand-name">Educare College</div>
-          <div class="brand-sub">Trainer Portal</div>
-        </div>
+        <img src="https://edc-attendance.com/images.png" alt="Educare" onerror="this.style.display='none'">
+        <div><div class="brand-name">Educare College</div><div class="brand-sub">Trainer Portal</div></div>
       </div>
       <div class="header-right">
         <div class="trainer-badge">
           <div class="trainer-avatar" id="trainerAvatar">?</div>
           <span id="trainerDisplayName">Trainer</span>
+          <span class="view-badge">Trainer View</span>
         </div>
+        <a href="https://edc-attendance.com/educare-portal" class="header-btn" title="Switch to admin portal">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          Switch to Admin
+        </a>
         <button onclick="openQrTab()" class="icon-btn" title="Show QR Code">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/></svg>
         </button>
         <button onclick="logout()" class="signout-btn">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -401,198 +251,245 @@ header {
         </button>
       </div>
     </div>
-
-    <!-- Course switcher (shown when trainer has 2+ courses) -->
+    <!-- Course switcher -->
     <div class="course-switcher" id="courseSwitcher" style="display:none;">
       <span class="course-label">CLASS:</span>
       <div id="courseChips"></div>
     </div>
-
-    <!-- Tab nav -->
+    <!-- Tabs -->
     <div class="tab-nav">
       <button class="tab-btn active" id="tabRoll" onclick="switchTab('roll')">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        Today's Roll
+        Daily Attendance
+      </button>
+      <button class="tab-btn" id="tabClass" onclick="switchTab('class')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg>
+        My Class
       </button>
       <button class="tab-btn" id="tabQr" onclick="switchTab('qr')">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/></svg>
         QR Code
       </button>
-      <button class="tab-btn" id="tabStudents" onclick="switchTab('students')">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg>
-        My Students
-      </button>
     </div>
   </header>
 
-  <!-- ── Today's Roll Tab ── -->
+  <!-- ── Daily Roll Tab ── -->
   <div class="content" id="rollView">
-
-    <!-- Trainer not detected: show picker -->
     <div id="trainerNotFoundPanel" style="display:none;">
       <div class="card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">Select Your Name</div>
-            <div class="card-sub">Your account wasn't automatically matched — pick your name below.</div>
-          </div>
-        </div>
-        <div class="trainer-picker">
-          <select id="trainerPickerSelect" onchange="applyTrainerPick()">
+        <div class="card-header"><div><div class="card-title">Select Your Name</div><div style="font-size:.75rem;color:var(--text-2);margin-top:.2rem;">Your account wasn't automatically matched.</div></div></div>
+        <div style="padding:1.1rem;">
+          <select id="trainerPickerSelect" onchange="applyTrainerPick()" style="width:100%;padding:.6rem .85rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.88rem;font-family:inherit;">
             <option value="">— Select trainer —</option>
           </select>
         </div>
       </div>
     </div>
-
     <!-- Stats -->
     <div class="stats-row" id="rollStats" style="display:none;">
-      <div class="stat-card" onclick="filterRoll('all')" title="Show all">
+      <div class="stat-card" onclick="filterRoll('all')">
         <div class="stat-label">Enrolled</div>
         <div class="stat-value" id="statEnrolled">–</div>
-        <div class="stat-sub" id="statDate">Today</div>
+        <div style="font-size:.7rem;color:var(--text-2);margin-top:.25rem;" id="statDate">Today</div>
       </div>
-      <div class="stat-card green" onclick="filterRoll('present')" title="Show present">
+      <div class="stat-card" onclick="filterRoll('present')">
         <div class="stat-label">Present</div>
-        <div class="stat-value" id="statPresent">–</div>
-        <div class="stat-sub" id="statRate">–</div>
+        <div class="stat-value green" id="statPresent">–</div>
+        <div style="font-size:.7rem;color:var(--text-2);margin-top:.25rem;" id="statRate">–</div>
       </div>
-      <div class="stat-card red" onclick="filterRoll('absent')" title="Show absent">
+      <div class="stat-card" onclick="filterRoll('absent')">
         <div class="stat-label">Absent</div>
-        <div class="stat-value" id="statAbsent">–</div>
-        <div class="stat-sub">Not checked in</div>
+        <div class="stat-value red" id="statAbsent">–</div>
+        <div style="font-size:.7rem;color:var(--text-2);margin-top:.25rem;">Not checked in</div>
       </div>
     </div>
-
-    <!-- Absent alert strip -->
-    <div class="absent-strip" id="absentStrip" style="display:none;">
-      <div class="absent-strip-icon">⚠️</div>
-      <div>
-        <div class="absent-strip-text" id="absentStripMsg"></div>
-        <div class="absent-strip-names" id="absentStripNames"></div>
-      </div>
-    </div>
-
     <!-- Roll card -->
     <div class="card" id="rollCard" style="display:none;">
       <div class="card-header">
         <div>
           <div class="card-title" id="rollCardTitle">Today's Attendance</div>
-          <div class="card-sub" id="rollCardSub"></div>
+          <div style="font-size:.72rem;color:var(--text-2);margin-top:.1rem;" id="rollCardSub"></div>
         </div>
-        <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
-          <div class="refresh-bar" id="refreshBar">
-            <div class="refresh-dot"></div>
-            <span id="lastRefreshed">–</span>
-          </div>
-          <button class="btn btn-ghost btn-sm" onclick="loadRoll()">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-            Refresh
-          </button>
-          <input type="date" id="rollDate" style="padding:0.3rem 0.6rem;border:1.5px solid var(--border);border-radius:8px;font-size:0.78rem;font-family:inherit;font-weight:700;" onchange="loadRoll()">
+        <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+          <div class="refresh-bar"><div class="refresh-dot"></div><span id="lastRefreshed">–</span></div>
+          <button class="btn btn-ghost btn-sm" onclick="loadRoll()">↻ Refresh</button>
+          <input type="date" id="rollDate" style="padding:.3rem .6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.78rem;font-family:inherit;font-weight:700;" onchange="loadRoll()">
         </div>
       </div>
       <div style="overflow-x:auto;">
         <table class="table">
-          <thead>
-            <tr>
-              <th>Student ID</th>
-              <th>Name</th>
-              <th class="hide-mobile">Check In</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="rollTableBody">
-            <tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text-2);">Loading…</td></tr>
-          </tbody>
+          <thead><tr>
+            <th>Student ID</th><th>Name</th>
+            <th class="hide-sm">Check In</th>
+            <th>Status</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="rollTableBody"><tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text-2);">Loading…</td></tr></tbody>
         </table>
       </div>
     </div>
-  </div><!-- /rollView -->
+  </div>
+
+  <!-- ── My Class Tab ── -->
+  <div class="content" id="classView" style="display:none;">
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Active Students</div>
+        <div class="stat-value" id="classStatActive">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">At Risk</div>
+        <div class="stat-value red" id="classStatRisk">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">On Track</div>
+        <div class="stat-value green" id="classStatTrack">–</div>
+      </div>
+    </div>
+    <!-- Class card -->
+    <div class="card">
+      <div class="card-header">
+        <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+          <span class="card-title">My Class</span>
+          <input type="text" id="classSearch" placeholder="Search name or ID…" oninput="renderClass()"
+            style="padding:.3rem .7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.78rem;font-family:inherit;font-weight:700;outline:none;width:180px;">
+          <span style="font-size:.75rem;color:var(--text-2);font-weight:700;" id="classActiveCount"></span>
+        </div>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-ghost btn-sm" onclick="loadSummary()">Refresh</button>
+          <button class="btn btn-outline btn-sm" onclick="exportClassCSV()" style="color:var(--success);border-color:var(--success);">Export CSV</button>
+          <button class="btn btn-primary" onclick="openAddStudentModal()">+ Add Student</button>
+        </div>
+      </div>
+      <!-- Sub-tabs -->
+      <div class="sub-tabs">
+        <button class="sub-tab active" id="stCurrent" onclick="switchClassTab('current')">
+          Current Students <span class="sub-tab-badge" id="stCurrentBadge">0</span>
+        </button>
+        <button class="sub-tab" id="stNotStarted" onclick="switchClassTab('not-started')">
+          Not Started
+        </button>
+        <button class="sub-tab" id="stUpcoming" onclick="switchClassTab('upcoming')">
+          Upcoming <span class="sub-tab-badge warn" id="stUpcomingBadge" style="display:none;">0</span>
+        </button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="table">
+          <thead><tr>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th class="hide-sm">Course</th>
+            <th class="hide-sm">Start Date</th>
+            <th class="hide-sm">Expected End</th>
+            <th>Monthly</th>
+            <th>Overall Rate</th>
+            <th>Status</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="classTableBody"><tr><td colspan="9" style="text-align:center;padding:1.5rem;color:var(--text-2);">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
   <!-- ── QR Code Tab ── -->
   <div class="content" id="qrView" style="display:none;">
     <div class="card">
       <div class="card-header">
-        <div>
-          <div class="card-title">Student Check-In QR Code</div>
-          <div class="card-sub">Display this for students to scan when they arrive</div>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="downloadQr()">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download
-        </button>
+        <div><div class="card-title">Student Check-In QR Code</div><div style="font-size:.72rem;color:var(--text-2);margin-top:.1rem;">Display this for students to scan when they arrive</div></div>
+        <button class="btn btn-primary btn-sm" onclick="downloadQr()">⬇ Download</button>
       </div>
       <div class="qr-container">
-        <div class="qr-box">
-          <canvas id="qrCanvas"></canvas>
-        </div>
-        <div class="qr-title">Scan to Check In</div>
-        <div class="qr-desc">
-          Students scan this code with their phone camera when they arrive on campus.
-          The form will auto-fill their campus location.
-        </div>
-        <div class="qr-url" id="qrUrlLabel"></div>
-
-        <div style="margin-top:1.5rem;background:#f0f8ff;border:1px solid #c6e2f5;border-radius:12px;padding:1rem 1.25rem;max-width:380px;text-align:left;">
-          <div style="font-size:0.72rem;font-weight:800;color:var(--brand);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.5rem;">How students use this</div>
-          <ol style="padding-left:1.1rem;font-size:0.78rem;color:var(--text-2);line-height:1.9;">
+        <div class="qr-box"><canvas id="qrCanvas"></canvas></div>
+        <div style="font-size:1.1rem;font-weight:900;color:var(--brand-dark);margin-bottom:.4rem;">Scan to Check In</div>
+        <div style="font-size:.82rem;color:var(--text-2);max-width:320px;line-height:1.6;">Students scan this with their phone camera when they arrive on campus.</div>
+        <div style="font-size:.75rem;color:var(--brand);font-weight:700;margin-top:.5rem;" id="qrUrlLabel"></div>
+        <div class="qr-how">
+          <div style="font-size:.7rem;font-weight:800;color:var(--brand);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem;">How students use this</div>
+          <ol style="padding-left:1.1rem;font-size:.78rem;color:var(--text-2);line-height:1.9;">
             <li>Open phone camera and point at QR code</li>
             <li>Tap the link that appears</li>
-            <li>Fill in Student ID, select trainer & course</li>
+            <li>Fill in Student ID, select trainer &amp; course</li>
             <li>Confirm location and tap <strong style="color:var(--text);">Check In</strong></li>
           </ol>
         </div>
-
         <div class="qr-actions">
-          <button class="btn btn-primary" onclick="downloadQr()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download QR Image
-          </button>
-          <a href="https://edc-attendance.com/checkin" target="_blank" class="btn btn-ghost">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            Open Check-In Page
-          </a>
+          <button class="btn btn-primary" onclick="downloadQr()">⬇ Download QR Image</button>
+          <a href="https://edc-attendance.com/checkin" target="_blank" class="btn btn-ghost">↗ Open Check-In Page</a>
         </div>
       </div>
     </div>
-  </div><!-- /qrView -->
+  </div>
+</div>
 
-  <!-- ── My Students Tab ── -->
-  <div class="content" id="studentsView" style="display:none;">
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title" id="studentsCardTitle">My Students</div>
-          <div class="card-sub" id="studentsCardSub"></div>
+<!-- ── Add Student Modal ── -->
+<div class="modal-overlay" id="addStudentModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Student to My Class</div>
+      <button class="modal-close" onclick="closeAddStudentModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Student ID <span style="color:var(--danger);">*</span></label>
+        <input type="text" id="addStudentId" placeholder="e.g. 14123456" maxlength="20">
+      </div>
+      <div class="field">
+        <label>Student Name <span style="color:var(--danger);">*</span></label>
+        <input type="text" id="addStudentName" placeholder="e.g. John Smith">
+      </div>
+      <div class="field">
+        <label>Course <span style="color:var(--danger);">*</span></label>
+        <select id="addStudentCourse"><option value="">Select course…</option></select>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Start Date</label>
+          <input type="date" id="addStudentStart">
         </div>
-        <div style="display:flex;align-items:center;gap:0.5rem;">
-          <input type="text" id="studentSearch" placeholder="Search name or ID…"
-            style="padding:0.35rem 0.75rem;border:1.5px solid var(--border);border-radius:8px;font-size:0.78rem;font-family:inherit;font-weight:700;outline:none;width:160px;"
-            oninput="renderStudents()">
+        <div class="field">
+          <label>Expected End Date</label>
+          <input type="date" id="addStudentEnd">
         </div>
       </div>
-      <div style="overflow-x:auto;">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Student ID</th>
-              <th>Name</th>
-              <th class="hide-mobile">Course</th>
-              <th>Status</th>
-              <th>Attendance (90d)</th>
-            </tr>
-          </thead>
-          <tbody id="studentsTableBody">
-            <tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text-2);">Loading…</td></tr>
-          </tbody>
-        </table>
+      <div class="field-note">The student will be added to your class list and synced to the admin view. They will appear on your daily roll from their start date.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" style="flex:1;" onclick="submitAddStudent()">Add to My Class</button>
+      <button class="btn btn-ghost" onclick="closeAddStudentModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Remove Student Modal ── -->
+<div class="modal-overlay" id="removeStudentModal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">Remove Student</div>
+      <button class="modal-close" onclick="closeRemoveStudentModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:.85rem;color:var(--text-2);margin-bottom:1rem;">Why is <strong id="removeStudentName" style="color:var(--text);"></strong> being removed?</div>
+      <div class="remove-option">
+        <button class="remove-opt-btn yellow" onclick="confirmRemove('not-started')">
+          <div class="remove-opt-label">Not Started Yet</div>
+          <div class="remove-opt-sub">Move to upcoming list — history preserved</div>
+        </button>
+        <button class="remove-opt-btn green" onclick="confirmRemove('completed')">
+          <div class="remove-opt-label">Course Completed</div>
+          <div class="remove-opt-sub">Remove from roster — attendance records remain</div>
+        </button>
+        <button class="remove-opt-btn purple" onclick="confirmRemove('not-my-student')">
+          <div class="remove-opt-label">Not My Student</div>
+          <div class="remove-opt-sub">Remove from my class — student stays in system for admin to reassign</div>
+        </button>
       </div>
     </div>
-  </div><!-- /studentsView -->
-
-</div><!-- /portalContent -->
+    <div class="modal-footer" style="justify-content:center;">
+      <button class="btn btn-ghost" onclick="closeRemoveStudentModal()">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <!-- Toast -->
 <div id="toast"><span id="toastMsg"></span></div>
@@ -617,24 +514,20 @@ const TRAINER_COURSES = {
   "Zeyun Ma":           ["CHC30121 Certificate III in Early Childhood Education and Care"],
   "Benjamin Akari":     ["CPC30220 Certificate III in Carpentry"],
 };
-
 const TRAINER_CAMPUS = {
-  "Troy Scott": "Brisbane CBD", "Maggie Yu Huang": "Brisbane CBD",
-  "Carol Ly": "Brisbane CBD", "Zeyun Ma": "Brisbane CBD",
-  "Sherwin Thiarhia": "Brisbane CBD", "Colleen Schmidt": "Brisbane CBD",
-  "Nati Belen": "Southport GC", "Vijeta Srivastava": "Southport GC",
-  "Toriqul Mozumder": "Southport GC",
-  "Alessandro Tavian": "Woolloongabba", "Benjamin Akari": "Woolloongabba",
+  "Troy Scott":"Brisbane CBD","Maggie Yu Huang":"Brisbane CBD","Carol Ly":"Brisbane CBD",
+  "Zeyun Ma":"Brisbane CBD","Sherwin Thiarhia":"Brisbane CBD","Colleen Schmidt":"Brisbane CBD",
+  "Nati Belen":"Southport GC","Vijeta Srivastava":"Southport GC","Toriqul Mozumder":"Southport GC",
+  "Alessandro Tavian":"Woolloongabba","Benjamin Akari":"Woolloongabba",
 };
 
 /* ── State ── */
-let trainerName    = null;
-let msDisplayName  = null;
-let currentCourse  = null;
-let summaryData    = [];
-let rollData       = [];
-let rollFilter     = 'all';
-let refreshTimer   = null;
+let trainerName = null, msDisplayName = null;
+let currentCourse = null;
+let summaryData = [], rollData = [], recordsData = [];
+let rollFilter = 'all', classTab = 'current';
+let refreshTimer = null;
+let removeStudentTarget = null;
 
 /* ── Auth ── */
 function signInWithMicrosoft() {
@@ -642,27 +535,23 @@ function signInWithMicrosoft() {
   document.getElementById('msSigninBtn').disabled = true;
   document.getElementById('msLoading').style.display = 'inline-block';
   document.getElementById('msSigninLabel').textContent = 'Opening Microsoft sign-in…';
-  var nonce = Math.random().toString(36).slice(2) + Date.now();
+  const nonce = Math.random().toString(36).slice(2) + Date.now();
   sessionStorage.setItem('ms_nonce', nonce);
-  var params = new URLSearchParams({
-    client_id: MS_CLIENT_ID, response_type: 'id_token',
-    redirect_uri: MS_REDIRECT, scope: 'openid profile email',
-    response_mode: 'fragment', nonce: nonce
+  const params = new URLSearchParams({
+    client_id:MS_CLIENT_ID, response_type:'id_token', redirect_uri:MS_REDIRECT,
+    scope:'openid profile email', response_mode:'fragment', nonce
   });
-  window.location.href = MS_AUTH_URL + '?' + params.toString();
+  window.location.href = MS_AUTH_URL + '?' + params;
 }
-
 function logout() {
   sessionStorage.removeItem('ms_session_trainer');
   clearInterval(refreshTimer);
   window.location.href = 'https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri=' + encodeURIComponent(MS_REDIRECT);
 }
-
 function parseJwt(token) {
   try { return JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); }
   catch(e) { return null; }
 }
-
 function setLoginError(msg) {
   document.getElementById('msLoginError').textContent = msg;
   document.getElementById('msLoading').style.display = 'none';
@@ -676,15 +565,7 @@ function detectTrainer(displayName) {
   const dn = displayName.toLowerCase().trim();
   for (const name of Object.keys(TRAINER_COURSES)) {
     if (dn === name.toLowerCase()) return name;
-    const parts = name.toLowerCase().split(' ');
-    if (parts.every(p => dn.includes(p))) return name;
-    if (dn.split(' ').some(p => parts[parts.length-1] === p && p.length > 3)) {
-      const matches = Object.keys(TRAINER_COURSES).filter(n => {
-        const np = n.toLowerCase().split(' ');
-        return np[np.length-1] === p && p.length > 3;
-      });
-      if (matches.length === 1) return matches[0];
-    }
+    if (name.toLowerCase().split(' ').every(p => dn.includes(p))) return name;
   }
   return null;
 }
@@ -692,20 +573,14 @@ function detectTrainer(displayName) {
 /* ── Portal init ── */
 function showPortal(name, username) {
   document.getElementById('loginScreen').style.display = 'none';
-  const p = document.getElementById('portalContent');
-  p.style.display = 'flex';
-
+  document.getElementById('portalContent').style.display = 'flex';
   msDisplayName = name || username || 'Trainer';
   const initials = msDisplayName.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('trainerAvatar').textContent = initials;
   document.getElementById('trainerDisplayName').textContent = msDisplayName.split(' ')[0];
-
   trainerName = detectTrainer(msDisplayName);
-  if (trainerName) {
-    initTrainer(trainerName);
-  } else {
-    showTrainerPicker();
-  }
+  if (trainerName) initTrainer(trainerName);
+  else showTrainerPicker();
 }
 
 function showTrainerPicker() {
@@ -714,12 +589,9 @@ function showTrainerPicker() {
   document.getElementById('trainerNotFoundPanel').style.display = 'block';
   const sel = document.getElementById('trainerPickerSelect');
   Object.keys(TRAINER_COURSES).sort().forEach(n => {
-    const o = document.createElement('option');
-    o.value = n; o.textContent = n;
-    sel.appendChild(o);
+    const o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o);
   });
 }
-
 function applyTrainerPick() {
   const val = document.getElementById('trainerPickerSelect').value;
   if (!val) return;
@@ -732,66 +604,51 @@ function initTrainer(name) {
   trainerName = name;
   const courses = TRAINER_COURSES[name] || [];
   currentCourse = courses[0] || null;
-
-  // Set trainer display name in badge
   document.getElementById('trainerDisplayName').textContent = name.split(' ')[0];
-
-  // Course switcher
-  if (courses.length > 1) {
-    document.getElementById('courseSwitcher').style.display = 'flex';
-    renderCourseChips();
-  }
-
-  // Today's date
-  const today = todayStr();
-  document.getElementById('rollDate').value = today;
+  if (courses.length > 1) { document.getElementById('courseSwitcher').style.display = 'flex'; renderCourseChips(); }
+  document.getElementById('rollDate').value = todayStr();
   document.getElementById('statDate').textContent = new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'short'});
-
   document.getElementById('rollStats').style.display = 'grid';
   document.getElementById('rollCard').style.display = 'block';
-
+  // Populate add student course dropdown
+  const sel = document.getElementById('addStudentCourse');
+  courses.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
   loadSummary();
   loadRoll();
+  loadRecords();
   renderQr();
-
-  // Auto-refresh every 90 seconds
   refreshTimer = setInterval(loadRoll, 90000);
 }
 
 function renderCourseChips() {
   const courses = TRAINER_COURSES[trainerName] || [];
-  const wrap = document.getElementById('courseChips');
-  wrap.innerHTML = '';
+  const wrap = document.getElementById('courseChips'); wrap.innerHTML = '';
   courses.forEach(c => {
     const code = c.match(/^([A-Z]{3}\d+)/)?.[1] || c.slice(0,8);
-    const label = c.replace(/^[A-Z]{3}\d+\s*/, '').replace(/Certificate (III|IV) in /,'Cert $1 ').replace(/Diploma of /,'Dip. ');
+    const lbl = c.replace(/^[A-Z]{3}\d+\s*/,'').replace(/Certificate (III|IV) in /,'Cert $1 ').replace(/Diploma of /,'Dip. ');
     const btn = document.createElement('button');
     btn.className = 'course-chip' + (c === currentCourse ? ' active' : '');
-    btn.title = c;
-    btn.innerHTML = `<strong>${code}</strong> ${label.length > 28 ? label.slice(0,28)+'…' : label}`;
-    btn.onclick = () => { currentCourse = c; renderCourseChips(); loadRoll(); renderStudents(); };
+    btn.title = c; btn.innerHTML = `<strong>${code}</strong> ${lbl.length>28?lbl.slice(0,28)+'…':lbl}`;
+    btn.onclick = () => { currentCourse = c; renderCourseChips(); loadRoll(); renderClass(); };
     wrap.appendChild(btn);
   });
 }
 
-/* ── Data loading ── */
-function todayStr() {
-  return new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Brisbane' });
-}
+/* ── Utilities ── */
+function todayStr() { return new Date().toLocaleDateString('en-CA',{timeZone:'Australia/Brisbane'}); }
+function fmtDate(d) { if(!d) return '–'; return new Date(d).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}); }
+function fmtTime(d) { if(!d) return '–'; return new Date(d).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:true}); }
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function parseCourse(raw) { const m=(raw||'').trim().match(/^([A-Z]{3}\d+)\s+(.+)$/); return m?{code:m[1],name:m[2]}:{code:'',name:(raw||'').trim()}; }
 
+/* ── Data loading ── */
 async function loadSummary() {
   try {
     const res = await fetch('/api/summary');
     const data = await res.json();
-    if (Array.isArray(data)) {
-      summaryData = data;
-      renderStudents();
-    }
-  } catch(e) {
-    console.warn('Summary load failed', e);
-  }
+    if (Array.isArray(data)) { summaryData = data; renderClass(); }
+  } catch(e) { console.warn('Summary load failed', e); }
 }
-
 async function loadRoll() {
   if (!trainerName) return;
   const date = document.getElementById('rollDate').value || todayStr();
@@ -799,268 +656,302 @@ async function loadRoll() {
     const res = await fetch('/api/attendance?date=' + date);
     const data = await res.json();
     rollData = Array.isArray(data) ? data : [];
-    renderRoll();
+    renderRoll(); renderClass();
     document.getElementById('lastRefreshed').textContent = 'Updated ' + new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
-  } catch(e) {
-    showToast('Failed to load roll: ' + e.message, true);
-  }
+  } catch(e) { showToast('Failed to load roll: ' + e.message, true); }
+}
+async function loadRecords() {
+  try {
+    const res = await fetch('/api/records');
+    const data = await res.json();
+    if (Array.isArray(data)) { recordsData = data; renderClass(); }
+  } catch(e) { console.warn('Records load failed', e); }
 }
 
-/* ── Render: Roll ── */
-function myStudentsInSummary() {
+/* ── Roll ── */
+function myEnrolled() {
   if (!trainerName) return [];
-  return summaryData.filter(s =>
-    s.trainer === trainerName &&
-    (!currentCourse || s.course === currentCourse) &&
-    s.status === 'active'
-  );
-}
-
-function parseCourse(raw) {
-  const m = (raw||'').trim().match(/^([A-Z]{3}\d+)\s+(.+)$/);
-  return m ? { code: m[1], name: m[2] } : { code: '', name: (raw||'').trim() };
+  return summaryData.filter(s => s.trainer===trainerName && (!currentCourse||s.course===currentCourse) && s.status==='active');
 }
 
 function renderRoll() {
-  if (!trainerName) return;
   const date = document.getElementById('rollDate').value || todayStr();
-  const enrolled = myStudentsInSummary();
+  const enrolled = myEnrolled();
+  const checkedIn = rollData.filter(r => r.trainer===trainerName && (!currentCourse||r.course===currentCourse||(parseCourse(r.course).name&&currentCourse&&currentCourse.includes(parseCourse(r.course).name))));
+  const checkedInIds = new Set(checkedIn.map(r=>r.studentId));
+  const enrolledIds = new Set(enrolled.map(s=>s.id));
+  const extras = checkedIn.filter(r=>!enrolledIds.has(r.studentId));
+  let rows = enrolled.map(s => { const rec=checkedIn.find(r=>r.studentId===s.id); return {id:s.id,name:s.name,present:!!rec,checkinTime:rec?.checkinTime||null}; });
+  extras.forEach(r => rows.push({id:r.studentId,name:r.studentName,present:true,checkinTime:r.checkinTime}));
+  if (!rows.length && checkedIn.length) rows = checkedIn.map(r=>({id:r.studentId,name:r.studentName,present:true,checkinTime:r.checkinTime}));
 
-  // Match roll records to this trainer's class
-  const checkedIn = rollData.filter(r => r.trainer === trainerName && (!currentCourse || r.course === currentCourse || (parseCourse(r.course).name && currentCourse && currentCourse.includes(parseCourse(r.course).name))));
-  const checkedInIds = new Set(checkedIn.map(r => r.studentId));
-
-  // Build combined list: enrolled students + any checked-in not in enrolled list
-  const enrolled_ids = new Set(enrolled.map(s => s.id));
-  const extraCheckins = checkedIn.filter(r => !enrolled_ids.has(r.studentId));
-
-  // Merge: enrolled students as base, mark present if checked in
-  let rows = enrolled.map(s => {
-    const record = checkedIn.find(r => r.studentId === s.id);
-    return { id: s.id, name: s.name, course: s.course, courseCode: s.courseCode, present: !!record, checkinTime: record?.checkinTime || null };
-  });
-
-  // Add extra check-ins
-  extraCheckins.forEach(r => {
-    rows.push({ id: r.studentId, name: r.studentName, course: r.course, courseCode: r.courseCode, present: true, checkinTime: r.checkinTime });
-  });
-
-  // If no summary data yet, fall back to roll data only
-  if (enrolled.length === 0 && checkedIn.length > 0) {
-    rows = checkedIn.map(r => ({ id: r.studentId, name: r.studentName, course: r.course, courseCode: r.courseCode, present: true, checkinTime: r.checkinTime }));
-  }
-
-  const total   = rows.length;
-  const present = rows.filter(r => r.present).length;
-  const absent  = total - present;
-  const rate    = total > 0 ? Math.round(present/total*100) : 0;
-
+  const total=rows.length, present=rows.filter(r=>r.present).length, absent=total-present, rate=total>0?Math.round(present/total*100):0;
   document.getElementById('statEnrolled').textContent = total;
   document.getElementById('statPresent').textContent  = present;
   document.getElementById('statAbsent').textContent   = absent;
-  document.getElementById('statRate').textContent     = total > 0 ? rate + '% rate' : '';
+  document.getElementById('statRate').textContent     = total>0?rate+'% rate':'';
 
-  // Course info in card header
-  const courseShort = currentCourse ? currentCourse.replace(/^[A-Z]{3}\d+\s*/,'').replace(/Certificate (III|IV) in /,'Cert $1 ').replace(/Diploma of /,'Dip. ') : 'All Classes';
-  document.getElementById('rollCardTitle').textContent = courseShort;
+  const cShort = currentCourse?currentCourse.replace(/^[A-Z]{3}\d+\s*/,'').replace(/Certificate (III|IV) in /,'Cert $1 ').replace(/Diploma of /,'Dip. '):'All Classes';
+  document.getElementById('rollCardTitle').textContent = cShort;
   document.getElementById('rollCardSub').textContent   = trainerName + ' · ' + new Date(date).toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});
 
-  // Absent strip
-  const absentStudents = rows.filter(r => !r.present);
-  if (absentStudents.length > 0 && total > 0) {
-    document.getElementById('absentStrip').style.display = 'flex';
-    document.getElementById('absentStripMsg').textContent = absentStudents.length + ' student' + (absentStudents.length>1?'s':'') + ' not yet checked in';
-    const names = absentStudents.slice(0,4).map(r=>r.name.split(' ')[0]).join(', ') + (absentStudents.length>4?' +more':'');
-    document.getElementById('absentStripNames').textContent = names;
-  } else {
-    document.getElementById('absentStrip').style.display = 'none';
-  }
-
-  // Filter
-  const filtered = rollFilter === 'all' ? rows :
-    rollFilter === 'present' ? rows.filter(r=>r.present) :
-    rows.filter(r=>!r.present);
-
+  const filtered = rollFilter==='all'?rows:rollFilter==='present'?rows.filter(r=>r.present):rows.filter(r=>!r.present);
   const tbody = document.getElementById('rollTableBody');
-  if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">${rollFilter==='present'?'✓':'📋'}</div><div class="empty-msg">${rollFilter==='present'?'No check-ins yet':'No students to show'}</div><div class="empty-sub">Try refreshing or check back later</div></div></td></tr>`;
-    return;
-  }
-
+  if (!filtered.length) { tbody.innerHTML=`<tr><td colspan="5"><div class="empty"><div class="empty-icon">${rollFilter==='present'?'✓':'📋'}</div><div class="empty-msg">No students to show</div></div></td></tr>`; return; }
   tbody.innerHTML = filtered.map(r => {
-    const time = r.checkinTime ? new Date(r.checkinTime).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:true}) : '–';
-    const badge = r.present
-      ? '<span class="badge badge-present">Present</span>'
-      : '<span class="badge badge-absent">Absent</span>';
-    const actions = r.present
-      ? `<button class="btn btn-danger btn-sm" onclick="markStudent('${r.id}','${escHtml(r.name)}','${escHtml(r.course)}','absent')" title="Mark absent">✕ Absent</button>`
-      : `<button class="btn btn-success btn-sm" onclick="markStudent('${r.id}','${escHtml(r.name)}','${escHtml(r.course)}','present')" title="Mark present">✓ Present</button>`;
-    return `<tr>
-      <td style="font-family:monospace;font-size:0.78rem;color:var(--text-2);">${escHtml(r.id)}</td>
-      <td style="font-weight:800;">${escHtml(r.name)}</td>
-      <td class="hide-mobile" style="color:var(--text-2);font-size:0.75rem;">${time}</td>
-      <td>${badge}</td>
-      <td>${actions}</td>
-    </tr>`;
+    const time = r.checkinTime?fmtTime(r.checkinTime):'–';
+    const badge = r.present?'<span class="badge badge-track">Present</span>':'<span class="badge badge-risk">Absent</span>';
+    const action = r.present
+      ? `<button class="btn-remove btn-sm" onclick="markStudent('${r.id}','${escHtml(r.name)}','${escHtml(currentCourse||'')}','absent')">✕ Absent</button>`
+      : `<button class="btn-edit btn-sm" onclick="markStudent('${r.id}','${escHtml(r.name)}','${escHtml(currentCourse||'')}','present')">✓ Present</button>`;
+    return `<tr><td style="font-family:monospace;font-size:.78rem;color:var(--text-2);">${escHtml(r.id)}</td><td style="font-weight:800;">${escHtml(r.name)}</td><td class="hide-sm" style="color:var(--text-2);font-size:.75rem;">${time}</td><td>${badge}</td><td>${action}</td></tr>`;
   }).join('');
 }
-
-function filterRoll(f) {
-  rollFilter = f;
-  renderRoll();
-}
+function filterRoll(f) { rollFilter=f; renderRoll(); }
 
 /* ── Mark attendance ── */
 async function markStudent(studentId, name, course, status) {
   const date = document.getElementById('rollDate').value || todayStr();
   const campus = TRAINER_CAMPUS[trainerName] || '';
-  const { code: courseCode } = parseCourse(course);
+  const {code:courseCode} = parseCourse(course);
   try {
-    const res = await fetch('/api/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ studentId, studentName: name, course, courseCode, trainer: trainerName, campus, dates: [date], status, markedBy: msDisplayName })
-    });
+    const res = await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({studentId,studentName:name,course,courseCode,trainer:trainerName,campus,dates:[date],status,markedBy:msDisplayName})});
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || res.statusText);
-    showToast(name.split(' ')[0] + ' marked ' + status);
+    if (!res.ok) throw new Error(data.error||res.statusText);
+    showToast(name.split(' ')[0]+' marked '+status);
     await loadRoll();
-  } catch(e) {
-    showToast('Failed: ' + e.message, true);
-  }
+  } catch(e) { showToast('Failed: '+e.message, true); }
 }
 
-/* ── Render: Students ── */
-function renderStudents() {
-  const enrolled = summaryData.filter(s => s.trainer === trainerName && (!currentCourse || s.course === currentCourse));
-  const query = (document.getElementById('studentSearch')?.value || '').toLowerCase();
-  const filtered = query ? enrolled.filter(s => s.name.toLowerCase().includes(query) || (s.id||'').toLowerCase().includes(query)) : enrolled;
+/* ── My Class ── */
+function switchClassTab(tab) {
+  classTab = tab;
+  ['current','not-started','upcoming'].forEach(t => document.getElementById('st'+t.charAt(0).toUpperCase()+t.slice(1).replace('-s','S').replace('-s','S')).classList.toggle('active',t===tab));
+  // Fix ID mapping
+  document.getElementById('stCurrent').classList.toggle('active', tab==='current');
+  document.getElementById('stNotStarted').classList.toggle('active', tab==='not-started');
+  document.getElementById('stUpcoming').classList.toggle('active', tab==='upcoming');
+  renderClass();
+}
 
-  document.getElementById('studentsCardTitle').textContent = 'My Students' + (currentCourse ? ' — ' + (currentCourse.match(/^[A-Z]{3}\d+/)?.[0] || '') : '');
-  document.getElementById('studentsCardSub').textContent   = filtered.length + ' enrolled student' + (filtered.length!==1?'s':'');
+function monthlyRate(studentId, course) {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthRecords = recordsData.filter(r => r.studentId===studentId && (r.course===course||!course) && new Date(r.attendanceDate)>=monthStart);
+  const workDays = workdaysThisMonth();
+  if (!workDays) return null;
+  return Math.min(100, Math.round(monthRecords.length / workDays * 100));
+}
 
-  const tbody = document.getElementById('studentsTableBody');
-  if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">📚</div><div class="empty-msg">No students found</div><div class="empty-sub">Data loads when students check in or from the roster</div></div></td></tr>`;
-    return;
-  }
+function workdaysThisMonth() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let count = 0;
+  const d = new Date(start);
+  while (d <= today) { const day=d.getDay(); if(day>=1&&day<=5) count++; d.setDate(d.getDate()+1); }
+  return count;
+}
 
-  tbody.innerHTML = filtered.map(s => {
-    const rate = s.attendedDays && s.attendedDays > 0
-      ? Math.min(100, Math.round(s.attendedDays / Math.max(1, workDaysInRange(s.commenced, null, 90)) * 100))
-      : null;
-    const pct = rate !== null ? rate : null;
-    const cls = pct === null ? '' : pct >= 80 ? '' : pct >= 60 ? 'mid' : 'low';
-    const rateBar = pct !== null
-      ? `<div class="rate-bar"><div class="rate-bg"><div class="rate-fill ${cls}" style="width:${pct}%"></div></div><div class="rate-pct" style="color:${pct>=80?'var(--success)':pct>=60?'var(--warning)':'var(--danger)'}">${pct}%</div></div>`
-      : '<span style="font-size:0.72rem;color:var(--text-2);">–</span>';
-    const statusBadge = s.status === 'active'
-      ? '<span class="badge badge-present">Active</span>'
-      : s.status === 'not-started'
-      ? '<span class="badge badge-na">Not Started</span>'
-      : `<span class="badge badge-na">${s.status||'–'}</span>`;
-    const courseShort = (s.course||'').replace(/^[A-Z]{3}\d+\s*/,'').replace(/Certificate (III|IV) in /,'Cert $1 ').replace(/Diploma of /,'Dip. ');
+function overallRate(s) {
+  if (s.attendedDays==null) return null;
+  const start = s.commenced ? new Date(s.commenced) : null;
+  if (!start) return null;
+  const today = new Date();
+  const windowStart = new Date(Math.max(start, new Date(today - 90*86400000)));
+  let workDays = 0;
+  const d = new Date(windowStart);
+  while (d <= today) { const day=d.getDay(); if(day>=1&&day<=5) workDays++; d.setDate(d.getDate()+1); }
+  return workDays>0 ? Math.min(100, Math.round(s.attendedDays/workDays*100)) : null;
+}
+
+function renderClass() {
+  if (!trainerName) return;
+  const myStudents = summaryData.filter(s => s.trainer===trainerName && (!currentCourse||s.course===currentCourse));
+  const active   = myStudents.filter(s=>s.status==='active');
+  const notStart = myStudents.filter(s=>s.status==='not-started');
+  const upcoming = myStudents.filter(s=>s.status==='upcoming'||s.status==='tentative');
+
+  // Stats
+  const atRisk  = active.filter(s=>{ const r=overallRate(s); return r!==null&&r<80; }).length;
+  const onTrack = active.filter(s=>{ const r=overallRate(s); return r!==null&&r>=80; }).length;
+  document.getElementById('classStatActive').textContent = active.length;
+  document.getElementById('classStatRisk').textContent   = atRisk;
+  document.getElementById('classStatTrack').textContent  = onTrack;
+
+  // Badge counts
+  document.getElementById('stCurrentBadge').textContent = active.length;
+  const upBadge = document.getElementById('stUpcomingBadge');
+  if (upcoming.length) { upBadge.style.display='inline-flex'; upBadge.textContent=upcoming.length; } else { upBadge.style.display='none'; }
+
+  const query = (document.getElementById('classSearch')?.value||'').toLowerCase();
+  let rows = classTab==='current' ? active : classTab==='not-started' ? notStart : upcoming;
+  if (query) rows = rows.filter(s=>(s.name||'').toLowerCase().includes(query)||(s.id||'').toLowerCase().includes(query));
+  document.getElementById('classActiveCount').textContent = rows.length+' '+(classTab==='current'?'active':'student')+(rows.length!==1?'s':'');
+
+  const tbody = document.getElementById('classTableBody');
+  if (!rows.length) { tbody.innerHTML=`<tr><td colspan="9"><div class="empty"><div class="empty-icon">📚</div><div class="empty-msg">No students in this view</div></div></td></tr>`; return; }
+
+  const todayCheckedIn = new Set(rollData.filter(r=>r.trainer===trainerName).map(r=>r.studentId));
+
+  tbody.innerHTML = rows.map(s => {
+    const {code,name} = parseCourse(s.course||'');
+    const overall = overallRate(s);
+    const monthly = monthlyRate(s.id, s.course);
+    const overallPct = overall!==null?overall:null;
+    const monthlyPct = monthly!==null?monthly:null;
+    const rateColor = p => p==null?'var(--text-2)':p>=80?'var(--success)':p>=60?'var(--warning)':'var(--danger)';
+    const rateBar = p => p!=null
+      ? `<div class="rate-wrap"><div class="rate-bg"><div class="rate-fill" style="width:${p}%;background:${rateColor(p)};"></div></div><div class="rate-pct" style="color:${rateColor(p)};">${p}%</div></div>`
+      : '<span style="font-size:.72rem;color:var(--text-2);">–</span>';
+
+    const lastCheckDate = s.lastCheckin ? 'Last: '+fmtDate(s.lastCheckin) : 'No check-in';
+    const statusBadge = classTab==='current'
+      ? (overallPct!=null&&overallPct<80?'<span class="badge badge-risk">At Risk</span>':'<span class="badge badge-track">On Track</span>')
+      : classTab==='not-started' ? '<span class="badge badge-pending">Not Started</span>'
+      : '<span class="badge badge-info">Upcoming</span>';
+
     return `<tr>
-      <td style="font-family:monospace;font-size:0.78rem;color:var(--text-2);">${escHtml(s.id||'')}</td>
-      <td style="font-weight:800;">${escHtml(s.name||'')}</td>
-      <td class="hide-mobile" style="font-size:0.75rem;color:var(--text-2);">${escHtml(courseShort)}</td>
+      <td style="font-family:monospace;font-size:.75rem;color:var(--text-2);">${escHtml(s.id||'')}</td>
+      <td><div class="student-name">${escHtml(s.name||'')}</div><div class="student-last">${lastCheckDate}</div></td>
+      <td class="hide-sm"><div style="font-size:.72rem;font-weight:800;color:var(--brand-dark);">${escHtml(code)}</div><div style="font-size:.75rem;color:var(--text-2);">${escHtml(name)}</div></td>
+      <td class="hide-sm" style="font-size:.78rem;color:var(--text-2);">${fmtDate(s.commenced)}</td>
+      <td class="hide-sm" style="font-size:.78rem;color:var(--text-2);">${fmtDate(s.expectedEnd)}</td>
+      <td><span style="font-weight:800;font-size:.8rem;color:${rateColor(monthlyPct)};">${monthlyPct!=null?monthlyPct+'%':'–'}</span></td>
+      <td>${rateBar(overallPct)}</td>
       <td>${statusBadge}</td>
-      <td>${rateBar}</td>
+      <td>
+        <div style="display:flex;flex-direction:column;gap:3px;">
+          <button class="btn-edit" onclick="openEditModal('${escHtml(s.id)}','${escHtml(s.name)}','${escHtml(s.course||'')}','${s.commenced||''}','${s.expectedEnd||''}')">Edit</button>
+          <button class="btn-remove" onclick="openRemoveStudentModal('${escHtml(s.id)}','${escHtml(s.name)}','${escHtml(s.course||'')}')">Remove</button>
+        </div>
+      </td>
     </tr>`;
   }).join('');
 }
 
-function workDaysInRange(start, end, maxDays) {
-  let count = 0;
-  const s = new Date(start || Date.now());
-  const e = new Date(end || Date.now());
-  const d = new Date(Math.max(s, new Date(e - maxDays*86400000)));
-  while (d <= e) {
-    const day = d.getDay();
-    if (day >= 1 && day <= 5) count++;
-    d.setDate(d.getDate() + 1);
-  }
-  return Math.max(count, 1);
+/* ── Add Student ── */
+function openAddStudentModal() {
+  document.getElementById('addStudentId').value = '';
+  document.getElementById('addStudentName').value = '';
+  document.getElementById('addStudentCourse').value = '';
+  document.getElementById('addStudentStart').value = todayStr();
+  document.getElementById('addStudentEnd').value = '';
+  document.getElementById('addStudentModal').classList.add('show');
 }
+function closeAddStudentModal() { document.getElementById('addStudentModal').classList.remove('show'); }
 
-/* ── Render: QR ── */
-function renderQr() {
-  const url = CHECKIN_URL;
-  document.getElementById('qrUrlLabel').textContent = url;
+async function submitAddStudent() {
+  const studentId = document.getElementById('addStudentId').value.trim();
+  const name      = document.getElementById('addStudentName').value.trim();
+  const course    = document.getElementById('addStudentCourse').value;
+  const commenced = document.getElementById('addStudentStart').value;
+  const expectedEnd = document.getElementById('addStudentEnd').value;
+  if (!studentId||!name||!course) { showToast('Please fill in all required fields', true); return; }
+  const {code:courseCode} = parseCourse(course);
+  const campus = TRAINER_CAMPUS[trainerName]||'';
   try {
-    QRCode.toCanvas(document.getElementById('qrCanvas'), url, {
-      width: 260, margin: 2,
-      color: { dark: '#0a3352', light: '#ffffff' }
-    }, err => { if (err) console.error(err); });
-  } catch(e) { console.error(e); }
+    const res = await fetch('/api/enroll',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({studentId,name,course,courseCode,trainer:trainerName,campus,commenced:commenced||null,expectedEnd:expectedEnd||null})});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||res.statusText);
+    showToast(name.split(' ')[0]+' added to your class');
+    closeAddStudentModal();
+    await loadSummary();
+  } catch(e) { showToast('Failed: '+e.message, true); }
 }
 
+/* ── Remove Student ── */
+function openRemoveStudentModal(studentId, name, course) {
+  removeStudentTarget = {studentId, name, course};
+  document.getElementById('removeStudentName').textContent = name;
+  document.getElementById('removeStudentModal').classList.add('show');
+}
+function closeRemoveStudentModal() { document.getElementById('removeStudentModal').classList.remove('show'); removeStudentTarget=null; }
+
+async function confirmRemove(reason) {
+  if (!removeStudentTarget) return;
+  const {studentId, name, course} = removeStudentTarget;
+  try {
+    const res = await fetch('/api/withdraw',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({studentId,course,reason})});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||res.statusText);
+    showToast(name.split(' ')[0]+' removed');
+    closeRemoveStudentModal();
+    await loadSummary();
+  } catch(e) { showToast('Failed: '+e.message, true); }
+}
+
+/* ── Edit modal (simple inline) ── */
+function openEditModal(id, name, course, commenced, expectedEnd) {
+  const newStart = prompt('Start date for '+name+' (YYYY-MM-DD):', commenced||'');
+  if (newStart===null) return;
+  const newEnd = prompt('Expected end date (YYYY-MM-DD):', expectedEnd||'');
+  if (newEnd===null) return;
+  const {code:courseCode} = parseCourse(course);
+  const campus = TRAINER_CAMPUS[trainerName]||'';
+  fetch('/api/enroll',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({studentId:id,name,course,courseCode,trainer:trainerName,campus,commenced:newStart||null,expectedEnd:newEnd||null})})
+    .then(r=>r.json()).then(data=>{ showToast('Updated'); loadSummary(); })
+    .catch(e=>showToast('Failed: '+e.message,true));
+}
+
+/* ── Export ── */
+function exportClassCSV() {
+  const myS = summaryData.filter(s=>s.trainer===trainerName&&(!currentCourse||s.course===currentCourse));
+  if (!myS.length) { showToast('No data to export',true); return; }
+  const headers = ['Student ID','Name','Course','Started','Expected End','Attended Days','Status'];
+  const rows = myS.map(s=>[s.id,'"'+s.name+'"','"'+s.course+'"',s.commenced||'',s.expectedEnd||'',s.attendedDays||0,s.status].join(','));
+  const blob = new Blob([[headers.join(','),...rows].join('\n')],{type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'my-class-'+todayStr()+'.csv'; a.click();
+}
+
+/* ── QR ── */
+function renderQr() {
+  document.getElementById('qrUrlLabel').textContent = CHECKIN_URL;
+  try { QRCode.toCanvas(document.getElementById('qrCanvas'), CHECKIN_URL, {width:260,margin:2,color:{dark:'#0a3352',light:'#ffffff'}}, e=>{ if(e) console.error(e); }); }
+  catch(e) { console.error(e); }
+}
 function downloadQr() {
-  const canvas = document.getElementById('qrCanvas');
-  const a = document.createElement('a');
-  a.download = 'educare-checkin-qr.png';
-  a.href = canvas.toDataURL('image/png');
-  a.click();
+  const a=document.createElement('a'); a.download='educare-checkin-qr.png';
+  a.href=document.getElementById('qrCanvas').toDataURL('image/png'); a.click();
 }
-
 function openQrTab() { switchTab('qr'); }
 
 /* ── Tabs ── */
-const TABS = ['roll','qr','students'];
+const TABS = ['roll','class','qr'];
 function switchTab(tab) {
   TABS.forEach(t => {
-    document.getElementById(t + 'View').style.display = t === tab ? 'block' : 'none';
-    document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
+    document.getElementById(t+'View').style.display = t===tab?'block':'none';
+    document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active',t===tab);
   });
-  if (tab === 'students') renderStudents();
+  if (tab==='class') renderClass();
 }
 
 /* ── Toast ── */
 function showToast(msg, isErr) {
-  const t = document.getElementById('toast');
-  document.getElementById('toastMsg').textContent = msg;
-  t.className = isErr ? 'error show' : 'show';
-  setTimeout(() => t.classList.remove('show'), 3000);
+  const t=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent=msg;
+  t.className=isErr?'error show':'show';
+  setTimeout(()=>t.classList.remove('show'),3000);
 }
 
-/* ── Utils ── */
-function escHtml(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-/* ── Dark mode ── */
-if (localStorage.getItem('tp_dm')) document.body.style.filter = 'invert(0.92) hue-rotate(180deg)';
-
-/* ── Auth IIFE — runs AFTER all declarations ── */
+/* ── Auth IIFE ── */
 (function() {
-  const hash   = window.location.hash.slice(1);
-  const params = new URLSearchParams(hash);
-
+  const hash=window.location.hash.slice(1), params=new URLSearchParams(hash);
   if (params.has('id_token')) {
-    history.replaceState(null, '', window.location.pathname);
-    const claims = parseJwt(params.get('id_token'));
-    if (claims) {
-      sessionStorage.setItem('ms_session_trainer', JSON.stringify({ name: claims.name, username: claims.preferred_username || claims.email }));
-      showPortal(claims.name, claims.preferred_username);
-    } else {
-      setLoginError('Sign-in failed — invalid token.');
-    }
+    history.replaceState(null,'',window.location.pathname);
+    const claims=parseJwt(params.get('id_token'));
+    if (claims) { sessionStorage.setItem('ms_session_trainer',JSON.stringify({name:claims.name,username:claims.preferred_username||claims.email})); showPortal(claims.name,claims.preferred_username); }
+    else setLoginError('Sign-in failed — invalid token.');
     return;
   }
-
-  if (params.has('error')) {
-    history.replaceState(null, '', window.location.pathname);
-    setLoginError('Sign-in error: ' + (params.get('error_description') || params.get('error')));
-    return;
-  }
-
-  const stored = sessionStorage.getItem('ms_session_trainer');
-  if (stored) {
-    try {
-      const s = JSON.parse(stored);
-      showPortal(s.name, s.username);
-    } catch(e) { sessionStorage.removeItem('ms_session_trainer'); }
-  }
+  if (params.has('error')) { history.replaceState(null,'',window.location.pathname); setLoginError('Sign-in error: '+(params.get('error_description')||params.get('error'))); return; }
+  const stored=sessionStorage.getItem('ms_session_trainer');
+  if (stored) { try { const s=JSON.parse(stored); showPortal(s.name,s.username); } catch(e) { sessionStorage.removeItem('ms_session_trainer'); } }
 })();
 </script>
 </body>
