@@ -520,6 +520,18 @@ const TRAINER_CAMPUS = {
   "Nati Belen":"Southport GC","Vijeta Srivastava":"Southport GC","Toriqul Mozumder":"Southport GC",
   "Alessandro Tavian":"Woolloongabba","Benjamin Akari":"Woolloongabba",
 };
+const TRAINER_EMAIL_MAP = {
+  "sherwin.thiarhia@educare.edu.au":  "Sherwin Thiarhia",
+  "troy.scott@educare.edu.au":        "Troy Scott",
+  "carol.ly@charltonbrown.edu.au":    "Carol Ly",
+  "maggie@educare.edu.au":            "Maggie Yu Huang",
+  "kylie.ma@niet.edu.au":             "Zeyun Ma",
+  "nati.belen@educare.edu.au":        "Nati Belen",
+  "toriqul.mozumder@educare.edu.au":  "Toriqul Mozumder",
+  "vijeta@educare.edu.au":            "Vijeta Srivastava",
+  "alessandro.tavian@educare.edu.au": "Alessandro Tavian",
+  "benjamin.akari@educare.edu.au":    "Benjamin Akari",
+};
 
 /* ── State ── */
 let trainerName = null, msDisplayName = null;
@@ -560,7 +572,11 @@ function setLoginError(msg) {
 }
 
 /* ── Trainer detection ── */
-function detectTrainer(displayName) {
+function detectTrainer(displayName, email) {
+  if (email) {
+    const mapped = TRAINER_EMAIL_MAP[(email || '').toLowerCase().trim()];
+    if (mapped) return mapped;
+  }
   if (!displayName) return null;
   const dn = displayName.toLowerCase().trim();
   for (const name of Object.keys(TRAINER_COURSES)) {
@@ -578,7 +594,7 @@ function showPortal(name, username) {
   const initials = msDisplayName.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('trainerAvatar').textContent = initials;
   document.getElementById('trainerDisplayName').textContent = msDisplayName.split(' ')[0];
-  trainerName = detectTrainer(msDisplayName);
+  trainerName = detectTrainer(msDisplayName, username);
   if (trainerName) initTrainer(trainerName);
   else showTrainerPicker();
 }

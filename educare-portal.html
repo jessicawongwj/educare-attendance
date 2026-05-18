@@ -1411,7 +1411,11 @@ const MS_AUTH_URL    = 'https://login.microsoftonline.com/common/oauth2/v2.0/aut
 let loggedInTrainerName = null;
 let viewMode = 'admin'; // 'admin' | 'trainer'
 
-function detectLoggedInTrainer(displayName){
+function detectLoggedInTrainer(displayName, email){
+  if(email){
+    const mapped = TRAINER_EMAIL_MAP[(email||'').toLowerCase().trim()];
+    if(mapped) return mapped;
+  }
   if(!displayName) return null;
   const dn = displayName.toLowerCase().trim();
   for(const name of Object.keys(TRAINER_CAMPUS)){
@@ -1431,7 +1435,7 @@ function showPortal(name, username){
   document.getElementById('headerAvatar').textContent = initials;
   document.getElementById('headerUserName').textContent = displayName.split(' ')[0];
   // Detect if logged-in user is a trainer
-  loggedInTrainerName = detectLoggedInTrainer(displayName);
+  loggedInTrainerName = detectLoggedInTrainer(displayName, username);
   if(loggedInTrainerName){
     document.getElementById('switchViewBtn').style.display = 'inline-flex';
   }
@@ -1696,6 +1700,18 @@ const TRAINER_CAMPUS = {
   "Toriqul Mozumder": "Southport GC",
   "Alessandro Tavian":"Woolloongabba",
   "Benjamin Akari":   "Woolloongabba",
+};
+const TRAINER_EMAIL_MAP = {
+  "sherwin.thiarhia@educare.edu.au":  "Sherwin Thiarhia",
+  "troy.scott@educare.edu.au":        "Troy Scott",
+  "carol.ly@charltonbrown.edu.au":    "Carol Ly",
+  "maggie@educare.edu.au":            "Maggie Yu Huang",
+  "kylie.ma@niet.edu.au":             "Zeyun Ma",
+  "nati.belen@educare.edu.au":        "Nati Belen",
+  "toriqul.mozumder@educare.edu.au":  "Toriqul Mozumder",
+  "vijeta@educare.edu.au":            "Vijeta Srivastava",
+  "alessandro.tavian@educare.edu.au": "Alessandro Tavian",
+  "benjamin.akari@educare.edu.au":    "Benjamin Akari",
 };
 
 function parseCourseCode(raw){ const m=(raw||'').trim().match(/^([A-Z]{3}\d+)\s+(.+)$/); return m?{code:m[1],name:m[2]}:{code:'',name:(raw||'').trim()}; }
