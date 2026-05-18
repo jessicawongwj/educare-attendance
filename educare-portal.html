@@ -1715,6 +1715,7 @@ function switchTab(tab){
     document.getElementById(v+'View').style.display=(v===tab)?'block':'none';
     document.getElementById(v+'NavTab').classList.toggle('active',v===tab);
   });
+  if(tab==='holidays') renderHolidaysList();
 }
 
 /* ── Dark Mode ── */
@@ -2172,8 +2173,58 @@ function renderNotStarted(){
 }
 
 /* ── Holidays ── */
-function openAddHolidayModal(){ document.getElementById('addHolidayModal').classList.add('show'); }
-function confirmAddHoliday(){ document.getElementById('addHolidayModal').classList.remove('show'); showToast('Saved (no API connected)'); }
+function getHolidays(){ return JSON.parse(localStorage.getItem('educare_holidays')||'[]').sort((a,b)=>a.date.localeCompare(b.date)); }
+function saveHolidays(list){ localStorage.setItem('educare_holidays', JSON.stringify(list)); }
+function renderHolidaysList(){
+  const holidays = getHolidays();
+  const el = document.getElementById('holidaysContent');
+  const today = new Date().toLocaleDateString('en-CA',{timeZone:'Australia/Brisbane'});
+  if(!holidays.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-state-icon">📅</div><div class="empty-state-title">No holidays configured</div><div class="empty-state-sub">Add public holidays and college closure dates to exclude them from attendance calculations.</div></div>';
+    return;
+  }
+  el.innerHTML=`<table class="data-table"><thead><tr>
+    <th>Date</th><th>Day</th><th>Description</th><th>Type</th><th></th>
+  </tr></thead><tbody>
+  ${holidays.map((h,i)=>{
+    const d=new Date(h.date+'T00:00:00');
+    const dayName=d.toLocaleDateString('en-AU',{weekday:'short',timeZone:'UTC'});
+    const dateStr=d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+    const past=h.date<today;
+    const badge=h.type==='public'
+      ?'<span class="badge badge-blue">Public Holiday</span>'
+      :'<span class="badge badge-yellow">College Closure</span>';
+    return `<tr style="${past?'opacity:.5':''}">
+      <td style="font-weight:700;">${dateStr}</td>
+      <td style="color:var(--text-2);">${dayName}</td>
+      <td>${h.description}</td>
+      <td>${badge}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="deleteHoliday(${i})" style="color:var(--danger);padding:.2rem .5rem;font-size:.72rem;">Remove</button></td>
+    </tr>`;
+  }).join('')}
+  </tbody></table>`;
+}
+function deleteHoliday(idx){
+  const list=getHolidays(); list.splice(idx,1); saveHolidays(list); renderHolidaysList();
+}
+function openAddHolidayModal(){
+  document.getElementById('holidayDate').value='';
+  document.getElementById('holidayDesc').value='';
+  document.getElementById('holidayType').value='public';
+  document.getElementById('addHolidayModal').classList.add('show');
+}
+function confirmAddHoliday(){
+  const date=document.getElementById('holidayDate').value;
+  const desc=document.getElementById('holidayDesc').value.trim();
+  const type=document.getElementById('holidayType').value;
+  if(!date||!desc){ showToast('Please fill in date and description.',true); return; }
+  const list=getHolidays();
+  list.push({date,description:desc,type});
+  saveHolidays(list);
+  document.getElementById('addHolidayModal').classList.remove('show');
+  renderHolidaysList();
+  showToast('Holiday saved');
+}
 
 /* ── Settings PIN ── */
 let adminPinBuffer='';
