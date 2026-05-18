@@ -473,18 +473,29 @@ textarea.form-input{ min-height:90px; resize:vertical; line-height:1.5; }
 /* ══════════════════════════════════════════
    DASHBOARD
 ══════════════════════════════════════════ */
-.trainer-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:0.875rem; padding:1rem; }
-.trainer-card{ border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; }
+.trainer-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:0.875rem; padding:1rem; }
+.trainer-card{ border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; transition:box-shadow .15s; }
+.trainer-card:hover{ box-shadow:var(--shadow-md); }
 .trainer-card-header{
-  padding:0.75rem 1rem; background:var(--surface-2); border-bottom:1px solid var(--border-2);
-  display:flex; justify-content:space-between; align-items:center;
+  padding:0.65rem 1rem; background:var(--surface-2); border-bottom:1px solid var(--border-2);
+  display:flex; justify-content:space-between; align-items:center; gap:0.5rem;
 }
-.trainer-card-name{ font-size:var(--text-sm); font-weight:700; color:var(--brand-dark); }
-.trainer-card-body{ padding:0.75rem 1rem; }
-.course-row{ display:flex; justify-content:space-between; align-items:center; padding:0.4rem 0; font-size:var(--text-sm); border-bottom:1px solid var(--border-2); }
+.trainer-card-name{ font-size:var(--text-sm); font-weight:800; color:var(--brand-dark); }
+.trainer-card-body{ padding:0.5rem 1rem 0.75rem; }
+.course-row{ display:flex; justify-content:space-between; align-items:flex-start; padding:0.45rem 0; font-size:var(--text-sm); border-bottom:1px solid var(--border-2); gap:0.5rem; }
 .course-row:last-child{ border-bottom:none; }
-.course-name{ color:var(--text-2); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-right:0.5rem; }
+.course-name{ color:var(--text-2); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.78rem; }
+.course-name strong{ color:var(--brand-dark); font-weight:700; }
 .course-stat{ font-weight:700; font-size:var(--text-sm); white-space:nowrap; }
+.course-stat-wrap{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0; }
+.rate-mini{ display:flex; align-items:center; gap:0.35rem; min-width:100px; }
+.rate-mini-bg{ flex:1; height:3px; background:var(--border); border-radius:99px; overflow:hidden; }
+.rate-mini-fill{ height:100%; border-radius:99px; transition:width .4s; }
+.today-badge{ display:inline-flex; align-items:center; padding:0.1rem 0.5rem; border-radius:20px; font-size:0.6rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; background:var(--brand); color:#fff; flex-shrink:0; }
+.view-mode-badge{ display:inline-flex; align-items:center; padding:0.15rem 0.6rem; border-radius:20px; font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; background:rgba(255,255,255,.15); color:rgba(255,255,255,.9); border:1px solid rgba(255,255,255,.2); }
+.switch-view-btn{ display:inline-flex; align-items:center; gap:0.4rem; height:32px; padding:0 0.9rem; border-radius:20px; font-size:0.76rem; font-weight:700; cursor:pointer; background:rgba(255,255,255,.12); border:1.5px solid rgba(255,255,255,.25); color:rgba(255,255,255,.92); transition:all .15s; white-space:nowrap; }
+.switch-view-btn:hover{ background:rgba(255,255,255,.22); border-color:rgba(255,255,255,.45); color:#fff; }
+.stats-bar-link{ color:var(--brand); text-decoration:underline; cursor:pointer; font-weight:700; }
 
 /* ══════════════════════════════════════════
    TRAINER SCHEDULE
@@ -631,7 +642,12 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
       <div class="user-badge">
         <div class="user-avatar" id="headerAvatar">AD</div>
         <span id="headerUserName">Admin</span>
+        <span class="view-mode-badge" id="viewModeBadge">Admin View</span>
       </div>
+      <button class="switch-view-btn" id="switchViewBtn" onclick="switchRole()" style="display:none;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        <span id="switchViewLabel">Switch to My Class</span>
+      </button>
       <button class="icon-btn icon-only" onclick="openQrModal()" title="Check-In QR Code">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/></svg>
       </button>
@@ -1392,6 +1408,20 @@ const MS_CLIENT_ID   = '2e958225-a191-405f-93a0-a78be04d96d5';
 const MS_REDIRECT    = 'https://edc-attendance.com/educare-portal';
 const MS_AUTH_URL    = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize';
 
+let loggedInTrainerName = null;
+let viewMode = 'admin'; // 'admin' | 'trainer'
+
+function detectLoggedInTrainer(displayName){
+  if(!displayName) return null;
+  const dn = displayName.toLowerCase().trim();
+  for(const name of Object.keys(TRAINER_CAMPUS)){
+    if(dn === name.toLowerCase()) return name;
+    const parts = name.toLowerCase().split(' ');
+    if(parts.every(p => dn.includes(p))) return name;
+  }
+  return null;
+}
+
 function showPortal(name, username){
   document.getElementById('loginScreen').style.display = 'none';
   const p = document.getElementById('portalContent');
@@ -1400,7 +1430,29 @@ function showPortal(name, username){
   const initials = displayName.trim().split(/\s+/).map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
   document.getElementById('headerAvatar').textContent = initials;
   document.getElementById('headerUserName').textContent = displayName.split(' ')[0];
+  // Detect if logged-in user is a trainer
+  loggedInTrainerName = detectLoggedInTrainer(displayName);
+  if(loggedInTrainerName){
+    document.getElementById('switchViewBtn').style.display = 'inline-flex';
+  }
   initPortal();
+}
+
+function switchRole(){
+  viewMode = viewMode === 'admin' ? 'trainer' : 'admin';
+  const isTrainer = viewMode === 'trainer';
+  document.getElementById('viewModeBadge').textContent = isTrainer ? 'My Class' : 'Admin View';
+  document.getElementById('switchViewLabel').textContent = isTrainer ? 'Switch to Admin View' : 'Switch to My Class';
+  if(isTrainer && loggedInTrainerName){
+    // Find which campus this trainer belongs to and switch to it
+    const campus = TRAINER_CAMPUS[loggedInTrainerName];
+    if(campus){
+      currentCampus = campus;
+      document.querySelectorAll('[data-campus]').forEach(b => b.classList.toggle('active', b.dataset.campus === campus));
+    }
+  }
+  renderDashboard();
+  switchTab('dashboard');
 }
 
 function setLoginError(msg){
@@ -1646,34 +1698,113 @@ const TRAINER_CAMPUS = {
   "Benjamin Akari":   "Woolloongabba",
 };
 
+function parseCourseCode(raw){ const m=(raw||'').trim().match(/^([A-Z]{3}\d+)\s+(.+)$/); return m?{code:m[1],name:m[2]}:{code:'',name:(raw||'').trim()}; }
+
 function renderDashboard(){
   if(!summaryData.length){ return; }
-  const filtered = summaryData.filter(s => TRAINER_CAMPUS[s.trainer] === currentCampus);
+
+  // In trainer view, show only the logged-in trainer's data
+  const filtered = (viewMode==='trainer' && loggedInTrainerName)
+    ? summaryData.filter(s => s.trainer === loggedInTrainerName)
+    : summaryData.filter(s => TRAINER_CAMPUS[s.trainer] === currentCampus);
+
+  // Get today's schedule to determine who has class today
+  const dayMap={0:null,1:'Mon',2:'Tue',3:'Wed',4:'Thu',5:'Fri',6:null};
+  const todayDay = dayMap[new Date().getDay()];
+  const schedData = loadScheduleData ? loadScheduleData() : {};
+  const scheduledToday = new Set();
+  Object.values(schedData).forEach(trainers=>{
+    trainers.forEach(t=>{ if(todayDay && t.days.includes(todayDay)) scheduledToday.add(t.name); });
+  });
+
+  // Group by trainer
   const byTrainer={};
   filtered.forEach(s=>{
     if(!byTrainer[s.trainer]) byTrainer[s.trainer]={courses:{}};
-    if(!byTrainer[s.trainer].courses[s.course]) byTrainer[s.trainer].courses[s.course]={total:0,active:0,upcoming:0};
-    byTrainer[s.trainer].courses[s.course].total++;
-    if(s.status==='active') byTrainer[s.trainer].courses[s.course].active++;
-    if(s.status==='not-started') byTrainer[s.trainer].courses[s.course].upcoming++;
+    const c = byTrainer[s.trainer].courses;
+    if(!c[s.course]) c[s.course]={total:0,active:0,courseCode:s.courseCode||''};
+    c[s.course].total++;
+    if(s.status==='active') c[s.course].active++;
   });
-  const presentIds=new Set(dailyRows.filter(r=>r.campus&&r.campus.includes(currentCampus)).map(r=>r.studentId));
-  const html=Object.entries(byTrainer).map(([trainer,data])=>`
-    <div class="trainer-card">
+
+  // Today's check-ins mapped by trainer+course
+  const campusDailyRows = viewMode==='trainer'
+    ? dailyRows.filter(r=>r.trainer===loggedInTrainerName)
+    : dailyRows.filter(r=>r.campus&&r.campus.includes(currentCampus));
+  const presentIds = new Set(campusDailyRows.map(r=>r.studentId));
+
+  function presentForTrainerCourse(trainer, course, courseCode){
+    return dailyRows.filter(r => r.trainer===trainer && (r.course===course || (courseCode && r.courseCode===courseCode))).length;
+  }
+
+  // Stats bar
+  const totalActive = filtered.filter(s=>s.status==='active').length;
+  const scheduledCount = filtered.filter(s=>s.status==='active' && scheduledToday.has(s.trainer)).length;
+  const presentCount = presentIds.size;
+  const absentCount = Math.max(0, scheduledCount - presentCount);
+  const rate = scheduledCount>0 ? Math.round(presentCount/scheduledCount*100) : 0;
+  const atRisk = filtered.filter(s=>s.status==='active' && s.attendedDays!=null && s.attendedDays < 5).length;
+
+  document.getElementById('campusTabStats').innerHTML=
+    `<span class="stats-bar-link" onclick="filterByCardClick&&filterByCardClick('all')">${totalActive} students</span>`
+    +(scheduledCount>0?` <span style="color:var(--text-3);">(${scheduledCount} scheduled today)</span>`:'')
+    +` &nbsp;·&nbsp; <span style="color:var(--success);font-weight:700;">${presentCount} present</span>`
+    +` &nbsp;·&nbsp; <span style="color:var(--danger);font-weight:700;">${absentCount} absent</span>`
+    +(scheduledCount>0?` &nbsp;·&nbsp; <span style="color:var(--warning);font-weight:700;">${rate}% attendance</span>`:'')
+    +(atRisk>0?` &nbsp;·&nbsp; <span style="color:var(--danger);">⚠ ${atRisk} at risk</span>`:'');
+
+  // Render trainer cards
+  // Sort: trainers with class TODAY first
+  const trainerEntries = Object.entries(byTrainer).sort(([a],[b])=>{
+    const at=scheduledToday.has(a)?0:1, bt=scheduledToday.has(b)?0:1;
+    if(at!==bt) return at-bt;
+    return a.localeCompare(b);
+  });
+
+  const html = trainerEntries.map(([trainer,data])=>{
+    const isToday = scheduledToday.has(trainer);
+    const trainerTotal = Object.values(data.courses).reduce((a,c)=>a+c.total,0);
+
+    const courseRows = Object.entries(data.courses).map(([course,c])=>{
+      const {code,name} = parseCourseCode(course);
+      const shortName = name.replace(/Certificate (III|IV) in /,'Cert $1 ').replace(/Diploma of /,'Dip. ');
+      const presentN = presentForTrainerCourse(trainer, course, c.courseCode);
+      const rateN = c.active>0 ? Math.round(presentN/c.active*100) : 0;
+      const rateColor = rateN>=80?'var(--success)':rateN>=50?'var(--warning)':'var(--danger)';
+      const tEsc = trainer.replace(/"/g,'&quot;'), cEsc = course.replace(/"/g,'&quot;');
+
+      if(c.active===0){
+        return `<div class="course-row">
+          <span class="course-name" title="${course}"><strong>${code}</strong> ${shortName}</span>
+          <span style="color:var(--text-3);font-size:0.72rem;font-style:italic;">no class</span>
+        </div>`;
+      }
+      return `<div class="course-row" onclick="openClassList('${tEsc}','${cEsc}')" style="cursor:pointer;" title="View class list">
+        <span class="course-name" title="${course}"><strong>${code}</strong> ${shortName}</span>
+        <div class="course-stat-wrap">
+          <span style="color:${rateColor};font-weight:700;font-size:0.75rem;">${presentN} active</span>
+          <div class="rate-mini">
+            <div class="rate-mini-bg"><div class="rate-mini-fill" style="width:${rateN}%;background:${rateColor};"></div></div>
+            <span style="font-size:0.67rem;color:var(--text-2);white-space:nowrap;">${presentN}/${c.active} · ${rateN}%</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div class="trainer-card">
       <div class="trainer-card-header">
-        <span class="trainer-card-name">${trainer}</span>
-        <span class="badge badge-info">${Object.values(data.courses).reduce((a,c)=>a+c.total,0)} students</span>
+        <div style="display:flex;align-items:center;gap:0.45rem;flex:1;min-width:0;">
+          <span class="trainer-card-name">${trainer}</span>
+          ${isToday?'<span class="today-badge">TODAY</span>':''}
+        </div>
+        <span class="badge badge-info" style="flex-shrink:0;">${trainerTotal} students</span>
       </div>
-      <div class="trainer-card-body">
-        ${Object.entries(data.courses).map(([course,c])=>`
-          <div class="course-row">
-            <span class="course-name" title="${course}">${course}</span>
-            <span class="course-stat" style="color:var(--success);cursor:pointer;text-decoration:underline;text-underline-offset:2px;" data-trainer="${trainer.replace(/"/g,'&quot;')}" data-course="${course.replace(/"/g,'&quot;')}" onclick="openClassListFromEl(this)">${c.active} active</span>
-          </div>`).join('')}
-      </div>
-    </div>`).join('');
-  document.getElementById('trainerCourseTableBody').innerHTML=html||'<div class="empty-state"><div class="empty-state-icon">📊</div><div class="empty-state-title">No trainers found for this campus</div></div>';
-  document.getElementById('campusTabStats').innerHTML=`<span>${filtered.length} total students &nbsp;·&nbsp; ${Object.keys(byTrainer).length} trainers &nbsp;·&nbsp; ${presentIds.size} checked in today</span>`;
+      <div class="trainer-card-body">${courseRows}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('trainerCourseTableBody').innerHTML = html ||
+    '<div class="empty-state"><div class="empty-state-icon">📊</div><div class="empty-state-title">No trainers found for this campus</div></div>';
 }
 function refreshDashboard(){ loadSummary(); showToast('Dashboard refreshed'); }
 function exportDashboardCSV(){ showToast('No data to export.',true); }
