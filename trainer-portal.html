@@ -417,10 +417,10 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
         <button class="btn btn-primary btn-sm" onclick="downloadQr()">⬇ Download</button>
       </div>
       <div class="qr-container">
-        <div class="qr-box"><canvas id="qrCanvas"></canvas></div>
+        <div class="qr-box"><img src="/educare-qr.jpg" alt="Educare Check-In QR Code" style="width:260px;height:260px;object-fit:contain;display:block;border-radius:8px;"></div>
         <div style="font-size:1.1rem;font-weight:900;color:var(--brand-dark);margin-bottom:.4rem;">Scan to Check In</div>
         <div style="font-size:.82rem;color:var(--text-2);max-width:320px;line-height:1.6;">Students scan this with their phone camera when they arrive on campus.</div>
-        <div style="font-size:.75rem;color:var(--brand);font-weight:700;margin-top:.5rem;" id="qrUrlLabel"></div>
+        <div style="font-size:.75rem;color:var(--brand);font-weight:700;margin-top:.5rem;">edc-attendance.com/checkin</div>
         <div class="qr-how">
           <div style="font-size:.7rem;font-weight:800;color:var(--brand);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem;">How students use this</div>
           <ol style="padding-left:1.1rem;font-size:.78rem;color:var(--text-2);line-height:1.9;">
@@ -431,7 +431,7 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
           </ol>
         </div>
         <div class="qr-actions">
-          <button class="btn btn-primary" onclick="downloadQr()">⬇ Download QR Image</button>
+          <a href="/educare-qr.jpg" download="educare-checkin-qr.jpg" class="btn btn-primary">⬇ Download QR Image</a>
           <a href="https://edc-attendance.com/checkin" target="_blank" class="btn btn-ghost">↗ Open Check-In Page</a>
         </div>
       </div>
