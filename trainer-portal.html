@@ -72,21 +72,25 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
 .tab-btn svg{vertical-align:-2px;margin-right:4px;}
 
 /* ── Content ── */
-.content{padding:1.25rem 1rem;max-width:1100px;margin:0 auto;}
+.content{padding:1.5rem 1.5rem;max-width:1500px;margin:0 auto;}
 
 /* ── Stat Cards ── */
-.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1.25rem;}
-.stat-card{background:#fff;border-radius:var(--radius);padding:1rem 1.25rem;box-shadow:var(--shadow);border:1px solid var(--border);transition:box-shadow var(--transition);}
-.stat-card:hover{box-shadow:var(--shadow-lg);}
-.stat-label{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-2);margin-bottom:.4rem;}
-.stat-value{font-size:2rem;font-weight:900;line-height:1;color:var(--text);}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.25rem;}
+.stat-card{background:#fff;border-radius:var(--radius);padding:1.1rem 1.35rem;box-shadow:var(--shadow);border:1px solid var(--border);border-left:4px solid var(--border);transition:box-shadow var(--transition),transform var(--transition);cursor:default;}
+.stat-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-1px);}
+.stat-card.blue{border-left-color:var(--brand);}
+.stat-card.red{border-left-color:var(--danger);}
+.stat-card.green{border-left-color:var(--success);}
+.stat-label{font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-2);margin-bottom:.5rem;}
+.stat-value{font-size:2.2rem;font-weight:900;line-height:1;color:var(--text);}
 .stat-value.red{color:var(--danger);}
 .stat-value.green{color:var(--success);}
+.stat-sub{font-size:.69rem;color:var(--text-2);margin-top:.3rem;font-weight:600;}
 
 /* ── Card ── */
 .card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;margin-bottom:1rem;}
-.card-header{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.1rem;background:#f9fafb;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:.5rem;}
-.card-title{font-size:.9rem;font-weight:800;color:var(--text);}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:.95rem 1.25rem;background:#f9fafb;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:.5rem;}
+.card-title{font-size:.95rem;font-weight:800;color:var(--text);}
 
 /* ── Sub-tabs ── */
 .sub-tabs{display:flex;border-bottom:2px solid var(--border);padding:0 1.1rem;background:#fff;}
@@ -98,12 +102,16 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
 
 /* ── Table ── */
 .table{width:100%;border-collapse:collapse;}
-.table th{padding:.6rem .85rem;text-align:left;font-size:.67rem;font-weight:800;color:var(--text-2);text-transform:uppercase;letter-spacing:.4px;background:#f9fafb;white-space:nowrap;}
-.table td{padding:.8rem .85rem;font-size:.82rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+.table th{padding:.65rem 1rem;text-align:left;font-size:.65rem;font-weight:800;color:var(--text-2);text-transform:uppercase;letter-spacing:.45px;background:#f9fafb;white-space:nowrap;border-bottom:2px solid var(--border);}
+.table td{padding:.9rem 1rem;font-size:.82rem;border-bottom:1px solid #f0f1f3;vertical-align:middle;}
 .table tbody tr:last-child td{border-bottom:none;}
-.table tbody tr:hover{background:#f0f8ff;}
-.student-name{font-weight:800;font-size:.85rem;}
-.student-last{font-size:.72rem;color:var(--text-2);margin-top:1px;font-weight:600;}
+.table tbody tr:hover{background:#f7f9fc;}
+.student-name{font-weight:800;font-size:.88rem;color:var(--text);}
+.student-last{font-size:.71rem;color:var(--text-2);margin-top:2px;font-weight:600;}
+.course-code-pill{display:inline-block;background:var(--brand-dark);color:#fff;font-size:.62rem;font-weight:800;padding:.15rem .5rem;border-radius:4px;letter-spacing:.3px;margin-bottom:2px;}
+.course-name-sm{font-size:.75rem;color:var(--text-2);line-height:1.3;}
+.date-cell{font-size:.78rem;font-weight:700;color:var(--text);}
+.date-cell-sub{font-size:.68rem;color:var(--text-2);margin-top:1px;}
 
 /* ── Rate Bar ── */
 .rate-wrap{display:flex;align-items:center;gap:.4rem;}
@@ -189,14 +197,19 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
 #toast.error{background:#7f1d1d;}
 
 /* ── Mobile ── */
-@media(max-width:640px){
+@media(max-width:768px){
   .stats-row{grid-template-columns:repeat(3,1fr);gap:.4rem;}
-  .stat-value{font-size:1.5rem;}
+  .stat-value{font-size:1.6rem;}
   .stat-card{padding:.75rem .85rem;}
   .content{padding:.85rem .65rem;}
-  .table th,.table td{padding:.5rem .55rem;font-size:.75rem;}
+  .table th,.table td{padding:.5rem .6rem;font-size:.75rem;}
   .hide-sm{display:none!important;}
   .brand-sub{display:none;}
+}
+@media(max-width:480px){
+  .stats-row{grid-template-columns:repeat(3,1fr);gap:.3rem;}
+  .stat-value{font-size:1.3rem;}
+  .stat-sub{display:none;}
 }
 </style>
 </head>
@@ -302,20 +315,20 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
     </div>
     <!-- Stats -->
     <div class="stats-row" id="rollStats" style="display:none;">
-      <div class="stat-card" onclick="filterRoll('all')">
-        <div class="stat-label">Enrolled</div>
+      <div class="stat-card blue" onclick="filterRoll('all')" style="cursor:pointer;">
+        <div class="stat-label">Enrolled Today</div>
         <div class="stat-value" id="statEnrolled">–</div>
-        <div style="font-size:.7rem;color:var(--text-2);margin-top:.25rem;" id="statDate">Today</div>
+        <div class="stat-sub" id="statDate">Today</div>
       </div>
-      <div class="stat-card" onclick="filterRoll('present')">
+      <div class="stat-card green" onclick="filterRoll('present')" style="cursor:pointer;">
         <div class="stat-label">Present</div>
         <div class="stat-value green" id="statPresent">–</div>
-        <div style="font-size:.7rem;color:var(--text-2);margin-top:.25rem;" id="statRate">–</div>
+        <div class="stat-sub" id="statRate">–</div>
       </div>
-      <div class="stat-card" onclick="filterRoll('absent')">
+      <div class="stat-card red" onclick="filterRoll('absent')" style="cursor:pointer;">
         <div class="stat-label">Absent</div>
         <div class="stat-value red" id="statAbsent">–</div>
-        <div style="font-size:.7rem;color:var(--text-2);margin-top:.25rem;">Not checked in</div>
+        <div class="stat-sub">Not checked in</div>
       </div>
     </div>
     <!-- Roll card -->
@@ -348,17 +361,20 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
   <div class="content" id="classView" style="display:none;">
     <!-- Stats -->
     <div class="stats-row">
-      <div class="stat-card">
+      <div class="stat-card blue">
         <div class="stat-label">Active Students</div>
         <div class="stat-value" id="classStatActive">–</div>
+        <div class="stat-sub">enrolled in your class</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card red">
         <div class="stat-label">At Risk</div>
         <div class="stat-value red" id="classStatRisk">–</div>
+        <div class="stat-sub">below 80% attendance</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card green">
         <div class="stat-label">On Track</div>
         <div class="stat-value green" id="classStatTrack">–</div>
+        <div class="stat-sub">80% attendance or above</div>
       </div>
     </div>
     <!-- Class card -->
@@ -389,19 +405,19 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
         </button>
       </div>
       <div style="overflow-x:auto;">
-        <table class="table">
+        <table class="table" style="min-width:860px;">
           <thead><tr>
-            <th>Student ID</th>
-            <th>Name</th>
-            <th class="hide-sm">Course</th>
-            <th class="hide-sm">Start Date</th>
-            <th class="hide-sm">Expected End</th>
-            <th>Monthly</th>
-            <th>Overall Rate</th>
-            <th>Status</th>
-            <th></th>
+            <th style="width:100px;">Student ID</th>
+            <th style="min-width:160px;">Name</th>
+            <th style="min-width:200px;">Course</th>
+            <th style="width:110px;">Start Date</th>
+            <th style="width:120px;">Expected End</th>
+            <th style="width:100px;">Monthly</th>
+            <th style="min-width:140px;">Overall Rate</th>
+            <th style="width:100px;">Status</th>
+            <th style="width:80px;"></th>
           </tr></thead>
-          <tbody id="classTableBody"><tr><td colspan="9" style="text-align:center;padding:1.5rem;color:var(--text-2);">Loading…</td></tr></tbody>
+          <tbody id="classTableBody"><tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-2);">Loading…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -861,28 +877,45 @@ function renderClass() {
 
   tbody.innerHTML = rows.map(s => {
     const {code,name} = parseCourse(s.course||'');
-    const overall = overallRate(s);
-    const monthly = monthlyRate(s.id, s.course);
-    const overallPct = overall!==null?overall:null;
-    const monthlyPct = monthly!==null?monthly:null;
+    const overall = s.expectedDays != null
+      ? (s.expectedDays > 0 ? Math.min(100, Math.round((s.attendedDays||0)/s.expectedDays*100)) : 0)
+      : overallRate(s);
+    const monthly = s.monthlyExpectedDays != null
+      ? (s.monthlyExpectedDays > 0 ? Math.min(100, Math.round((s.monthlyAttendedDays||0)/s.monthlyExpectedDays*100)) : null)
+      : monthlyRate(s.id, s.course);
+    const overallPct = overall!=null?overall:null;
+    const monthlyPct = monthly!=null?monthly:null;
     const rateColor = p => p==null?'var(--text-2)':p>=80?'var(--success)':p>=60?'var(--warning)':'var(--danger)';
     const rateBar = p => p!=null
       ? `<div class="rate-wrap"><div class="rate-bg"><div class="rate-fill" style="width:${p}%;background:${rateColor(p)};"></div></div><div class="rate-pct" style="color:${rateColor(p)};">${p}%</div></div>`
       : '<span style="font-size:.72rem;color:var(--text-2);">–</span>';
 
-    const lastCheckDate = s.lastCheckin ? 'Last: '+fmtDate(s.lastCheckin) : 'No check-in';
+    const lastCheckDate = s.lastCheckin ? 'Last in: '+fmtDate(s.lastCheckin) : 'No check-ins yet';
     const statusBadge = classTab==='current'
       ? (overallPct!=null&&overallPct<80?'<span class="badge badge-risk">At Risk</span>':'<span class="badge badge-track">On Track</span>')
       : classTab==='not-started' ? '<span class="badge badge-pending">Not Started</span>'
       : '<span class="badge badge-info">Upcoming</span>';
 
+    const commencedFmt = s.commenced ? fmtDate(s.commenced) : '—';
+    const endFmt = s.expectedEnd ? fmtDate(s.expectedEnd) : '—';
+
     return `<tr>
-      <td style="font-family:monospace;font-size:.75rem;color:var(--text-2);">${escHtml(s.id||'')}</td>
-      <td><div class="student-name">${escHtml(s.name||'')}</div><div class="student-last">${lastCheckDate}</div></td>
-      <td class="hide-sm"><div style="font-size:.72rem;font-weight:800;color:var(--brand-dark);">${escHtml(code)}</div><div style="font-size:.75rem;color:var(--text-2);">${escHtml(name)}</div></td>
-      <td class="hide-sm" style="font-size:.78rem;color:var(--text-2);">${fmtDate(s.commenced)}</td>
-      <td class="hide-sm" style="font-size:.78rem;color:var(--text-2);">${fmtDate(s.expectedEnd)}</td>
-      <td><span style="font-weight:800;font-size:.8rem;color:${rateColor(monthlyPct)};">${monthlyPct!=null?monthlyPct+'%':'–'}</span></td>
+      <td style="font-family:monospace;font-size:.75rem;color:var(--text-2);font-weight:700;">${escHtml(s.id||'')}</td>
+      <td>
+        <div class="student-name">${escHtml(s.name||'')}</div>
+        <div class="student-last">${lastCheckDate}</div>
+      </td>
+      <td>
+        ${code ? `<div class="course-code-pill">${escHtml(code)}</div>` : ''}
+        <div class="course-name-sm">${escHtml(name||s.course||'—')}</div>
+      </td>
+      <td>
+        <div class="date-cell">${commencedFmt}</div>
+      </td>
+      <td>
+        <div class="date-cell">${endFmt}</div>
+      </td>
+      <td><span style="font-weight:800;font-size:.82rem;color:${rateColor(monthlyPct)};">${monthlyPct!=null?monthlyPct+'%':'–'}</span></td>
       <td>${rateBar(overallPct)}</td>
       <td>${statusBadge}</td>
       <td>
