@@ -2217,11 +2217,21 @@ function renderNotStarted(){
 }
 
 /* ── Holidays ── */
-function getHolidays(){ return JSON.parse(localStorage.getItem('educare_holidays')||'[]').sort((a,b)=>a.date.localeCompare(b.date)); }
-function saveHolidays(list){ localStorage.setItem('educare_holidays', JSON.stringify(list)); }
-function renderHolidaysList(){
-  const holidays = getHolidays();
+async function getHolidays(){
+  try {
+    const res = await authFetch('/api/settings?key=holidays');
+    if(!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data.sort((a,b)=>a.date.localeCompare(b.date)) : [];
+  } catch(e){ return []; }
+}
+async function saveHolidays(list){
+  await authFetch('/api/settings?key=holidays', {method:'PUT', body:JSON.stringify(list)});
+}
+async function renderHolidaysList(){
   const el = document.getElementById('holidaysContent');
+  el.innerHTML='<div class="empty-state"><div class="empty-state-icon">⏳</div><div class="empty-state-title">Loading…</div></div>';
+  const holidays = await getHolidays();
   const today = new Date().toLocaleDateString('en-CA',{timeZone:'Australia/Brisbane'});
   if(!holidays.length){
     el.innerHTML='<div class="empty-state"><div class="empty-state-icon">📅</div><div class="empty-state-title">No holidays configured</div><div class="empty-state-sub">Add public holidays and college closure dates to exclude them from attendance calculations.</div></div>';
@@ -2248,8 +2258,12 @@ function renderHolidaysList(){
   }).join('')}
   </tbody></table>`;
 }
-function deleteHoliday(idx){
-  const list=getHolidays(); list.splice(idx,1); saveHolidays(list); renderHolidaysList();
+async function deleteHoliday(idx){
+  const list = await getHolidays();
+  list.splice(idx,1);
+  await saveHolidays(list);
+  renderHolidaysList();
+  showToast('Holiday removed');
 }
 function openAddHolidayModal(){
   document.getElementById('holidayDate').value='';
@@ -2257,14 +2271,14 @@ function openAddHolidayModal(){
   document.getElementById('holidayType').value='public';
   document.getElementById('addHolidayModal').classList.add('show');
 }
-function confirmAddHoliday(){
+async function confirmAddHoliday(){
   const date=document.getElementById('holidayDate').value;
   const desc=document.getElementById('holidayDesc').value.trim();
   const type=document.getElementById('holidayType').value;
   if(!date||!desc){ showToast('Please fill in date and description.',true); return; }
-  const list=getHolidays();
+  const list = await getHolidays();
   list.push({date,description:desc,type});
-  saveHolidays(list);
+  await saveHolidays(list);
   document.getElementById('addHolidayModal').classList.remove('show');
   renderHolidaysList();
   showToast('Holiday saved');

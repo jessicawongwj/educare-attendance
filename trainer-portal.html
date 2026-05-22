@@ -929,13 +929,18 @@ function downloadQr() {
 function openQrTab() { switchTab('qr'); }
 
 /* ── Holidays ── */
-function getHolidays() {
-  return JSON.parse(localStorage.getItem('educare_holidays') || '[]')
-    .sort((a,b) => a.date.localeCompare(b.date));
+async function getHolidays() {
+  try {
+    const res = await authFetch('/api/settings?key=holidays');
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data.sort((a,b) => a.date.localeCompare(b.date)) : [];
+  } catch(e) { return []; }
 }
-function renderHolidays() {
-  const holidays = getHolidays();
+async function renderHolidays() {
   const el = document.getElementById('holidaysContent');
+  el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-2);">Loading…</div>';
+  const holidays = await getHolidays();
   const today = todayStr();
   if (!holidays.length) {
     el.innerHTML = '<div style="text-align:center;padding:2.5rem;color:var(--text-2);font-size:.85rem;">No holidays or closure dates have been added yet.<br><span style="font-size:.78rem;opacity:.7;">Your admin will configure these dates.</span></div>';
