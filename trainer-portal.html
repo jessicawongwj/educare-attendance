@@ -717,6 +717,16 @@ function fmtDate(d) { if(!d) return '–'; return new Date(d).toLocaleDateString
 function fmtTime(d) { if(!d) return '–'; return new Date(d).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:true}); }
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function parseCourse(raw) { const m=(raw||'').trim().match(/^([A-Z]{3}\d+)\s+(.+)$/); return m?{code:m[1],name:m[2]}:{code:'',name:(raw||'').trim()}; }
+// Match a student's course against the currently selected course chip.
+// Handles mismatches between "CPC30220 Cert III…" (frontend) and "Cert III…" (DB short name).
+function courseMatches(s) {
+  if (!currentCourse) return true;
+  if (s.course === currentCourse) return true;
+  const {code: cc, name: cn} = parseCourse(currentCourse);
+  if (cc && s.courseCode && s.courseCode === cc) return true;
+  if (cn && s.course && (s.course === cn || s.course.includes(cn) || cn.includes(s.course))) return true;
+  return false;
+}
 
 /* ── Data loading ── */
 async function loadSummary() {
@@ -748,7 +758,7 @@ async function loadRecords() {
 /* ── Roll ── */
 function myEnrolled() {
   if (!trainerName) return [];
-  return summaryData.filter(s => s.trainer===trainerName && (!currentCourse||s.course===currentCourse) && s.status==='active');
+  return summaryData.filter(s => s.trainer===trainerName && courseMatches(s) && s.status==='active');
 }
 
 function renderRoll() {
@@ -848,7 +858,7 @@ function renderClass() {
     document.getElementById('classTableBody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-2);">Select a trainer from the Daily Attendance tab first.</td></tr>';
     return;
   }
-  const myStudents = summaryData.filter(s => s.trainer===trainerName && (!currentCourse||s.course===currentCourse));
+  const myStudents = summaryData.filter(s => s.trainer===trainerName && courseMatches(s));
   const active   = myStudents.filter(s=>s.status==='active');
   const notStart = myStudents.filter(s=>s.status==='not-started');
   const upcoming = myStudents.filter(s=>s.status==='upcoming'||s.status==='tentative');
@@ -997,7 +1007,7 @@ function openEditModal(id, name, course, commenced, expectedEnd) {
 
 /* ── Export ── */
 function exportClassCSV() {
-  const myS = summaryData.filter(s=>s.trainer===trainerName&&(!currentCourse||s.course===currentCourse));
+  const myS = summaryData.filter(s=>s.trainer===trainerName&&courseMatches(s));
   if (!myS.length) { showToast('No data to export',true); return; }
   const headers = ['Student ID','Name','Course','Started','Expected End','Attended Days','Status'];
   const rows = myS.map(s=>[s.id,'"'+s.name+'"','"'+s.course+'"',s.commenced||'',s.expectedEnd||'',s.attendedDays||0,s.status].join(','));

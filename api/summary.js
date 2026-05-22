@@ -20,7 +20,9 @@ module.exports = async (req, res) => {
     if (!adminUser && trainerNames.length > 0) {
       const placeholders = trainerNames.map((_, i) => `@t${i}`).join(',');
       trainerNames.forEach((n, i) => request.input(`t${i}`, sql.NVarChar(200), n));
-      trainerWhere = `AND e.trainer IN (${placeholders})`;
+      // COALESCE so imported students (trainer in students table) and
+      // web-enrolled students (trainer in enrollments table) are both matched
+      trainerWhere = `AND COALESCE(e.trainer, s.trainer) IN (${placeholders})`;
     } else if (!adminUser && trainerNames.length === 0) {
       return res.status(200).json([]);
     }
@@ -29,29 +31,39 @@ module.exports = async (req, res) => {
       SELECT
         s.id,
         s.name,
-        e.course,
-        e.courseCode,
-        e.trainer,
+        COALESCE(e.course,      s.course)      AS course,
+        COALESCE(e.courseCode,  s.courseCode)  AS courseCode,
+        COALESCE(e.trainer,     s.trainer)     AS trainer,
         s.campus,
-        e.status,
-        e.commenced,
-        e.expectedEnd,
-        e.isPrimary,
+        COALESCE(e.status,      s.status)      AS status,
+        COALESCE(e.commenced,   s.commenced)   AS commenced,
+        COALESCE(e.expectedEnd, s.expectedEnd) AS expectedEnd,
+        COALESCE(e.isPrimary, 1)               AS isPrimary,
         (SELECT COUNT(*) FROM enrollments WHERE studentId = s.id) AS enrollmentCount,
         COUNT(a.id) AS attendedDays,
         SUM(CASE WHEN a.attendanceDate >= CAST(DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1) AS DATE) THEN 1 ELSE 0 END) AS monthlyAttendedDays,
         MAX(a.checkinTime) AS lastCheckin
       FROM students s
-      JOIN enrollments e ON e.studentId = s.id
+      LEFT JOIN enrollments e ON e.studentId = s.id
       LEFT JOIN attendance a
         ON  a.studentId = s.id
-        AND (a.course = e.course OR (a.courseCode = e.courseCode AND a.courseCode != ''))
+        AND (
+          a.course = COALESCE(e.course, s.course)
+          OR (a.courseCode = COALESCE(e.courseCode, s.courseCode) AND COALESCE(e.courseCode, s.courseCode) != '')
+        )
         AND a.attendanceDate >= DATEADD(day, -90, CAST(GETDATE() AS DATE))
       WHERE s.withdrawn = 0 ${trainerWhere}
       GROUP BY
-        s.id, s.name, e.course, e.courseCode, e.trainer, s.campus,
-        e.status, e.commenced, e.expectedEnd, e.isPrimary
-      ORDER BY s.name, e.isPrimary DESC
+        s.id, s.name,
+        COALESCE(e.course,      s.course),
+        COALESCE(e.courseCode,  s.courseCode),
+        COALESCE(e.trainer,     s.trainer),
+        s.campus,
+        COALESCE(e.status,      s.status),
+        COALESCE(e.commenced,   s.commenced),
+        COALESCE(e.expectedEnd, s.expectedEnd),
+        COALESCE(e.isPrimary, 1)
+      ORDER BY s.name, COALESCE(e.isPrimary, 1) DESC
     `);
 
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Brisbane' });
