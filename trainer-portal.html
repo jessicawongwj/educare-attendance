@@ -239,6 +239,10 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
           <span id="trainerDisplayName">Trainer</span>
           <span class="view-badge">Trainer View</span>
         </div>
+        <button id="adminSwitchBtn" onclick="showAdminTrainerPicker()" class="header-btn" style="display:none;" title="Switch which trainer you're viewing">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg>
+          Switch Trainer
+        </button>
         <a href="https://edc-attendance.com/educare-portal" class="header-btn" title="Switch to admin portal">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
           Switch to Admin
@@ -283,6 +287,17 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
         <div style="font-size:.82rem;color:var(--text-2);line-height:1.6;max-width:340px;margin:0 auto .5rem;">Your Microsoft account is not linked to a trainer profile. Please contact your administrator to have your account configured.</div>
         <div id="trainerNotFoundEmail" style="font-size:.75rem;color:var(--text-3);margin-top:.25rem;"></div>
         <button class="ms-btn" onclick="logout()" style="margin-top:1.25rem;max-width:200px;margin-left:auto;margin-right:auto;">Sign out</button>
+      </div>
+    </div>
+    <div id="adminTrainerPickerPanel" style="display:none;">
+      <div class="card" style="text-align:center;padding:2.5rem 1.5rem;max-width:420px;margin:0 auto;">
+        <div style="font-size:1.8rem;margin-bottom:.75rem;">👥</div>
+        <div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:.35rem;">View as Trainer</div>
+        <div style="font-size:.82rem;color:var(--text-2);line-height:1.6;max-width:320px;margin:0 auto 1.25rem;">You're signed in as an admin. Select a trainer to view their portal and manage their class.</div>
+        <select id="adminTrainerSelect" style="width:100%;max-width:300px;padding:.6rem .85rem;border:1.5px solid var(--border);border-radius:.5rem;font-size:.88rem;margin-bottom:1rem;background:#fff;display:block;margin-left:auto;margin-right:auto;">
+          <option value="">Select a trainer…</option>
+        </select>
+        <button class="btn btn-primary" onclick="applyAdminTrainerPick()" style="width:100%;max-width:300px;">View Portal</button>
       </div>
     </div>
     <!-- Stats -->
@@ -524,9 +539,17 @@ const TRAINER_EMAIL_MAP = {
   "alessandro.tavian@educare.edu.au": "Alessandro Tavian",
   "benjamin.akari@educare.edu.au":    "Benjamin Akari",
 };
+const ADMIN_EMAILS = new Set([
+  'jessica.wong@niet.edu.au',
+  'shuang.wu@niet.edu.au',
+  'nicole@charltonbrown.edu.au',
+  'jason.yang@niet.edu.au',
+  'maria.a.b@educare.edu.au',
+]);
 
 /* ── State ── */
 let trainerName = null, msDisplayName = null;
+let isAdminViewing = false;
 let currentCourse = null;
 let summaryData = [], rollData = [], recordsData = [];
 let rollFilter = 'all', classTab = 'current';
@@ -596,8 +619,14 @@ function showPortal(name, username) {
   document.getElementById('trainerAvatar').textContent = initials;
   document.getElementById('trainerDisplayName').textContent = msDisplayName.split(' ')[0];
   trainerName = detectTrainer(msDisplayName, username);
-  if (trainerName) initTrainer(trainerName);
-  else showAccessDenied(username);
+  if (trainerName) {
+    initTrainer(trainerName);
+  } else if (ADMIN_EMAILS.has((username || '').toLowerCase())) {
+    isAdminViewing = true;
+    showAdminTrainerPicker();
+  } else {
+    showAccessDenied(username);
+  }
 }
 
 function showAccessDenied(email) {
@@ -608,18 +637,43 @@ function showAccessDenied(email) {
   if (el && email) el.textContent = 'Signed in as: ' + email;
 }
 
+function showAdminTrainerPicker() {
+  document.getElementById('rollStats').style.display = 'none';
+  document.getElementById('rollCard').style.display = 'none';
+  document.getElementById('courseSwitcher').style.display = 'none';
+  document.getElementById('adminTrainerPickerPanel').style.display = 'block';
+  const sel = document.getElementById('adminTrainerSelect');
+  sel.innerHTML = '<option value="">Select a trainer…</option>';
+  Object.keys(TRAINER_COURSES).sort().forEach(n => {
+    const opt = document.createElement('option');
+    opt.value = n; opt.textContent = n;
+    sel.appendChild(opt);
+  });
+}
+
+function applyAdminTrainerPick() {
+  const name = document.getElementById('adminTrainerSelect').value;
+  if (!name) { showToast('Please select a trainer.', true); return; }
+  document.getElementById('adminTrainerPickerPanel').style.display = 'none';
+  document.getElementById('adminSwitchBtn').style.display = 'inline-flex';
+  switchTab('roll');
+  initTrainer(name);
+}
+
 function initTrainer(name) {
+  clearInterval(refreshTimer);
   trainerName = name;
   const courses = TRAINER_COURSES[name] || [];
   currentCourse = courses[0] || null;
   document.getElementById('trainerDisplayName').textContent = name.split(' ')[0];
-  if (courses.length > 1) { document.getElementById('courseSwitcher').style.display = 'flex'; renderCourseChips(); }
+  document.getElementById('courseSwitcher').style.display = courses.length > 1 ? 'flex' : 'none';
+  if (courses.length > 1) renderCourseChips();
   document.getElementById('rollDate').value = todayStr();
   document.getElementById('statDate').textContent = new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'short'});
   document.getElementById('rollStats').style.display = 'grid';
   document.getElementById('rollCard').style.display = 'block';
-  // Populate add student course dropdown
   const sel = document.getElementById('addStudentCourse');
+  sel.innerHTML = '';
   courses.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
   loadSummary();
   loadRoll();
