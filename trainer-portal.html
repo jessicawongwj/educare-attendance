@@ -271,10 +271,6 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/></svg>
         Holidays
       </button>
-      <button class="tab-btn" id="tabQr" onclick="switchTab('qr')">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/></svg>
-        QR Code
-      </button>
     </div>
   </header>
 
@@ -410,33 +406,6 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
   </div>
 
   <!-- ── QR Code Tab ── -->
-  <div class="content" id="qrView" style="display:none;">
-    <div class="card">
-      <div class="card-header">
-        <div><div class="card-title">Student Check-In QR Code</div><div style="font-size:.72rem;color:var(--text-2);margin-top:.1rem;">Display this for students to scan when they arrive</div></div>
-        <button class="btn btn-primary btn-sm" onclick="downloadQr()">⬇ Download</button>
-      </div>
-      <div class="qr-container">
-        <div class="qr-box"><img src="/educare-qr.jpg" alt="Educare Check-In QR Code" style="width:260px;height:260px;object-fit:contain;display:block;border-radius:8px;"></div>
-        <div style="font-size:1.1rem;font-weight:900;color:var(--brand-dark);margin-bottom:.4rem;">Scan to Check In</div>
-        <div style="font-size:.82rem;color:var(--text-2);max-width:320px;line-height:1.6;">Students scan this with their phone camera when they arrive on campus.</div>
-        <div style="font-size:.75rem;color:var(--brand);font-weight:700;margin-top:.5rem;">edc-attendance.com/checkin</div>
-        <div class="qr-how">
-          <div style="font-size:.7rem;font-weight:800;color:var(--brand);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem;">How students use this</div>
-          <ol style="padding-left:1.1rem;font-size:.78rem;color:var(--text-2);line-height:1.9;">
-            <li>Open phone camera and point at QR code</li>
-            <li>Tap the link that appears</li>
-            <li>Fill in Student ID, select trainer &amp; course</li>
-            <li>Confirm location and tap <strong style="color:var(--text);">Check In</strong></li>
-          </ol>
-        </div>
-        <div class="qr-actions">
-          <a href="/educare-qr.jpg" download="educare-checkin-qr.jpg" class="btn btn-primary">⬇ Download QR Image</a>
-          <a href="https://edc-attendance.com/checkin" target="_blank" class="btn btn-ghost">↗ Open Check-In Page</a>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- ── Add Student Modal ── -->
@@ -655,7 +624,6 @@ function initTrainer(name) {
   loadSummary();
   loadRoll();
   loadRecords();
-  renderQr();
   refreshTimer = setInterval(loadRoll, 90000);
 }
 
@@ -995,7 +963,7 @@ function renderHolidays() {
 }
 
 /* ── Tabs ── */
-const TABS = ['roll','class','holidays','qr'];
+const TABS = ['roll','class','holidays'];
 function switchTab(tab) {
   TABS.forEach(t => {
     document.getElementById(t+'View').style.display = t===tab?'block':'none';
