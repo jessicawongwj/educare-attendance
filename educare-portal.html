@@ -999,8 +999,8 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
               <th>Course</th>
               <th>Start Date</th>
               <th>Expected End</th>
-              <th>Monthly %</th>
-              <th>Overall Rate</th>
+              <th>Today</th>
+              <th>Attendance Rate</th>
               <th>Status</th>
               <th></th>
             </tr>
@@ -1518,6 +1518,44 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
 <script>
 /* ── Utilities ── */
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function normISO(v){ if(!v) return ''; const s=String(v); return s.length>=10?s.slice(0,10):''; }
+
+/* ── Attendance Calculation ── */
+let _cachedHolidays = null;
+
+function calcWorkingDays(startISO, endISO, holidays) {
+  if(!startISO||!endISO||startISO>endISO) return 0;
+  const hSet = new Set((holidays||[]).map(h=>h.date));
+  let n = 0;
+  const e = new Date(endISO+'T00:00:00Z');
+  for(let d=new Date(startISO+'T00:00:00Z'); d<=e; d.setUTCDate(d.getUTCDate()+1)){
+    const wd=d.getUTCDay();
+    if(wd===0||wd===6) continue;
+    if(hSet.has(d.toISOString().slice(0,10))) continue;
+    n++;
+  }
+  return n;
+}
+
+function calcExpectedSessions(student){
+  const today = todayStr();
+  const ago90 = new Date(); ago90.setDate(ago90.getDate()-90);
+  const cutoff = ago90.toLocaleDateString('en-CA',{timeZone:'Australia/Brisbane'});
+  const commenced = normISO(student.commenced);
+  const start = (commenced && commenced > cutoff) ? commenced : cutoff;
+  if(start > today) return 0;
+  return calcWorkingDays(start, today, _cachedHolidays||[]);
+}
+
+function calcMonthlyExpectedSessions(student){
+  const today = todayStr();
+  const [y,m] = today.split('-');
+  const monthStart = `${y}-${m}-01`;
+  const commenced = normISO(student.commenced);
+  const start = (commenced && commenced > monthStart) ? commenced : monthStart;
+  if(start > today) return 0;
+  return calcWorkingDays(start, today, _cachedHolidays||[]);
+}
 
 /* ── Config ── */
 const PORTAL_PIN = '1234'; // TODO: replace with secure PIN storage
@@ -1796,6 +1834,8 @@ async function loadSummary(){
   document.getElementById('campusTabStats').innerHTML='<span style="color:var(--text-2);">Loading…</span>';
   document.getElementById('trainerCourseTableBody').innerHTML='<div style="padding:2rem;text-align:center;color:var(--text-2);">Loading attendance data…</div>';
   try{
+    // Cache holidays for accurate rate calculations (commenced date + holiday exclusion)
+    if(!_cachedHolidays) _cachedHolidays = await getHolidays();
     const res = await authFetch('/api/summary');
     const data = await res.json();
     if(!res.ok) throw new Error(data.error || res.statusText);
@@ -1938,7 +1978,10 @@ function renderDashboard(){
   const presentCount = presentIds.size;
   const absentCount = Math.max(0, scheduledCount - presentCount);
   const rate = scheduledCount>0 ? Math.round(presentCount/scheduledCount*100) : 0;
-  const atRisk = filtered.filter(s=>s.status==='active' && s.attendedDays!=null && s.attendedDays < 5).length;
+  const atRisk = filtered.filter(s=>{
+    if(s.status!=='active') return false;
+    const exp=calcExpectedSessions(s); return exp>0&&(s.attendedDays||0)/exp*100<80;
+  }).length;
 
   document.getElementById('campusTabStats').innerHTML=
     `<span class="stats-bar-link" onclick="filterByCardClick&&filterByCardClick('all')">${totalActive} students</span>`
@@ -2058,7 +2101,7 @@ function markFromClassList(studentId, type){
 /* ── Daily Attendance ── */
 let dailyCampusFilter='all', dailyStatusFilter='all';
 function setCampus(c){ dailyCampusFilter=c; applyDailyFilters(); }
-function setDailyDate(offset){ const d=new Date(); d.setDate(d.getDate()+offset); document.getElementById('dateFilter').value=d.toISOString().slice(0,10); loadDailyAttendance(); }
+function setDailyDate(offset){ const d=new Date(); d.setDate(d.getDate()+offset); document.getElementById('dateFilter').value=d.toLocaleDateString('en-CA',{timeZone:'Australia/Brisbane'}); loadDailyAttendance(); }
 
 async function loadDailyAttendance(){
   const date=document.getElementById('dateFilter').value||todayStr();
@@ -2126,8 +2169,11 @@ function filterByCardClick(s){ dailyStatusFilter=s; applyDailyFilters(); }
 function refreshDaily(){ loadDailyAttendance(); showToast('Refreshed'); }
 function exportCSV(){
   if(!dailyRows.length){ showToast('No data to export.',true); return; }
-  const headers=['Student ID','Name','Course','Trainer','Campus','Check In','Check Out'];
-  const csv=[headers.join(','),...dailyRows.map(r=>[r.studentId,'"'+r.studentName+'"','"'+r.course+'"','"'+r.trainer+'"','"'+r.campus+'"',fmtTime(r.checkinTime),fmtTime(r.checkoutTime)].join(','))].join('\n');
+  const headers=['Student ID','Name','Course','Trainer','Campus','Check In','Check Out','Status'];
+  const csv=[headers.join(','),...dailyRows.map(r=>{
+    const status=r.checkoutTime?'Present':r.checkinTime?'Checked In':'Absent';
+    return [r.studentId,'"'+(r.studentName||'')+'"','"'+(r.course||'')+'"','"'+(r.trainer||'')+'"','"'+(r.campus||'')+'"',fmtTime(r.checkinTime),fmtTime(r.checkoutTime),status].join(',');
+  })].join('\n');
   const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
   a.download='attendance-'+document.getElementById('dateFilter').value+'.csv'; a.click();
 }
@@ -2160,11 +2206,12 @@ function renderRateCheck(){
   const course=document.getElementById('rateCourseFilter').value;
   const search=(document.getElementById('rateSearchInput').value||'').toLowerCase();
   const todayCheckedIn=new Set(dailyRows.map(r=>r.studentId));
-  const workDays=Array.from({length:90},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); return d.getDay(); }).filter(d=>d>0&&d<6).length;
-
-  // Summary cards
+  // Summary cards — uses per-student expected sessions (commenced + holiday exclusion)
   const totalS=summaryData.length, activeS=summaryData.filter(s=>s.status==='active').length;
-  const atRiskS=summaryData.filter(s=>s.status==='active'&&workDays&&(s.attendedDays||0)/workDays*100<80).length;
+  const atRiskS=summaryData.filter(s=>{
+    if(s.status!=='active') return false;
+    const exp=calcExpectedSessions(s); return exp>0&&(s.attendedDays||0)/exp*100<80;
+  }).length;
   const notStartedS=summaryData.filter(s=>s.status==='not-started').length;
   document.getElementById('rateSummaryCards').innerHTML=`
     <div class="stat-card" style="border-left-color:var(--brand);" onclick="setRateStatus('all')"><div class="stat-label">Total Students</div><div class="stat-value">${totalS}</div></div>
@@ -2184,8 +2231,9 @@ function renderRateCheck(){
     if(trainer!=='all'&&s.trainer!==trainer) return false;
     if(course!=='all'&&s.course!==course) return false;
     if(search&&!(s.name||'').toLowerCase().includes(search)&&!(s.id||'').includes(search)) return false;
-    const rate=workDays?Math.min(100,Math.round((s.attendedDays||0)/workDays*100)):0;
-    if(rateStatus==='below80'&&rate>=80) return false;
+    const exp=calcExpectedSessions(s);
+    const rate=exp?Math.min(100,Math.round((s.attendedDays||0)/exp*100)):0;
+    if(rateStatus==='below80'&&(rate>=80||exp===0)) return false;
     if(rateStatus==='above80'&&rate<80) return false;
     if(rateStatus==='notstarted'&&todayCheckedIn.has(s.id)) return false;
     if(rateStatus==='upcoming'&&s.status!=='not-started') return false;
@@ -2196,21 +2244,28 @@ function renderRateCheck(){
   const tbody=document.getElementById('rateTableBody');
   if(!rows.length){ tbody.innerHTML='<tr><td colspan="11"><div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-title">No students match</div></div></td></tr>'; document.getElementById('ratePagination').style.display='none'; return; }
   tbody.innerHTML=rows.map(s=>{
-    const rate=workDays?Math.min(100,Math.round((s.attendedDays||0)/workDays*100)):0;
+    const expectedDays = calcExpectedSessions(s);
+    const monthlyExpected = calcMonthlyExpectedSessions(s);
+    const rate = expectedDays ? Math.min(100,Math.round((s.attendedDays||0)/expectedDays*100)) : 0;
+    const monthlyRate = monthlyExpected ? Math.min(100,Math.round((s.monthlyAttendedDays||s.attendedDays||0)/monthlyExpected*100)) : 0;
     const rateClass=rate>=80?'':'mid';
     const multiTag=(s.enrollmentCount||1)>1?`<span style="margin-left:4px;font-size:10px;font-weight:700;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;border-radius:4px;padding:1px 5px;">${s.enrollmentCount} COURSES</span>`:'';
+    const rateColor=rate>=80?'var(--success)':rate>=50?'var(--warning)':'var(--danger)';
     return `<tr>
-      <td>${s.id}</td>
+      <td style="font-size:var(--text-xs);font-family:monospace;color:var(--text-2);">${s.id}</td>
       <td class="td-name" data-student-id="${s.id||''}" data-student-name="${(s.name||'').replace(/"/g,'&quot;')}">${s.name}${multiTag}</td>
-      <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${s.course}">${s.courseCode?'<span style="font-size:11px;color:var(--text-3);margin-right:4px;">['+s.courseCode+']</span>':''}${s.course}</td>
+      <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(s.course||'')}">${s.courseCode?'<span style="font-size:11px;color:var(--text-3);margin-right:4px;">['+s.courseCode+']</span>':''}${escHtml(s.course||'—')}</td>
       <td>${s.trainer||'—'}</td>
       <td>${s.campus||'—'}</td>
       <td style="font-size:.78rem;color:var(--text-2);">${s.commenced?fmtDate(s.commenced):'—'}</td>
       <td style="font-size:.78rem;color:var(--text-2);">${s.expectedEnd?fmtDate(s.expectedEnd):'—'}</td>
       <td>${s.lastCheckin?fmtDate(s.lastCheckin):'Never'}</td>
-      <td><div class="rate-bar-row"><div class="rate-bar-bg"><div class="rate-bar-fill ${rateClass}" style="width:${rate}%"></div></div><span class="rate-pct" style="color:${rate>=80?'var(--success)':'var(--warning)'}">${rate}%</span></div></td>
-      <td>${rate>=80?'<span class="badge badge-ok">On Track</span>':'<span class="badge badge-warn">At Risk</span>'}</td>
-      <td><button class="btn btn-ghost" style="font-size:var(--text-xs);padding:0.25rem 0.6rem;" onclick="openMarkModal(this.dataset.id)" data-id="${s.id}">Mark</button></td>
+      <td title="${s.attendedDays||0} attended / ${expectedDays} expected">
+        <div class="rate-bar-row"><div class="rate-bar-bg"><div class="rate-bar-fill ${rateClass}" style="width:${rate}%"></div></div><span class="rate-pct" style="color:${rateColor}">${rate}%</span></div>
+        ${expectedDays===0?'<span style="font-size:10px;color:var(--text-3);">not started</span>':''}
+      </td>
+      <td>${rate>=80?'<span class="badge badge-ok">On Track</span>':rate>0?'<span class="badge badge-warn">At Risk</span>':'<span class="badge badge-info">Pending</span>'}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openMarkModal(this.dataset.id)" data-id="${s.id}">Mark</button></td>
     </tr>`;
   }).join('');
   document.getElementById('ratePagination').style.display='none';
@@ -2303,12 +2358,15 @@ function renderMyClass(){
   const todayIn=new Set(dailyRows.map(r=>r.studentId));
   const workDays=Array.from({length:90},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); return d.getDay(); }).filter(d=>d>0&&d<6).length;
 
-  // Summary cards
-  const currentCount=summaryData.filter(s=>s.status==='active').length;
-  const nsCount=summaryData.filter(s=>s.status==='not-started').length;
+  // Summary cards — scoped to trainer view if applicable
+  const myScope = (viewMode==='trainer'&&loggedInTrainerName) ? summaryData.filter(s=>s.trainer===loggedInTrainerName) : summaryData;
+  const currentCount=myScope.filter(s=>s.status==='active').length;
+  const nsCount=myScope.filter(s=>s.status==='not-started').length;
+  const atRiskCount=myScope.filter(s=>{if(s.status!=='active')return false;const exp=calcExpectedSessions(s);return exp>0&&(s.attendedDays||0)/exp*100<80;}).length;
   document.getElementById('myClassSummaryCards').innerHTML=`
     <div class="stat-card" style="border-left-color:var(--brand);"><div class="stat-label">Active Students</div><div class="stat-value">${currentCount}</div></div>
-    <div class="stat-card" style="border-left-color:var(--success);"><div class="stat-label" style="color:var(--success);">Present Today</div><div class="stat-value" style="color:var(--success);">${summaryData.filter(s=>s.status==='active'&&todayIn.has(s.id)).length}</div></div>
+    <div class="stat-card" style="border-left-color:var(--success);"><div class="stat-label" style="color:var(--success);">Present Today</div><div class="stat-value" style="color:var(--success);">${myScope.filter(s=>s.status==='active'&&todayIn.has(s.id)).length}</div></div>
+    <div class="stat-card" style="border-left-color:var(--danger);"><div class="stat-label" style="color:var(--danger);">At Risk (&lt;80%)</div><div class="stat-value" style="color:var(--danger);">${atRiskCount}</div></div>
     <div class="stat-card" style="border-left-color:var(--warning);"><div class="stat-label" style="color:var(--warning);">Not Started</div><div class="stat-value" style="color:var(--warning);">${nsCount}</div></div>`;
 
   // Sub-tab badges
@@ -2318,6 +2376,8 @@ function renderMyClass(){
   if(nsBadge){nsBadge.textContent=nsCount;nsBadge.style.display=nsCount?'inline':'none';}
 
   let rows=summaryData.filter(s=>{
+    // In trainer view, My Class shows only that trainer's students
+    if(viewMode==='trainer'&&loggedInTrainerName&&s.trainer!==loggedInTrainerName) return false;
     if(myClassTab==='current'&&s.status!=='active') return false;
     if(myClassTab==='notstarted'&&s.status!=='not-started') return false;
     if(myClassTab==='upcoming'&&s.status!=='not-started') return false;
@@ -2329,7 +2389,10 @@ function renderMyClass(){
   if(!tbody) return;
   if(!rows.length){ tbody.innerHTML='<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">📚</div><div class="empty-state-title">No students</div></div></td></tr>'; return; }
   tbody.innerHTML=rows.map(s=>{
-    const rate=workDays?Math.min(100,Math.round((s.attendedDays||0)/workDays*100)):0;
+    const expectedDays=calcExpectedSessions(s);
+    const rate=expectedDays?Math.min(100,Math.round((s.attendedDays||0)/expectedDays*100)):0;
+    const rateClass=rate>=80?'':'mid';
+    const rateColor=rate>=80?'var(--success)':rate>=50?'var(--warning)':'var(--danger)';
     const checkedIn=todayIn.has(s.id);
     return `<tr>
       <td style="font-size:var(--text-xs);font-family:monospace;color:var(--text-2);">${s.id}</td>
@@ -2338,8 +2401,10 @@ function renderMyClass(){
       <td style="font-size:.78rem;color:var(--text-2);">${s.commenced?fmtDate(s.commenced):'—'}</td>
       <td style="font-size:.78rem;color:var(--text-2);">${s.expectedEnd?fmtDate(s.expectedEnd):'—'}</td>
       <td>${checkedIn?'<span class="badge badge-present">Present</span>':'<span class="badge badge-absent">Not In</span>'}</td>
-      <td><div class="rate-bar-row"><div class="rate-bar-bg"><div class="rate-bar-fill ${rate>=80?'':'mid'}" style="width:${rate}%"></div></div><span class="rate-pct">${rate}%</span></div></td>
-      <td>${rate>=80?'<span class="badge badge-ok">On Track</span>':'<span class="badge badge-warn">At Risk</span>'}</td>
+      <td title="${s.attendedDays||0} attended / ${expectedDays} expected">
+        <div class="rate-bar-row"><div class="rate-bar-bg"><div class="rate-bar-fill ${rateClass}" style="width:${rate}%"></div></div><span class="rate-pct" style="color:${rateColor}">${rate}%</span></div>
+      </td>
+      <td>${rate>=80?'<span class="badge badge-ok">On Track</span>':expectedDays>0?'<span class="badge badge-warn">At Risk</span>':'<span class="badge badge-info">Pending</span>'}</td>
       <td><button class="btn btn-ghost btn-sm" onclick="openMarkModal(this.dataset.id)" data-id="${s.id}">Mark</button></td>
     </tr>`;
   }).join('');
@@ -2347,8 +2412,18 @@ function renderMyClass(){
 function refreshMyClass(){ loadSummary(); showToast('Refreshed'); }
 function exportMyClassCSV(){
   if(!summaryData.length){ showToast('No data.',true); return; }
-  const headers=['Student ID','Name','Course','Trainer','Campus','Status'];
-  const csv=[headers.join(','),...summaryData.map(s=>[s.id,'"'+s.name+'"','"'+s.course+'"','"'+s.trainer+'"','"'+s.campus+'"',s.status].join(','))].join('\n');
+  const todayIn=new Set(dailyRows.map(r=>r.studentId));
+  const headers=['Student ID','Name','Course','Trainer','Campus','Start Date','Expected End','Attendance %','Today','Status'];
+  const rows=summaryData.filter(s=>viewMode!=='trainer'||!loggedInTrainerName||s.trainer===loggedInTrainerName);
+  const csv=[headers.join(','),...rows.map(s=>{
+    const exp=calcExpectedSessions(s);
+    const rate=exp?Math.min(100,Math.round((s.attendedDays||0)/exp*100)):0;
+    const started=normISO(s.commenced)||'';
+    const ends=normISO(s.expectedEnd)||'';
+    const today=todayIn.has(s.id)?'Present':'Absent';
+    const status=rate>=80?'On Track':exp>0?'At Risk':'Pending';
+    return [s.id,'"'+(s.name||'')+'"','"'+(s.course||'')+'"','"'+(s.trainer||'')+'"','"'+(s.campus||'')+'"',started,ends,rate+'%',today,status].join(',');
+  })].join('\n');
   const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='myclass.csv'; a.click();
 }
 
