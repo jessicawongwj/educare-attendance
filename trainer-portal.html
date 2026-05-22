@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-<script src="https://alcdn.msauth.net/browser/2.38.4/js/msal-browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2/lib/msal-browser.min.js"></script>
 <style>
 :root {
   --grad: linear-gradient(150deg,#0a3352 0%,#1464a0 30%,#198c6c 65%,#3ab84a 100%);
@@ -517,12 +517,13 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
 const MS_CLIENT_ID = '2e958225-a191-405f-93a0-a78be04d96d5';
 const MS_REDIRECT  = 'https://edc-attendance.com/trainer-portal';
 
-const msalApp = new msal.PublicClientApplication({
-  auth: { clientId: MS_CLIENT_ID, redirectUri: MS_REDIRECT },
-  cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false },
-});
-
-let msalToken = null;
+let msalApp, msalToken = null;
+try {
+  msalApp = new msal.PublicClientApplication({
+    auth: { clientId: MS_CLIENT_ID, redirectUri: MS_REDIRECT },
+    cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false },
+  });
+} catch(e) { console.error('MSAL init failed:', e); }
 const CHECKIN_URL  = 'https://edc-attendance.com/checkin';
 
 const TRAINER_COURSES = {

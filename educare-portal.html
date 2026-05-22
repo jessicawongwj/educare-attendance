@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script src="https://alcdn.msauth.net/browser/2.38.4/js/msal-browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2/lib/msal-browser.min.js"></script>
 <style>
 /* ── Design tokens ── */
 :root {
@@ -1462,12 +1462,13 @@ const CHECKOUT_URL = ''; // TODO
 const MS_CLIENT_ID = '2e958225-a191-405f-93a0-a78be04d96d5';
 const MS_REDIRECT  = 'https://edc-attendance.com/educare-portal';
 
-const msalApp = new msal.PublicClientApplication({
-  auth: { clientId: MS_CLIENT_ID, redirectUri: MS_REDIRECT },
-  cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false },
-});
-
-let msalToken = null;
+let msalApp, msalToken = null;
+try {
+  msalApp = new msal.PublicClientApplication({
+    auth: { clientId: MS_CLIENT_ID, redirectUri: MS_REDIRECT },
+    cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false },
+  });
+} catch(e) { console.error('MSAL init failed:', e); }
 
 let loggedInTrainerName = null;
 let viewMode = 'admin'; // 'admin' | 'trainer'
