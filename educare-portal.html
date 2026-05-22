@@ -2286,23 +2286,49 @@ function refreshAttendanceRates(){ loadSummary(); showToast('Refreshed'); }
 
 /* ── Student Attendance History ── */
 let _studentHistoryData = [];
+const _historyCache = new Map();   // session cache: studentId → records[]
+let _prefetchTimer = null;
+
+function _historySkeletonHtml() {
+  return `<table style="font-size:.82rem;">
+    <thead><tr><th>Date</th><th>Day</th><th>Course</th><th>Check In</th><th>Check Out</th><th>Status</th></tr></thead>
+    <tbody>${Array.from({length:6},()=>`<tr>${Array.from({length:6},()=>`<td><span class="skeleton" style="display:inline-block;width:${60+Math.random()*40|0}px;height:12px;border-radius:3px;"></span></td>`).join('')}</tr>`).join('')}</tbody>
+  </table>`;
+}
+
+async function _fetchHistory(studentId) {
+  if (_historyCache.has(studentId)) return _historyCache.get(studentId);
+  const res = await authFetch('/api/records?student=' + encodeURIComponent(studentId));
+  if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+  const data = await res.json();
+  const records = Array.isArray(data) ? data : [];
+  _historyCache.set(studentId, records);
+  return records;
+}
+
 async function openStudentHistory(studentId, studentName) {
   const modal = document.getElementById('studentDatesModal');
   document.getElementById('studentDatesTitle').textContent = studentName + ' — Attendance History';
-  document.getElementById('studentDatesMeta').textContent = 'Loading…';
-  document.getElementById('studentDatesBody').innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏳</div></div>';
   document.getElementById('studentHistoryCsvBtn').style.display = 'none';
   _studentHistoryData = [];
   modal.classList.add('show');
-  try {
-    const res = await authFetch('/api/records?student=' + encodeURIComponent(studentId));
-    if (!res.ok) throw new Error((await res.json()).error || res.statusText);
-    const data = await res.json();
-    _studentHistoryData = Array.isArray(data) ? data : [];
-    renderStudentHistory(studentId, studentName);
-  } catch(e) {
+
+  if (_historyCache.has(studentId)) {
+    // Instant — already cached
     document.getElementById('studentDatesMeta').textContent = '';
-    document.getElementById('studentDatesBody').innerHTML = '<div class="empty-state"><div class="empty-state-title">Failed to load history</div><div class="empty-state-sub">' + escHtml(e.message) + '</div></div>';
+    _studentHistoryData = _historyCache.get(studentId);
+    renderStudentHistory(studentId, studentName);
+  } else {
+    // Show skeleton table while fetching
+    document.getElementById('studentDatesMeta').textContent = 'Loading…';
+    document.getElementById('studentDatesBody').innerHTML = _historySkeletonHtml();
+    try {
+      _studentHistoryData = await _fetchHistory(studentId);
+      renderStudentHistory(studentId, studentName);
+    } catch(e) {
+      document.getElementById('studentDatesMeta').textContent = '';
+      document.getElementById('studentDatesBody').innerHTML = '<div class="empty-state"><div class="empty-state-title">Failed to load history</div><div class="empty-state-sub">' + escHtml(e.message) + '</div></div>';
+    }
   }
 }
 function renderStudentHistory(studentId, studentName) {
@@ -2878,13 +2904,26 @@ document.addEventListener('keydown',e=>{
   }
 })();
 
-/* ── Student name click — delegated ── */
+/* ── Student name click + hover prefetch — delegated ── */
 document.addEventListener('click', function(e) {
   const td = e.target.closest('.td-name[data-student-id]');
   if (!td) return;
   const sid  = td.dataset.studentId;
   const name = td.dataset.studentName;
   if (sid) openStudentHistory(sid, name);
+});
+
+// Prefetch on hover so data is usually ready before the click
+document.addEventListener('mouseover', function(e) {
+  const td = e.target.closest('.td-name[data-student-id]');
+  if (!td) { clearTimeout(_prefetchTimer); return; }
+  const sid = td.dataset.studentId;
+  if (!sid || _historyCache.has(sid)) return;
+  clearTimeout(_prefetchTimer);
+  _prefetchTimer = setTimeout(() => _fetchHistory(sid).catch(() => {}), 150);
+});
+document.addEventListener('mouseout', function(e) {
+  if (!e.target.closest('.td-name[data-student-id]')) clearTimeout(_prefetchTimer);
 });
 </script>
 </body>
