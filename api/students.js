@@ -1,7 +1,10 @@
-const { getPool, sql } = require('./_db');
+const { getPool } = require('./_db');
+const { validateToken } = require('./_auth');
 
 module.exports = async (req, res) => {
   if (req.method !== 'GET') return res.status(405).end();
+  const user = await validateToken(req);
+  if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
     const pool = await getPool();

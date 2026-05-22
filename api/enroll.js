@@ -1,7 +1,12 @@
 const { getPool, sql } = require('./_db');
+const { validateToken, isAdminUser } = require('./_auth');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).end();
+  const user = await validateToken(req);
+  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+  const email = (user.mail || user.userPrincipalName || '').toLowerCase();
+  if (!isAdminUser(email)) return res.status(403).json({ error: 'Admin only' });
 
   const { studentId, name, course, courseCode, trainer, campus, commenced, expectedEnd } = req.body;
   if (!studentId || !name || !course || !trainer) {

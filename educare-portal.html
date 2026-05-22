@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://alcdn.msauth.net/browser/2.38.4/js/msal-browser.min.js"></script>
 <style>
 /* ── Design tokens ── */
 :root {
@@ -1098,6 +1099,35 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
       </div>
     </div>
 
+    <!-- Email Reports -->
+    <div class="card" style="margin-top:1.25rem;">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Email Reports</div>
+          <div class="card-meta">Attendance reports sent automatically on the 1st and 15th of each month</div>
+        </div>
+      </div>
+      <div style="padding:1.25rem 1.5rem;">
+        <div style="margin-bottom:1.25rem;">
+          <label style="display:block;font-size:var(--text-sm);font-weight:600;color:var(--text);margin-bottom:.4rem;">Recipients</label>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+            <input id="emailRecipients" type="text" placeholder="email1@example.com, email2@example.com" class="search-input" style="flex:1;min-width:240px;">
+            <button class="btn btn-primary" onclick="saveEmailRecipients()">Save</button>
+          </div>
+          <div id="emailRecipientsMsg" style="font-size:var(--text-sm);margin-top:.4rem;min-height:1.2em;color:var(--success);"></div>
+        </div>
+        <div style="border-top:1px solid var(--border-2);padding-top:1.25rem;">
+          <div style="font-size:var(--text-sm);font-weight:600;color:var(--text);margin-bottom:.6rem;">Send Now</div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+            <button class="btn btn-ghost" onclick="sendEmailReport('fortnightly')">Fortnightly Report</button>
+            <button class="btn btn-ghost" onclick="sendEmailReport('monthly')">Monthly Report</button>
+            <button class="btn btn-ghost" onclick="sendEmailReport('absence')">Absence Alert</button>
+          </div>
+          <div id="emailSendMsg" style="font-size:var(--text-sm);margin-top:.5rem;min-height:1.2em;color:var(--text-2);"></div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /settingsView -->
 
   <!-- ══ TRAINER SCHEDULE ══ -->
@@ -1428,10 +1458,16 @@ const CAMPUSES = ['Brisbane CBD — 316 Adelaide St','Brisbane CBD — 102 Adela
 const CHECKIN_URL  = ''; // TODO
 const CHECKOUT_URL = ''; // TODO
 
-/* ── Microsoft OAuth2 Login (no library) ── */
-const MS_CLIENT_ID   = '2e958225-a191-405f-93a0-a78be04d96d5';
-const MS_REDIRECT    = 'https://edc-attendance.com/educare-portal';
-const MS_AUTH_URL    = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize';
+/* ── Microsoft Auth (MSAL PKCE) ── */
+const MS_CLIENT_ID = '2e958225-a191-405f-93a0-a78be04d96d5';
+const MS_REDIRECT  = 'https://edc-attendance.com/educare-portal';
+
+const msalApp = new msal.PublicClientApplication({
+  auth: { clientId: MS_CLIENT_ID, redirectUri: MS_REDIRECT },
+  cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false },
+});
+
+let msalToken = null;
 
 let loggedInTrainerName = null;
 let viewMode = 'admin'; // 'admin' | 'trainer'
@@ -1526,33 +1562,37 @@ function setLoginError(msg){
   document.getElementById('msSigninBtn').disabled = false;
 }
 
-function signInWithMicrosoft(){
+async function signInWithMicrosoft(){
   document.getElementById('msLoginError').textContent = '';
   document.getElementById('msSigninBtn').disabled = true;
   document.getElementById('msLoading').style.display = 'block';
-  var nonce = Math.random().toString(36).slice(2) + Date.now();
-  sessionStorage.setItem('ms_nonce', nonce);
-  var params = new URLSearchParams({
-    client_id:     MS_CLIENT_ID,
-    response_type: 'id_token',
-    redirect_uri:  MS_REDIRECT,
-    scope:         'openid profile email',
-    response_mode: 'fragment',
-    nonce:         nonce
-  });
-  window.location.href = MS_AUTH_URL + '?' + params.toString();
+  try {
+    const result = await msalApp.loginPopup({ scopes: ['User.Read'] });
+    msalApp.setActiveAccount(result.account);
+    msalToken = result.accessToken;
+    showPortal(result.account.name, result.account.username);
+  } catch(e) {
+    setLoginError('Sign-in failed — ' + (e.message || 'please try again'));
+  }
 }
 
 function logout(){
-  sessionStorage.removeItem('ms_session');
-  window.location.href = 'https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri=' + encodeURIComponent(MS_REDIRECT);
+  msalToken = null;
+  msalApp.logoutPopup().catch(() => {});
 }
 
-function parseJwt(token){
-  try {
-    var b64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
-    return JSON.parse(atob(b64));
-  } catch(e){ return null; }
+async function refreshToken() {
+  const accounts = msalApp.getAllAccounts();
+  if (!accounts.length) throw new Error('Not signed in');
+  const r = await msalApp.acquireTokenSilent({ scopes: ['User.Read'], account: accounts[0] });
+  msalToken = r.accessToken;
+}
+
+async function authFetch(url, options = {}) {
+  if (!msalToken) await refreshToken();
+  const headers = { ...(options.headers || {}), 'Authorization': 'Bearer ' + msalToken };
+  if (options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
+  return fetch(url, { ...options, headers });
 }
 
 /* ── Global Data ── */
@@ -1687,7 +1727,7 @@ async function loadSummary(){
   document.getElementById('campusTabStats').innerHTML='<span style="color:var(--text-2);">Loading…</span>';
   document.getElementById('trainerCourseTableBody').innerHTML='<div style="padding:2rem;text-align:center;color:var(--text-2);">Loading attendance data…</div>';
   try{
-    const res = await fetch('/api/summary');
+    const res = await authFetch('/api/summary');
     const data = await res.json();
     if(!res.ok) throw new Error(data.error || res.statusText);
     if(!Array.isArray(data)) throw new Error('Unexpected response from /api/summary');
@@ -1718,6 +1758,7 @@ function switchTab(tab){
     document.getElementById(v+'NavTab').classList.toggle('active',v===tab);
   });
   if(tab==='holidays') renderHolidaysList();
+  if(tab==='settings') loadEmailRecipients();
 }
 
 /* ── Dark Mode ── */
@@ -1954,7 +1995,7 @@ async function loadDailyAttendance(){
   const date=document.getElementById('dateFilter').value||todayStr();
   document.getElementById('dailyLoadedTime').textContent='Loading...';
   try{
-    const res=await fetch('/api/attendance?date='+date);
+    const res=await authFetch('/api/attendance?date='+date);
     const data=await res.json();
     if(!res.ok) throw new Error(data.error||res.statusText);
     if(!Array.isArray(data)) throw new Error('Unexpected response from /api/attendance');
@@ -2253,6 +2294,36 @@ function lockAdminSection(){
 }
 function submitAddAdmin(){ showToast('Admin management requires API integration.',true); }
 
+/* ── Email Reports ── */
+async function loadEmailRecipients(){
+  try {
+    const res = await authFetch('/api/settings?key=email_config');
+    if(res.ok){ const d=await res.json(); if(Array.isArray(d.recipients)) document.getElementById('emailRecipients').value=d.recipients.join(', '); }
+  } catch(e){}
+}
+async function saveEmailRecipients(){
+  const val=document.getElementById('emailRecipients').value.trim();
+  const recipients=val.split(',').map(s=>s.trim()).filter(Boolean);
+  const msg=document.getElementById('emailRecipientsMsg');
+  if(!recipients.length){ msg.style.color='var(--danger)'; msg.textContent='Enter at least one email.'; return; }
+  try {
+    const res=await authFetch('/api/settings?key=email_config',{method:'PUT',body:JSON.stringify({recipients})});
+    const d=await res.json();
+    msg.style.color=res.ok?'var(--success)':'var(--danger)';
+    msg.textContent=res.ok?'Saved':'Error: '+(d.error||res.statusText);
+  } catch(e){ msg.style.color='var(--danger)'; msg.textContent='Error: '+e.message; }
+}
+async function sendEmailReport(type){
+  const msg=document.getElementById('emailSendMsg');
+  msg.style.color='var(--text-2)'; msg.textContent='Sending…';
+  try {
+    const res=await authFetch('/api/send-email',{method:'POST',body:JSON.stringify({type})});
+    const d=await res.json();
+    msg.style.color=res.ok?'var(--success)':'var(--danger)';
+    msg.textContent=res.ok?'Sent ('+type+')':'Error: '+(d.error||res.statusText);
+  } catch(e){ msg.style.color='var(--danger)'; msg.textContent='Error: '+e.message; }
+}
+
 /* ── QR / Poster ── */
 function openQrModal(){ document.getElementById('qrModal').classList.add('show'); }
 function printCheckinPoster(){ window.print(); }
@@ -2342,9 +2413,8 @@ async function confirmMarkAbsent(){
   const btn=document.getElementById('absentModalSubmit');
   btn.disabled=true; btn.textContent='Saving…';
   try{
-    const resp=await fetch('/api/save',{
+    const resp=await authFetch('/api/save',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         studentId:markStudent.id, studentName:markStudent.name,
         course:markStudent.course, courseCode:markStudent.courseCode,
@@ -2389,35 +2459,15 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape') document.querySelectorAll('.modal-overlay.show').forEach(o=>o.classList.remove('show'));
 });
 
-// Check URL hash for auth response, or existing session — runs AFTER all let/const declarations
-(function(){
-  var hash   = window.location.hash.slice(1);
-  var params = new URLSearchParams(hash);
-
-  if(params.has('id_token')){
-    history.replaceState(null, '', window.location.pathname);
-    var claims = parseJwt(params.get('id_token'));
-    if(claims){
-      sessionStorage.setItem('ms_session', JSON.stringify({ name: claims.name, username: claims.preferred_username || claims.email }));
-      showPortal(claims.name, claims.preferred_username);
-    } else {
-      setLoginError('Sign-in failed — invalid token.');
-    }
-    return;
-  }
-
-  if(params.has('error')){
-    history.replaceState(null, '', window.location.pathname);
-    setLoginError('Sign-in error: ' + (params.get('error_description') || params.get('error')));
-    return;
-  }
-
-  var stored = sessionStorage.getItem('ms_session');
-  if(stored){
+// Restore MSAL session on page load — runs AFTER all let/const declarations
+(async function(){
+  const accounts = msalApp.getAllAccounts();
+  if (accounts.length) {
     try {
-      var s = JSON.parse(stored);
-      showPortal(s.name, s.username);
-    } catch(e){ sessionStorage.removeItem('ms_session'); }
+      const r = await msalApp.acquireTokenSilent({ scopes: ['User.Read'], account: accounts[0] });
+      msalToken = r.accessToken;
+      showPortal(accounts[0].name, accounts[0].username);
+    } catch(e) { /* silent refresh failed — stay on login screen */ }
   }
 })();
 </script>

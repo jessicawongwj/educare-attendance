@@ -1,9 +1,16 @@
 {
   "cleanUrls": true,
+  "crons": [
+    { "path": "/api/cron-report", "schedule": "0 22 1,15 * *" }
+  ],
   "redirects": [
     { "source": "/", "destination": "/educare-portal", "permanent": false }
   ],
   "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
     {
       "source": "/(.*).html",
       "headers": [{ "key": "Cache-Control", "value": "no-store, must-revalidate" }]

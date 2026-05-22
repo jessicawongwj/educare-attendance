@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://alcdn.msauth.net/browser/2.38.4/js/msal-browser.min.js"></script>
 <style>
 :root {
   --grad: linear-gradient(150deg,#0a3352 0%,#1464a0 30%,#198c6c 65%,#3ab84a 100%);
@@ -515,7 +516,13 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
 /* ── Constants ── */
 const MS_CLIENT_ID = '2e958225-a191-405f-93a0-a78be04d96d5';
 const MS_REDIRECT  = 'https://edc-attendance.com/trainer-portal';
-const MS_AUTH_URL  = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize';
+
+const msalApp = new msal.PublicClientApplication({
+  auth: { clientId: MS_CLIENT_ID, redirectUri: MS_REDIRECT },
+  cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false },
+});
+
+let msalToken = null;
 const CHECKIN_URL  = 'https://edc-attendance.com/checkin';
 
 const TRAINER_COURSES = {
@@ -558,27 +565,36 @@ let refreshTimer = null;
 let removeStudentTarget = null;
 
 /* ── Auth ── */
-function signInWithMicrosoft() {
+async function signInWithMicrosoft() {
   document.getElementById('msLoginError').textContent = '';
   document.getElementById('msSigninBtn').disabled = true;
   document.getElementById('msLoading').style.display = 'inline-block';
   document.getElementById('msSigninLabel').textContent = 'Opening Microsoft sign-in…';
-  const nonce = Math.random().toString(36).slice(2) + Date.now();
-  sessionStorage.setItem('ms_nonce', nonce);
-  const params = new URLSearchParams({
-    client_id:MS_CLIENT_ID, response_type:'id_token', redirect_uri:MS_REDIRECT,
-    scope:'openid profile email', response_mode:'fragment', nonce
-  });
-  window.location.href = MS_AUTH_URL + '?' + params;
+  try {
+    const result = await msalApp.loginPopup({ scopes: ['User.Read'] });
+    msalApp.setActiveAccount(result.account);
+    msalToken = result.accessToken;
+    showPortal(result.account.name, result.account.username);
+  } catch(e) {
+    setLoginError('Sign-in failed — ' + (e.message || 'please try again'));
+  }
 }
 function logout() {
-  sessionStorage.removeItem('ms_session_trainer');
+  msalToken = null;
   clearInterval(refreshTimer);
-  window.location.href = 'https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri=' + encodeURIComponent(MS_REDIRECT);
+  msalApp.logoutPopup().catch(() => {});
 }
-function parseJwt(token) {
-  try { return JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); }
-  catch(e) { return null; }
+async function refreshToken() {
+  const accounts = msalApp.getAllAccounts();
+  if (!accounts.length) throw new Error('Not signed in');
+  const r = await msalApp.acquireTokenSilent({ scopes: ['User.Read'], account: accounts[0] });
+  msalToken = r.accessToken;
+}
+async function authFetch(url, options = {}) {
+  if (!msalToken) await refreshToken();
+  const headers = { ...(options.headers || {}), 'Authorization': 'Bearer ' + msalToken };
+  if (options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
+  return fetch(url, { ...options, headers });
 }
 function setLoginError(msg) {
   document.getElementById('msLoginError').textContent = msg;
@@ -676,7 +692,7 @@ function parseCourse(raw) { const m=(raw||'').trim().match(/^([A-Z]{3}\d+)\s+(.+
 /* ── Data loading ── */
 async function loadSummary() {
   try {
-    const res = await fetch('/api/summary');
+    const res = await authFetch('/api/summary');
     const data = await res.json();
     if (Array.isArray(data)) { summaryData = data; renderClass(); }
   } catch(e) { console.warn('Summary load failed', e); }
@@ -685,7 +701,7 @@ async function loadRoll() {
   if (!trainerName) return;
   const date = document.getElementById('rollDate').value || todayStr();
   try {
-    const res = await fetch('/api/attendance?date=' + date);
+    const res = await authFetch('/api/attendance?date=' + date);
     const data = await res.json();
     rollData = Array.isArray(data) ? data : [];
     renderRoll(); renderClass();
@@ -694,7 +710,7 @@ async function loadRoll() {
 }
 async function loadRecords() {
   try {
-    const res = await fetch('/api/records');
+    const res = await authFetch('/api/records');
     const data = await res.json();
     if (Array.isArray(data)) { recordsData = data; renderClass(); }
   } catch(e) { console.warn('Records load failed', e); }
@@ -747,7 +763,7 @@ async function markStudent(studentId, name, course, status) {
   const campus = TRAINER_CAMPUS[trainerName] || '';
   const {code:courseCode} = parseCourse(course);
   try {
-    const res = await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},
+    const res = await authFetch('/api/save',{method:'POST',
       body:JSON.stringify({studentId,studentName:name,course,courseCode,trainer:trainerName,campus,dates:[date],status,markedBy:msDisplayName})});
     const data = await res.json();
     if (!res.ok) throw new Error(data.error||res.statusText);
@@ -884,7 +900,7 @@ async function submitAddStudent() {
   const {code:courseCode} = parseCourse(course);
   const campus = TRAINER_CAMPUS[trainerName]||'';
   try {
-    const res = await fetch('/api/enroll',{method:'POST',headers:{'Content-Type':'application/json'},
+    const res = await authFetch('/api/enroll',{method:'POST',
       body:JSON.stringify({studentId,name,course,courseCode,trainer:trainerName,campus,commenced:commenced||null,expectedEnd:expectedEnd||null})});
     const data = await res.json();
     if (!res.ok) throw new Error(data.error||res.statusText);
@@ -906,7 +922,7 @@ async function confirmRemove(reason) {
   if (!removeStudentTarget) return;
   const {studentId, name, course} = removeStudentTarget;
   try {
-    const res = await fetch('/api/withdraw',{method:'POST',headers:{'Content-Type':'application/json'},
+    const res = await authFetch('/api/withdraw',{method:'POST',
       body:JSON.stringify({studentId,course,reason})});
     const data = await res.json();
     if (!res.ok) throw new Error(data.error||res.statusText);
@@ -924,7 +940,7 @@ function openEditModal(id, name, course, commenced, expectedEnd) {
   if (newEnd===null) return;
   const {code:courseCode} = parseCourse(course);
   const campus = TRAINER_CAMPUS[trainerName]||'';
-  fetch('/api/enroll',{method:'POST',headers:{'Content-Type':'application/json'},
+  authFetch('/api/enroll',{method:'POST',
     body:JSON.stringify({studentId:id,name,course,courseCode,trainer:trainerName,campus,commenced:newStart||null,expectedEnd:newEnd||null})})
     .then(r=>r.json()).then(data=>{ showToast('Updated'); loadSummary(); })
     .catch(e=>showToast('Failed: '+e.message,true));
@@ -1006,19 +1022,16 @@ function showToast(msg, isErr) {
   setTimeout(()=>t.classList.remove('show'),3000);
 }
 
-/* ── Auth IIFE ── */
-(function() {
-  const hash=window.location.hash.slice(1), params=new URLSearchParams(hash);
-  if (params.has('id_token')) {
-    history.replaceState(null,'',window.location.pathname);
-    const claims=parseJwt(params.get('id_token'));
-    if (claims) { sessionStorage.setItem('ms_session_trainer',JSON.stringify({name:claims.name,username:claims.preferred_username||claims.email})); showPortal(claims.name,claims.preferred_username); }
-    else setLoginError('Sign-in failed — invalid token.');
-    return;
+/* ── Restore session on page load ── */
+(async function() {
+  const accounts = msalApp.getAllAccounts();
+  if (accounts.length) {
+    try {
+      const r = await msalApp.acquireTokenSilent({ scopes: ['User.Read'], account: accounts[0] });
+      msalToken = r.accessToken;
+      showPortal(accounts[0].name, accounts[0].username);
+    } catch(e) { /* silent refresh failed — stay on login screen */ }
   }
-  if (params.has('error')) { history.replaceState(null,'',window.location.pathname); setLoginError('Sign-in error: '+(params.get('error_description')||params.get('error'))); return; }
-  const stored=sessionStorage.getItem('ms_session_trainer');
-  if (stored) { try { const s=JSON.parse(stored); showPortal(s.name,s.username); } catch(e) { sessionStorage.removeItem('ms_session_trainer'); } }
 })();
 </script>
 </body>
