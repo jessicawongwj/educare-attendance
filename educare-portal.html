@@ -2049,7 +2049,7 @@ function applyDailyFilters(){
   if(!rows.length){ tbody.innerHTML='<tr><td colspan="10"><div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No records for this date</div><div class="empty-state-sub">No students have checked in yet.</div></div></td></tr>'; document.getElementById('dailyPagination').style.display='none'; return; }
   tbody.innerHTML=rows.map(r=>`<tr>
     <td>${r.studentId}</td>
-    <td class="td-name" onclick="openStudentHistory('${(r.studentId||'').replace(/'/g,"\\'")}','${(r.studentName||'').replace(/'/g,"\\'")}')">${r.studentName}</td>
+    <td class="td-name" data-student-id="${r.studentId||''}" data-student-name="${(r.studentName||'').replace(/"/g,'&quot;')}">${r.studentName}</td>
     <td style="max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${r.course||''}">${r.course||'—'}</td>
     <td>${r.trainer||'—'}</td>
     <td>${r.campus||'—'}</td>
@@ -2123,11 +2123,9 @@ function renderRateCheck(){
     const rate=workDays?Math.min(100,Math.round((s.attendedDays||0)/workDays*100)):0;
     const rateClass=rate>=80?'':'mid';
     const multiTag=(s.enrollmentCount||1)>1?`<span style="margin-left:4px;font-size:10px;font-weight:700;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;border-radius:4px;padding:1px 5px;">${s.enrollmentCount} COURSES</span>`:'';
-    const safeId=s.id.replace(/'/g,"\\'").replace(/"/g,'&quot;');
-    const safeName=(s.name||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
     return `<tr>
       <td>${s.id}</td>
-      <td class="td-name" style="cursor:pointer;color:var(--brand-dark);text-decoration:underline;text-underline-offset:2px;" onclick="openStudentHistory('${safeId}','${safeName}')">${s.name}${multiTag}</td>
+      <td class="td-name" data-student-id="${s.id||''}" data-student-name="${(s.name||'').replace(/"/g,'&quot;')}">${s.name}${multiTag}</td>
       <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${s.course}">${s.courseCode?'<span style="font-size:11px;color:var(--text-3);margin-right:4px;">['+s.courseCode+']</span>':''}${s.course}</td>
       <td>${s.trainer||'—'}</td>
       <td>${s.campus||'—'}</td>
@@ -2136,7 +2134,7 @@ function renderRateCheck(){
       <td>${s.lastCheckin?fmtDate(s.lastCheckin):'Never'}</td>
       <td><div class="rate-bar-row"><div class="rate-bar-bg"><div class="rate-bar-fill ${rateClass}" style="width:${rate}%"></div></div><span class="rate-pct" style="color:${rate>=80?'var(--success)':'var(--warning)'}">${rate}%</span></div></td>
       <td>${rate>=80?'<span class="badge badge-ok">On Track</span>':'<span class="badge badge-warn">At Risk</span>'}</td>
-      <td><button class="btn btn-ghost" style="font-size:var(--text-xs);padding:0.25rem 0.6rem;" onclick="openMarkModal('${safeId}')">Mark</button></td>
+      <td><button class="btn btn-ghost" style="font-size:var(--text-xs);padding:0.25rem 0.6rem;" onclick="openMarkModal(this.dataset.id)" data-id="${s.id}">Mark</button></td>
     </tr>`;
   }).join('');
   document.getElementById('ratePagination').style.display='none';
@@ -2660,6 +2658,15 @@ document.addEventListener('keydown',e=>{
     } catch(e) { /* silent refresh failed — stay on login screen */ }
   }
 })();
+
+/* ── Student name click — delegated ── */
+document.addEventListener('click', function(e) {
+  const td = e.target.closest('.td-name[data-student-id]');
+  if (!td) return;
+  const sid  = td.dataset.studentId;
+  const name = td.dataset.studentName;
+  if (sid) openStudentHistory(sid, name);
+});
 </script>
 </body>
 </html>
