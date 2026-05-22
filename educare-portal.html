@@ -2049,7 +2049,7 @@ function applyDailyFilters(){
   if(!rows.length){ tbody.innerHTML='<tr><td colspan="10"><div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No records for this date</div><div class="empty-state-sub">No students have checked in yet.</div></div></td></tr>'; document.getElementById('dailyPagination').style.display='none'; return; }
   tbody.innerHTML=rows.map(r=>`<tr>
     <td>${r.studentId}</td>
-    <td class="td-name">${r.studentName}</td>
+    <td class="td-name" onclick="openStudentHistory('${(r.studentId||'').replace(/'/g,"\\'")}','${(r.studentName||'').replace(/'/g,"\\'")}')">${r.studentName}</td>
     <td style="max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${r.course||''}">${r.course||'—'}</td>
     <td>${r.trainer||'—'}</td>
     <td>${r.campus||'—'}</td>
