@@ -594,6 +594,14 @@ body.dark .campus-pill{ background:var(--surface); }
 body.dark .filter-select, body.dark .search-input, body.dark .form-input{ background:var(--surface); color:var(--text); border-color:var(--border); }
 body.dark .filter-bar-strip{ background:var(--surface-2); }
 body.dark .toast{ background:var(--surface); color:var(--text); }
+/* ── PIN keypad ── */
+.pin-dots{ display:flex; gap:8px; justify-content:center; margin-bottom:1rem; }
+.pin-dot{ width:16px; height:16px; border-radius:50%; background:var(--border); border:2px solid var(--border); transition:all .15s; }
+.pin-dot.filled{ background:var(--brand); border-color:var(--brand); }
+.pin-keypad{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:1rem; }
+.pin-key{ height:48px; border:1.5px solid var(--border); border-radius:var(--radius-md); background:var(--surface); color:var(--brand); font-size:1.1rem; font-weight:700; cursor:pointer; font-family:inherit; transition:all var(--transition); }
+.pin-key:hover{ background:var(--brand); color:white; border-color:var(--brand); }
+.pin-key.del{ color:var(--danger); font-size:1rem; }
 body.dark .pin-key{ background:var(--surface); color:var(--brand-light); border-color:var(--border); }
 body.dark .pin-key:hover{ background:var(--surface-2); border-color:var(--brand); }
 body.dark .login-card{ background:#162030; }
@@ -1320,7 +1328,7 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
       </div>
       <div class="form-group" style="margin-bottom:0;">
         <label class="form-label">Trainer</label>
-        <select id="addStudentTrainer" class="form-input"><option value="">— Select —</option></select>
+        <select id="addStudentTrainer" class="form-input" onchange="populateAddStudentCourses()"><option value="">— Select —</option></select>
       </div>
       <div class="form-group" style="margin-bottom:0;">
         <label class="form-label">Course</label>
@@ -1508,6 +1516,9 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
      JAVASCRIPT
 ══════════════════════════════════════════ -->
 <script>
+/* ── Utilities ── */
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
 /* ── Config ── */
 const PORTAL_PIN = '1234'; // TODO: replace with secure PIN storage
 const TRAINER_COURSES = { /* populated when API connected */ };
@@ -2104,9 +2115,9 @@ function applyDailyFilters(){
     <td>${r.campus||'—'}</td>
     <td>${fmtTime(r.checkinTime)}</td>
     <td>${fmtTime(r.checkoutTime)}</td>
-    <td>${r.checkoutTime?'<span class="badge badge-present">Present</span>':'<span class="badge badge-warn">Checked In</span>'}</td>
+    <td>${r.checkoutTime?'<span class="badge badge-present">Present</span>':r.checkinTime?'<span class="badge badge-warn">Checked In</span>':'<span class="badge badge-absent">Absent</span>'}</td>
     <td>—</td>
-    <td></td>
+    <td><button class="btn btn-ghost btn-sm" onclick="openMarkModal('${(r.studentId||'').replace(/'/g,"\\'")}')" title="Mark attendance">Mark</button></td>
   </tr>`).join('');
   document.getElementById('dailyPagination').style.display='none';
 }
@@ -2149,8 +2160,24 @@ function renderRateCheck(){
   const course=document.getElementById('rateCourseFilter').value;
   const search=(document.getElementById('rateSearchInput').value||'').toLowerCase();
   const todayCheckedIn=new Set(dailyRows.map(r=>r.studentId));
-  // Working days in last 30 days (Mon-Fri)
   const workDays=Array.from({length:90},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); return d.getDay(); }).filter(d=>d>0&&d<6).length;
+
+  // Summary cards
+  const totalS=summaryData.length, activeS=summaryData.filter(s=>s.status==='active').length;
+  const atRiskS=summaryData.filter(s=>s.status==='active'&&workDays&&(s.attendedDays||0)/workDays*100<80).length;
+  const notStartedS=summaryData.filter(s=>s.status==='not-started').length;
+  document.getElementById('rateSummaryCards').innerHTML=`
+    <div class="stat-card" style="border-left-color:var(--brand);" onclick="setRateStatus('all')"><div class="stat-label">Total Students</div><div class="stat-value">${totalS}</div></div>
+    <div class="stat-card" style="border-left-color:var(--success);" onclick="setRateStatus('above80')"><div class="stat-label" style="color:var(--success);">Active</div><div class="stat-value" style="color:var(--success);">${activeS}</div></div>
+    <div class="stat-card" style="border-left-color:var(--danger);" onclick="setRateStatus('below80')"><div class="stat-label" style="color:var(--danger);">At Risk (&lt;80%)</div><div class="stat-value" style="color:var(--danger);">${atRiskS}</div></div>
+    <div class="stat-card" style="border-left-color:var(--warning);" onclick="setRateStatus('upcoming')"><div class="stat-label" style="color:var(--warning);">Not Started</div><div class="stat-value" style="color:var(--warning);">${notStartedS}</div></div>`;
+
+  // Sub-tab badges
+  const notCheckedInCount=summaryData.filter(s=>s.status==='active'&&!todayCheckedIn.has(s.id)).length;
+  const nciBadge=document.getElementById('noCheckinTabBadge');
+  if(nciBadge){nciBadge.textContent=notCheckedInCount;nciBadge.style.display=notCheckedInCount?'inline':'none';}
+  const upBadge=document.getElementById('upcomingTabBadge');
+  if(upBadge){upBadge.textContent=notStartedS;upBadge.style.display=notStartedS?'inline':'none';}
 
   let rows=summaryData.filter(s=>{
     if(rateCampus!=='all'&&s.campus!==rateCampus) return false;
@@ -2274,6 +2301,22 @@ function renderMyClass(){
   if(!summaryData.length) return;
   const search=(document.getElementById('myClassSearch').value||'').toLowerCase();
   const todayIn=new Set(dailyRows.map(r=>r.studentId));
+  const workDays=Array.from({length:90},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); return d.getDay(); }).filter(d=>d>0&&d<6).length;
+
+  // Summary cards
+  const currentCount=summaryData.filter(s=>s.status==='active').length;
+  const nsCount=summaryData.filter(s=>s.status==='not-started').length;
+  document.getElementById('myClassSummaryCards').innerHTML=`
+    <div class="stat-card" style="border-left-color:var(--brand);"><div class="stat-label">Active Students</div><div class="stat-value">${currentCount}</div></div>
+    <div class="stat-card" style="border-left-color:var(--success);"><div class="stat-label" style="color:var(--success);">Present Today</div><div class="stat-value" style="color:var(--success);">${summaryData.filter(s=>s.status==='active'&&todayIn.has(s.id)).length}</div></div>
+    <div class="stat-card" style="border-left-color:var(--warning);"><div class="stat-label" style="color:var(--warning);">Not Started</div><div class="stat-value" style="color:var(--warning);">${nsCount}</div></div>`;
+
+  // Sub-tab badges
+  const curBadge=document.getElementById('myClassCurrentBadge');
+  if(curBadge) curBadge.textContent=currentCount;
+  const nsBadge=document.getElementById('myClassNotStartedBadge');
+  if(nsBadge){nsBadge.textContent=nsCount;nsBadge.style.display=nsCount?'inline':'none';}
+
   let rows=summaryData.filter(s=>{
     if(myClassTab==='current'&&s.status!=='active') return false;
     if(myClassTab==='notstarted'&&s.status!=='not-started') return false;
@@ -2284,20 +2327,20 @@ function renderMyClass(){
   document.getElementById('myClassCount').textContent=rows.length+' students';
   const tbody=document.getElementById('myClassTableBody');
   if(!tbody) return;
-  const workDays=Array.from({length:90},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); return d.getDay(); }).filter(d=>d>0&&d<6).length;
-  if(!rows.length){ tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">📚</div><div class="empty-state-title">No students</div></div></td></tr>'; return; }
+  if(!rows.length){ tbody.innerHTML='<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">📚</div><div class="empty-state-title">No students</div></div></td></tr>'; return; }
   tbody.innerHTML=rows.map(s=>{
     const rate=workDays?Math.min(100,Math.round((s.attendedDays||0)/workDays*100)):0;
     const checkedIn=todayIn.has(s.id);
     return `<tr>
-      <td>${s.id}</td>
-      <td class="td-name">${s.name}</td>
-      <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.course}</td>
-      <td>${s.trainer||'—'}</td>
-      <td>${s.campus||'—'}</td>
+      <td style="font-size:var(--text-xs);font-family:monospace;color:var(--text-2);">${s.id}</td>
+      <td class="td-name" data-student-id="${s.id||''}" data-student-name="${(s.name||'').replace(/"/g,'&quot;')}">${s.name}</td>
+      <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(s.course||'')}">${s.courseCode?'<span style="font-size:11px;color:var(--text-3);margin-right:4px;">['+s.courseCode+']</span>':''}${escHtml(s.course||'—')}</td>
+      <td style="font-size:.78rem;color:var(--text-2);">${s.commenced?fmtDate(s.commenced):'—'}</td>
+      <td style="font-size:.78rem;color:var(--text-2);">${s.expectedEnd?fmtDate(s.expectedEnd):'—'}</td>
       <td>${checkedIn?'<span class="badge badge-present">Present</span>':'<span class="badge badge-absent">Not In</span>'}</td>
       <td><div class="rate-bar-row"><div class="rate-bar-bg"><div class="rate-bar-fill ${rate>=80?'':'mid'}" style="width:${rate}%"></div></div><span class="rate-pct">${rate}%</span></div></td>
-      <td><button class="btn btn-ghost" style="font-size:var(--text-xs);padding:0.25rem 0.6rem;" onclick="openMarkModal('${s.id.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">Mark</button></td>
+      <td>${rate>=80?'<span class="badge badge-ok">On Track</span>':'<span class="badge badge-warn">At Risk</span>'}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openMarkModal(this.dataset.id)" data-id="${s.id}">Mark</button></td>
     </tr>`;
   }).join('');
 }
@@ -2326,20 +2369,35 @@ function renderNotStarted(){
   const todayIn=new Set(dailyRows.map(r=>r.studentId));
   const notIn=summaryData.filter(s=>s.status==='active'&&!todayIn.has(s.id));
   const upcoming=summaryData.filter(s=>s.status==='not-started');
+
+  // Nav badge (top-level tab)
   const badge=document.getElementById('notStartedBadge');
   if(badge){ badge.textContent=notIn.length; badge.style.display=notIn.length?'inline':'none'; }
-  const rows=notStartedTab==='not-checked-in'?notIn:upcoming;
+
+  // Sub-tab badges
+  const notInBadge=document.getElementById('nsTabNotCheckedInBadge');
+  if(notInBadge){notInBadge.textContent=notIn.length;notInBadge.style.display=notIn.length?'inline':'none';}
+  const tentBadge=document.getElementById('nsTabTentativeBadge');
+  if(tentBadge){tentBadge.textContent=upcoming.length;tentBadge.style.display=upcoming.length?'inline':'none';}
+
+  const baseRows=notStartedTab==='not-checked-in'?notIn:upcoming;
+  const search=(document.getElementById('notStartedSearch')?.value||'').toLowerCase();
+  const rows=search?baseRows.filter(s=>(s.name||'').toLowerCase().includes(search)||(s.id||'').includes(search)):baseRows;
+
+  const countLabel=document.getElementById('notStartedCountLabel');
+  if(countLabel) countLabel.textContent=rows.length+' students';
+
   const tbody=document.getElementById('notStartedTableBody');
   if(!tbody) return;
-  if(!rows.length){ tbody.innerHTML='<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-title">'+(notStartedTab==='not-checked-in'?'All active students have checked in':'No upcoming students')+'</div></div></td></tr>'; return; }
+  if(!rows.length){ tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-title">'+(notStartedTab==='not-checked-in'?'All active students have checked in':'No upcoming students')+'</div></div></td></tr>'; return; }
   tbody.innerHTML=rows.map(s=>`<tr>
-    <td>${s.id}</td>
-    <td class="td-name">${s.name}</td>
-    <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.course}</td>
+    <td style="font-size:var(--text-xs);font-family:monospace;color:var(--text-2);">${s.id}</td>
+    <td class="td-name" data-student-id="${s.id||''}" data-student-name="${(s.name||'').replace(/"/g,'&quot;')}">${s.name}</td>
+    <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(s.course||'')}">${escHtml(s.course||'—')}</td>
     <td>${s.trainer||'—'}</td>
     <td>${s.campus||'—'}</td>
     <td>${s.lastCheckin?fmtDate(s.lastCheckin):'Never'}</td>
-    <td><button class="btn btn-ghost" style="font-size:var(--text-xs);padding:0.25rem 0.6rem;" onclick="openMarkModal('${s.id.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">Mark</button></td>
+    <td><button class="btn btn-ghost btn-sm" onclick="openMarkModal(this.dataset.id)" data-id="${s.id}">Mark</button></td>
   </tr>`).join('');
 }
 
@@ -2578,7 +2636,24 @@ function confirmRosterUpload(){ showToast('Roster upload requires API integratio
 function closeModal(){ document.getElementById('studentModal').classList.remove('show'); }
 function closeAbsentModal(){ document.getElementById('absentModal').classList.remove('show'); }
 function closeAddStudentModal(){ document.getElementById('addStudentModal').classList.remove('show'); }
-function openAddStudentModal(){ document.getElementById('addStudentDate').value=document.getElementById('dateFilter').value||todayStr(); document.getElementById('addStudentModal').classList.add('show'); }
+function openAddStudentModal(){
+  document.getElementById('addStudentDate').value=document.getElementById('dateFilter').value||todayStr();
+  // Populate trainer dropdown from known trainers
+  const trainerSel=document.getElementById('addStudentTrainer');
+  trainerSel.innerHTML='<option value="">— Select —</option>';
+  Object.keys(TRAINER_CAMPUS).filter((v,i,a)=>a.indexOf(v)===i).sort().forEach(name=>{
+    const o=document.createElement('option'); o.value=name; o.textContent=name; trainerSel.appendChild(o);
+  });
+  populateAddStudentCourses();
+  document.getElementById('addStudentModal').classList.add('show');
+}
+function populateAddStudentCourses(){
+  const trainer=document.getElementById('addStudentTrainer').value;
+  const courses=[...new Set(summaryData.filter(s=>!trainer||s.trainer===trainer).map(s=>s.course).filter(Boolean))].sort();
+  const cf=document.getElementById('addStudentCourse');
+  cf.innerHTML='<option value="">— Select —</option>';
+  courses.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; cf.appendChild(o); });
+}
 function closeAddClassStudentModal(){ document.getElementById('addClassStudentModal').classList.remove('show'); }
 function openAddClassStudentModal(){ document.getElementById('addClassStudentModal').classList.add('show'); }
 function confirmAddStudent(){ showToast('Requires API integration.',true); closeAddStudentModal(); }
