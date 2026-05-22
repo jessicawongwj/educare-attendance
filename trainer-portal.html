@@ -281,13 +281,12 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
   <!-- ── Daily Roll Tab ── -->
   <div class="content" id="rollView">
     <div id="trainerNotFoundPanel" style="display:none;">
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">Select Your Name</div><div style="font-size:.75rem;color:var(--text-2);margin-top:.2rem;">Your account wasn't automatically matched.</div></div></div>
-        <div style="padding:1.1rem;">
-          <select id="trainerPickerSelect" onchange="applyTrainerPick()" style="width:100%;padding:.6rem .85rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.88rem;font-family:inherit;">
-            <option value="">— Select trainer —</option>
-          </select>
-        </div>
+      <div class="card" style="text-align:center;padding:2.5rem 1.5rem;">
+        <div style="font-size:2rem;margin-bottom:.75rem;">🔒</div>
+        <div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:.4rem;">Account not recognised</div>
+        <div style="font-size:.82rem;color:var(--text-2);line-height:1.6;max-width:340px;margin:0 auto .5rem;">Your Microsoft account is not linked to a trainer profile. Please contact your administrator to have your account configured.</div>
+        <div id="trainerNotFoundEmail" style="font-size:.75rem;color:var(--text-3);margin-top:.25rem;"></div>
+        <button class="ms-btn" onclick="logout()" style="margin-top:1.25rem;max-width:200px;margin-left:auto;margin-right:auto;">Sign out</button>
       </div>
     </div>
     <!-- Stats -->
@@ -629,24 +628,15 @@ function showPortal(name, username) {
   document.getElementById('trainerDisplayName').textContent = msDisplayName.split(' ')[0];
   trainerName = detectTrainer(msDisplayName, username);
   if (trainerName) initTrainer(trainerName);
-  else showTrainerPicker();
+  else showAccessDenied(username);
 }
 
-function showTrainerPicker() {
+function showAccessDenied(email) {
   document.getElementById('rollStats').style.display = 'none';
   document.getElementById('rollCard').style.display = 'none';
   document.getElementById('trainerNotFoundPanel').style.display = 'block';
-  const sel = document.getElementById('trainerPickerSelect');
-  Object.keys(TRAINER_COURSES).sort().forEach(n => {
-    const o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o);
-  });
-}
-function applyTrainerPick() {
-  const val = document.getElementById('trainerPickerSelect').value;
-  if (!val) return;
-  document.getElementById('trainerNotFoundPanel').style.display = 'none';
-  trainerName = val;
-  initTrainer(val);
+  const el = document.getElementById('trainerNotFoundEmail');
+  if (el && email) el.textContent = 'Signed in as: ' + email;
 }
 
 function initTrainer(name) {

@@ -1,18 +1,30 @@
 const { getPool, sql } = require('./_db');
 const { validateToken, isAdminUser } = require('./_auth');
+const { trainersFromEmail } = require('./_trainers');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).end();
   const user = await validateToken(req);
   if (!user) return res.status(401).json({ error: 'Unauthorized' });
   const email = (user.mail || user.userPrincipalName || '').toLowerCase();
-  if (!isAdminUser(email)) return res.status(403).json({ error: 'Admin only' });
+  const adminUser = isAdminUser(email);
+  const trainerNames = adminUser ? [] : trainersFromEmail(email);
+
+  // Must be admin or a known trainer
+  if (!adminUser && trainerNames.length === 0) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
 
   const { studentId, studentName, course, courseCode, trainer, campus,
           dates, status, reason, markedBy, note } = req.body;
 
   if (!studentId || !Array.isArray(dates) || !dates.length || !status) {
     return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  // Trainers can only save records attributed to themselves
+  if (!adminUser && trainer && !trainerNames.includes(trainer)) {
+    return res.status(403).json({ error: 'Forbidden: cannot save records for another trainer' });
   }
 
   try {
