@@ -401,7 +401,7 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
           <div style="font-size:.72rem;color:var(--text-2);margin-top:.1rem;">These dates are excluded from attendance rate calculations</div>
         </div>
       </div>
-      <div id="holidaysContent" style="padding:.5rem 0;"></div>
+      <div id="holidaysContent" style="padding:.75rem 0;"></div>
     </div>
   </div>
 
@@ -946,25 +946,51 @@ async function renderHolidays() {
     el.innerHTML = '<div style="text-align:center;padding:2.5rem;color:var(--text-2);font-size:.85rem;">No holidays or closure dates have been added yet.<br><span style="font-size:.78rem;opacity:.7;">Your admin will configure these dates.</span></div>';
     return;
   }
-  el.innerHTML = `<table class="table"><thead><tr>
-    <th>Date</th><th>Day</th><th>Description</th><th>Type</th>
-  </tr></thead><tbody>
-  ${holidays.map(h => {
-    const d = new Date(h.date + 'T00:00:00');
-    const dayName = d.toLocaleDateString('en-AU',{weekday:'short',timeZone:'UTC'});
-    const dateStr = d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
-    const past = h.date < today;
-    const badge = h.type==='public'
-      ? '<span style="background:#dbeafe;color:#1d4ed8;padding:.2rem .55rem;border-radius:20px;font-size:.65rem;font-weight:800;">Public Holiday</span>'
-      : '<span style="background:#fef3c7;color:#92400e;padding:.2rem .55rem;border-radius:20px;font-size:.65rem;font-weight:800;">College Closure</span>';
-    return `<tr style="${past?'opacity:.45':''}">
-      <td style="font-weight:700;color:var(--brand-dark);">${dateStr}</td>
-      <td style="color:var(--text-2);">${dayName}</td>
-      <td>${escHtml(h.description)}</td>
-      <td>${badge}</td>
-    </tr>`;
-  }).join('')}
-  </tbody></table>`;
+  const pubHols = holidays.filter(h=>h.type==='public').sort((a,b)=>a.date.localeCompare(b.date));
+  const closures = holidays.filter(h=>h.type==='closure').sort((a,b)=>a.date.localeCompare(b.date));
+  const breakMap={};
+  closures.forEach(h=>{
+    if(!breakMap[h.description]) breakMap[h.description]={min:h.date,max:h.date,desc:h.description};
+    else{ if(h.date<breakMap[h.description].min) breakMap[h.description].min=h.date; if(h.date>breakMap[h.description].max) breakMap[h.description].max=h.date; }
+  });
+  const breaks = Object.values(breakMap).sort((a,b)=>a.min.localeCompare(b.min));
+  const upcoming = pubHols.filter(h=>h.date>=today);
+  const past = pubHols.filter(h=>h.date<today);
+  const nextHol = upcoming[0];
+  function fmtShort(iso){return new Date(iso+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short',timeZone:'UTC'});}
+  function fmtLong(iso){return new Date(iso+'T00:00:00').toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});}
+  function fmtRow(iso){return new Date(iso+'T00:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'});}
+  function weekdays(min,max){let c=0;const e=new Date(max+'T00:00:00');for(const d=new Date(min+'T00:00:00');d<=e;d.setDate(d.getDate()+1)){const w=d.getDay();if(w>=1&&w<=5)c++;}return c;}
+  const bannerHtml=nextHol?`<div style="background:var(--brand-dark);color:#fff;border-radius:.75rem;padding:1rem 1.5rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;">
+    <div style="font-size:.62rem;font-weight:800;letter-spacing:.1em;opacity:.65;white-space:nowrap;">NEXT PUBLIC HOLIDAY</div>
+    <div style="font-weight:800;font-size:1.02rem;">${escHtml(nextHol.description)}</div>
+    <div style="opacity:.75;font-size:.82rem;">${fmtLong(nextHol.date)}</div>
+  </div>`:'';
+  const holRow=(h,isPast)=>`<div style="display:flex;align-items:center;gap:.7rem;padding:.6rem 0;border-bottom:1px solid var(--border);${isPast?'opacity:.4':''}">
+    <div style="width:.5rem;height:.5rem;border-radius:50%;background:${isPast?'#9ca3af':'#22c55e'};flex-shrink:0;"></div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-weight:700;font-size:.82rem;">${fmtRow(h.date)}</div>
+      <div style="font-size:.75rem;color:var(--text-2);margin-top:.05rem;">${escHtml(h.description)}</div>
+    </div>
+  </div>`;
+  const breakCard=b=>{const isPast=b.max<today;const wd=weekdays(b.min,b.max);const clr=isPast?'#9ca3af':'#3b82f6';const bg=isPast?'#f9fafb':'#eff6ff';
+    return `<div style="border-radius:.6rem;padding:.85rem 1rem;margin-bottom:.7rem;background:${bg};border-left:3px solid ${clr};${isPast?'opacity:.5':''}">
+      <div style="font-weight:700;font-size:.85rem;">${escHtml(b.desc.replace(/^School Break — /,''))}</div>
+      <div style="font-size:.75rem;color:var(--text-2);margin-top:.15rem;">${fmtShort(b.min)} – ${fmtShort(b.max)} &nbsp;·&nbsp; ${wd} working days</div>
+    </div>`;
+  };
+  el.innerHTML=`${bannerHtml}<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.5rem;align-items:start;padding:.25rem 0;">
+    <div>
+      <div style="font-size:.62rem;font-weight:800;letter-spacing:.1em;color:var(--text-2);margin-bottom:.6rem;">PUBLIC HOLIDAYS</div>
+      ${upcoming.length?`<div style="font-size:.6rem;font-weight:800;letter-spacing:.08em;color:#22c55e;margin-bottom:.15rem;">UPCOMING</div>${upcoming.map(h=>holRow(h,false)).join('')}`:''}
+      ${past.length?`<div style="font-size:.6rem;font-weight:800;letter-spacing:.08em;color:var(--text-2);margin-bottom:.15rem;margin-top:.6rem;">PAST</div>${past.map(h=>holRow(h,true)).join('')}`:''}
+      ${!upcoming.length&&!past.length?'<div style="color:var(--text-2);font-size:.82rem;">No public holidays configured.</div>':''}
+    </div>
+    <div>
+      <div style="font-size:.62rem;font-weight:800;letter-spacing:.1em;color:var(--text-2);margin-bottom:.6rem;">SCHOOL BREAKS</div>
+      ${breaks.length?breaks.map(b=>breakCard(b)).join(''):'<div style="color:var(--text-2);font-size:.82rem;">No school breaks configured.</div>'}
+    </div>
+  </div>`;
 }
 
 /* ── Tabs ── */
