@@ -733,10 +733,7 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="23 11 19 15 17 13"/></svg>
         Student Attendance
       </button>
-      <button id="myclassNavTab" class="nav-tab" onclick="switchTab('myclass')">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg>
-        My Class
-      </button>
+
       <button id="notStartedNavTab" class="nav-tab" onclick="switchTab('notStarted')">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         Not Started
@@ -962,56 +959,6 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
     </div>
   </div><!-- /ratecheckView -->
 
-  <!-- ══ MY CLASS ══ -->
-  <div id="myclassView" style="display:none;">
-    <div id="myClassSummaryCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.875rem;margin-bottom:1.25rem;"></div>
-    <div class="card">
-      <div class="card-header">
-        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-          <div class="card-title">My Class</div>
-          <input type="text" class="search-input" id="myClassSearch" placeholder="Search name or ID…" oninput="renderMyClass()">
-          <span class="card-meta" id="myClassCount"></span>
-        </div>
-        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-          <button class="btn btn-outline-primary" onclick="refreshMyClass()">↻ Refresh</button>
-          <button class="btn btn-outline-success" onclick="exportMyClassCSV()">⬇ Export CSV</button>
-          <button class="btn btn-primary" onclick="openAddClassStudentModal()">+ Add Student</button>
-        </div>
-      </div>
-      <!-- Sub-tabs -->
-      <div class="sub-tabs">
-        <button id="myClassTabCurrent" class="sub-tab active" onclick="switchMyClassTab('current')">
-          Current Students <span id="myClassCurrentBadge" class="badge-count" style="background:var(--brand);"></span>
-        </button>
-        <button id="myClassTabNotstarted" class="sub-tab" onclick="switchMyClassTab('notstarted')">
-          Not Started <span id="myClassNotStartedBadge" class="badge-count"></span>
-        </button>
-        <button id="myClassTabUpcoming" class="sub-tab" onclick="switchMyClassTab('upcoming')">
-          Upcoming <span id="myClassUpcomingBadge" class="badge-count" style="background:#d97706;"></span>
-        </button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Student ID</th>
-              <th>Name</th>
-              <th>Course</th>
-              <th>Start Date</th>
-              <th>Expected End</th>
-              <th>Monthly %</th>
-              <th>Overall Rate</th>
-              <th>Status</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="myClassTableBody">
-            <tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">🎓</div><div class="empty-state-title">No students in your class</div><div class="empty-state-sub">Add students to get started.</div></div></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div><!-- /myclassView -->
 
   <!-- ══ NOT STARTED ══ -->
   <div id="notStartedView" style="display:none;">
@@ -1433,36 +1380,6 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
 </div>
 
 <!-- Add Student to My Class Modal -->
-<div class="modal-overlay" id="addClassStudentModal">
-  <div class="modal modal-sm">
-    <div class="modal-header">
-      <div><div class="modal-title">Add Student to My Class</div></div>
-      <button class="modal-close" onclick="closeAddClassStudentModal()">×</button>
-    </div>
-    <div class="modal-body" style="display:flex;flex-direction:column;gap:0.875rem;">
-      <div class="form-group" style="margin-bottom:0;">
-        <label class="form-label">Student ID <span style="color:var(--danger);">*</span></label>
-        <input type="text" id="addClassStudentId" class="form-input" placeholder="e.g. 12345678">
-      </div>
-      <div class="form-group" style="margin-bottom:0;">
-        <label class="form-label">Student Name <span style="color:var(--danger);">*</span></label>
-        <input type="text" id="addClassStudentName" class="form-input" placeholder="e.g. Jane Smith">
-      </div>
-      <div class="form-group" style="margin-bottom:0;">
-        <label class="form-label">Course <span style="color:var(--danger);">*</span></label>
-        <select id="addClassStudentCourse" class="form-input"><option value="">Select course…</option></select>
-      </div>
-      <div class="form-group" style="margin-bottom:0;">
-        <label class="form-label">Start Date</label>
-        <input type="date" id="addClassStudentStart" class="form-input">
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeAddClassStudentModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="confirmAddClassStudent()">Add to My Class</button>
-    </div>
-  </div>
-</div>
 
 <!-- Reassign Trainer Modal -->
 <div class="modal-overlay" id="reassignTrainerModal">
@@ -1841,7 +1758,7 @@ function initPortal(){
 
 async function loadSummary(){
   const loadingRow='<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-2);">Loading students…</td></tr>';
-  ['rateTableBody','myClassTableBody','notStartedTableBody'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=loadingRow;});
+  ['rateTableBody','notStartedTableBody'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=loadingRow;});
   document.getElementById('campusTabStats').innerHTML='<span style="color:var(--text-2);">Loading…</span>';
   document.getElementById('trainerCourseTableBody').innerHTML='<div style="padding:2rem;text-align:center;color:var(--text-2);">Loading attendance data…</div>';
   try{
@@ -1854,13 +1771,12 @@ async function loadSummary(){
     summaryData = data;
     populateRateFilters();
     renderRateCheck();
-    renderMyClass();
     renderNotStarted();
     renderDashboard();
   } catch(e){
     console.error('summary load failed',e);
     const errRow=`<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--danger);">Failed to load: ${e.message}</td></tr>`;
-    ['rateTableBody','myClassTableBody','notStartedTableBody'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=errRow;});
+    ['rateTableBody','notStartedTableBody'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=errRow;});
     document.getElementById('campusTabStats').innerHTML=`<span style="color:var(--danger);">Failed to load data — <a href="javascript:loadSummary()" style="color:var(--brand);">try again</a></span>`;
     document.getElementById('trainerCourseTableBody').innerHTML=`<div style="padding:2rem;text-align:center;color:var(--danger);">Could not load attendance data: ${e.message}<br><br><button class="btn btn-primary" onclick="loadSummary()">↻ Retry</button></div>`;
     showToast('Data failed to load: '+e.message,true);
@@ -1871,7 +1787,7 @@ function fmtTime(dt){ if(!dt) return '—'; return new Date(dt).toLocaleTimeStri
 function fmtDate(dt){ if(!dt) return '—'; return new Date(dt).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'}); }
 
 /* ── Tab Switching ── */
-const VIEWS = ['dashboard','daily','ratecheck','myclass','notStarted','holidays','schedule','settings'];
+const VIEWS = ['dashboard','daily','ratecheck','notStarted','holidays','schedule','settings'];
 function switchTab(tab){
   VIEWS.forEach(v=>{
     document.getElementById(v+'View').style.display=(v===tab)?'block':'none';
