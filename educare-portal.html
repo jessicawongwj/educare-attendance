@@ -994,7 +994,10 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
           <div class="card-title">Public Holidays &amp; College Closure Dates</div>
           <div class="card-meta">These dates are excluded from attendance rate calculations</div>
         </div>
-        <button class="btn btn-primary" onclick="openAddHolidayModal()">+ Add Date</button>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+          <button class="btn btn-ghost btn-sm" onclick="seedCalendar2026()" title="Pre-load all 2026 QLD public holidays and school breaks">📅 Load 2026 Calendar</button>
+          <button class="btn btn-primary" onclick="openAddHolidayModal()">+ Add Date</button>
+        </div>
       </div>
       <div id="holidaysContent">
         <div class="empty-state"><div class="empty-state-icon">📅</div><div class="empty-state-title">No holidays configured</div><div class="empty-state-sub">Add public holidays and college closure dates to exclude them from attendance calculations.</div></div>
@@ -2217,6 +2220,61 @@ function renderNotStarted(){
 }
 
 /* ── Holidays ── */
+const CALENDAR_2026 = [
+  {date:'2026-01-01',description:"New Year's Day",          type:'public'},
+  {date:'2026-01-26',description:'Australia Day',            type:'public'},
+  {date:'2026-04-03',description:'Good Friday',              type:'public'},
+  {date:'2026-04-06',description:'Easter Monday',            type:'public'},
+  {date:'2026-04-07',description:'School Break — Easter',    type:'closure'},
+  {date:'2026-04-08',description:'School Break — Easter',    type:'closure'},
+  {date:'2026-04-09',description:'School Break — Easter',    type:'closure'},
+  {date:'2026-04-10',description:'School Break — Easter',    type:'closure'},
+  {date:'2026-04-13',description:'School Break — Easter',    type:'closure'},
+  {date:'2026-04-14',description:'School Break — Easter',    type:'closure'},
+  {date:'2026-04-15',description:'School Break — Easter',    type:'closure'},
+  {date:'2026-04-16',description:'School Break — Easter',    type:'closure'},
+  {date:'2026-04-17',description:'School Break — Easter',    type:'closure'},
+  {date:'2026-05-04',description:'Labour Day (QLD)',          type:'public'},
+  {date:'2026-06-29',description:'School Break — Mid-year',  type:'closure'},
+  {date:'2026-06-30',description:'School Break — Mid-year',  type:'closure'},
+  {date:'2026-07-01',description:'School Break — Mid-year',  type:'closure'},
+  {date:'2026-07-02',description:'School Break — Mid-year',  type:'closure'},
+  {date:'2026-07-03',description:'School Break — Mid-year',  type:'closure'},
+  {date:'2026-07-06',description:'School Break — Mid-year',  type:'closure'},
+  {date:'2026-07-07',description:'School Break — Mid-year',  type:'closure'},
+  {date:'2026-07-08',description:'School Break — Mid-year',  type:'closure'},
+  {date:'2026-07-09',description:'School Break — Mid-year',  type:'closure'},
+  {date:'2026-07-10',description:'School Break — Mid-year',  type:'closure'},
+  {date:'2026-08-12',description:'Ekka Show Day (Brisbane)', type:'public'},
+  {date:'2026-09-21',description:'School Break — Spring',    type:'closure'},
+  {date:'2026-09-22',description:'School Break — Spring',    type:'closure'},
+  {date:'2026-09-23',description:'School Break — Spring',    type:'closure'},
+  {date:'2026-09-24',description:'School Break — Spring',    type:'closure'},
+  {date:'2026-09-25',description:'School Break — Spring',    type:'closure'},
+  {date:'2026-09-28',description:'School Break — Spring',    type:'closure'},
+  {date:'2026-09-29',description:'School Break — Spring',    type:'closure'},
+  {date:'2026-09-30',description:'School Break — Spring',    type:'closure'},
+  {date:'2026-10-01',description:'School Break — Spring',    type:'closure'},
+  {date:'2026-10-02',description:'School Break — Spring',    type:'closure'},
+  {date:'2026-12-21',description:'School Break — Year-end',  type:'closure'},
+  {date:'2026-12-22',description:'School Break — Year-end',  type:'closure'},
+  {date:'2026-12-23',description:'School Break — Year-end',  type:'closure'},
+  {date:'2026-12-24',description:'School Break — Year-end',  type:'closure'},
+  {date:'2026-12-25',description:'Christmas Day',            type:'public'},
+  {date:'2026-12-28',description:'Boxing Day (observed)',    type:'public'},
+  {date:'2026-12-29',description:'School Break — Year-end',  type:'closure'},
+  {date:'2026-12-30',description:'School Break — Year-end',  type:'closure'},
+  {date:'2026-12-31',description:'School Break — Year-end',  type:'closure'},
+];
+async function seedCalendar2026(){
+  if(!confirm('This will replace all current holiday dates with the 2026 Educare Academic Calendar (44 dates). Continue?')) return;
+  try {
+    const res = await authFetch('/api/settings?key=holidays',{method:'PUT',body:JSON.stringify(CALENDAR_2026)});
+    if(!res.ok){ const d=await res.json(); showToast('Error: '+(d.error||res.statusText),true); return; }
+    showToast('2026 calendar loaded — 44 dates saved');
+    renderHolidaysList();
+  } catch(e){ showToast('Error: '+e.message,true); }
+}
 async function getHolidays(){
   try {
     const res = await authFetch('/api/settings?key=holidays');
