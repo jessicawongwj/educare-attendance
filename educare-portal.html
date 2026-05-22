@@ -2171,12 +2171,12 @@ function renderStudentHistory(studentId, studentName) {
     document.getElementById('studentDatesBody').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No records in last 90 days</div></div>';
     return;
   }
-  document.getElementById('studentDatesBody').innerHTML = `<table class="data-table" style="font-size:.82rem;">
+  document.getElementById('studentDatesBody').innerHTML = `<table style="font-size:.82rem;">
     <thead><tr><th>Date</th><th>Day</th><th>Course</th><th>Check In</th><th>Check Out</th><th>Status</th></tr></thead>
     <tbody>${records.map(r => {
-      const d = new Date((r.attendanceDate||'').replace('T00:00:00.000Z','')+'T00:00:00');
-      const dateStr = d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
-      const dayStr  = d.toLocaleDateString('en-AU',{weekday:'short',timeZone:'UTC'});
+      const d = new Date(r.attendanceDate);
+      const dateStr = isNaN(d) ? '—' : d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+      const dayStr  = isNaN(d) ? '' : d.toLocaleDateString('en-AU',{weekday:'short',timeZone:'UTC'});
       const status  = r.checkoutTime ? '<span class="badge badge-present">Present</span>'
                     : r.checkinTime  ? '<span class="badge badge-warn">Checked In</span>'
                     : '<span class="badge badge-absent">Absent</span>';
@@ -2196,9 +2196,9 @@ function downloadStudentHistoryCSV() {
   const title = document.getElementById('studentDatesTitle').textContent.replace(' — Attendance History','');
   const headers = ['Date','Day','Course','Trainer','Campus','Check In','Check Out','Status'];
   const rows = _studentHistoryData.map(r => {
-    const d = new Date((r.attendanceDate||'').replace('T00:00:00.000Z','')+'T00:00:00');
-    const dateStr = d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
-    const dayStr  = d.toLocaleDateString('en-AU',{weekday:'short',timeZone:'UTC'});
+    const d = new Date(r.attendanceDate);
+    const dateStr = isNaN(d) ? '' : d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+    const dayStr  = isNaN(d) ? '' : d.toLocaleDateString('en-AU',{weekday:'short',timeZone:'UTC'});
     const status  = r.checkoutTime ? 'Present' : r.checkinTime ? 'Checked In' : 'Absent';
     return [dateStr, dayStr, '"'+(r.course||'')+'"', '"'+(r.trainer||'')+'"', '"'+(r.campus||'')+'"', r.checkinTime?fmtTime(r.checkinTime):'', r.checkoutTime?fmtTime(r.checkoutTime):'', status].join(',');
   });
