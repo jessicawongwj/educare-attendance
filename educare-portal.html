@@ -999,8 +999,8 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
               <th>Course</th>
               <th>Start Date</th>
               <th>Expected End</th>
-              <th>Today</th>
-              <th>Attendance Rate</th>
+              <th>Monthly %</th>
+              <th>Overall Rate</th>
               <th>Status</th>
               <th></th>
             </tr>
@@ -1538,6 +1538,9 @@ function calcWorkingDays(startISO, endISO, holidays) {
 }
 
 function calcExpectedSessions(student){
+  // Prefer server-calculated value (accounts for school breaks + holidays via _calendar.js)
+  if(student.expectedDays != null) return student.expectedDays;
+  // Client-side fallback using cached holidays
   const today = todayStr();
   const ago90 = new Date(); ago90.setDate(ago90.getDate()-90);
   const cutoff = ago90.toLocaleDateString('en-CA',{timeZone:'Australia/Brisbane'});
@@ -1548,6 +1551,9 @@ function calcExpectedSessions(student){
 }
 
 function calcMonthlyExpectedSessions(student){
+  // Prefer server-calculated value
+  if(student.monthlyExpectedDays != null) return student.monthlyExpectedDays;
+  // Client-side fallback
   const today = todayStr();
   const [y,m] = today.split('-');
   const monthStart = `${y}-${m}-01`;
@@ -1555,6 +1561,11 @@ function calcMonthlyExpectedSessions(student){
   const start = (commenced && commenced > monthStart) ? commenced : monthStart;
   if(start > today) return 0;
   return calcWorkingDays(start, today, _cachedHolidays||[]);
+}
+
+function getMonthlyAttended(student){
+  // Server sends monthlyAttendedDays when available
+  return student.monthlyAttendedDays != null ? student.monthlyAttendedDays : (student.attendedDays||0);
 }
 
 /* ── Config ── */
@@ -2245,9 +2256,10 @@ function renderRateCheck(){
   if(!rows.length){ tbody.innerHTML='<tr><td colspan="11"><div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-title">No students match</div></div></td></tr>'; document.getElementById('ratePagination').style.display='none'; return; }
   tbody.innerHTML=rows.map(s=>{
     const expectedDays = calcExpectedSessions(s);
-    const monthlyExpected = calcMonthlyExpectedSessions(s);
+    const monthlyExp = calcMonthlyExpectedSessions(s);
+    const monthlyAtt = getMonthlyAttended(s);
     const rate = expectedDays ? Math.min(100,Math.round((s.attendedDays||0)/expectedDays*100)) : 0;
-    const monthlyRate = monthlyExpected ? Math.min(100,Math.round((s.monthlyAttendedDays||s.attendedDays||0)/monthlyExpected*100)) : 0;
+    const monthlyRate = monthlyExp ? Math.min(100,Math.round(monthlyAtt/monthlyExp*100)) : 0;
     const rateClass=rate>=80?'':'mid';
     const multiTag=(s.enrollmentCount||1)>1?`<span style="margin-left:4px;font-size:10px;font-weight:700;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;border-radius:4px;padding:1px 5px;">${s.enrollmentCount} COURSES</span>`:'';
     const rateColor=rate>=80?'var(--success)':rate>=50?'var(--warning)':'var(--danger)';
@@ -2390,21 +2402,26 @@ function renderMyClass(){
   if(!rows.length){ tbody.innerHTML='<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">📚</div><div class="empty-state-title">No students</div></div></td></tr>'; return; }
   tbody.innerHTML=rows.map(s=>{
     const expectedDays=calcExpectedSessions(s);
-    const rate=expectedDays?Math.min(100,Math.round((s.attendedDays||0)/expectedDays*100)):0;
-    const rateClass=rate>=80?'':'mid';
-    const rateColor=rate>=80?'var(--success)':rate>=50?'var(--warning)':'var(--danger)';
-    const checkedIn=todayIn.has(s.id);
+    const monthlyExp=calcMonthlyExpectedSessions(s);
+    const monthlyAtt=getMonthlyAttended(s);
+    const overallRate=expectedDays?Math.min(100,Math.round((s.attendedDays||0)/expectedDays*100)):0;
+    const monthlyRate=monthlyExp?Math.min(100,Math.round(monthlyAtt/monthlyExp*100)):0;
+    const rateClass=overallRate>=80?'':'mid';
+    const rateColor=overallRate>=80?'var(--success)':overallRate>=50?'var(--warning)':'var(--danger)';
+    const mColor=monthlyRate>=80?'var(--success)':monthlyRate>=50?'var(--warning)':'var(--danger)';
     return `<tr>
       <td style="font-size:var(--text-xs);font-family:monospace;color:var(--text-2);">${s.id}</td>
       <td class="td-name" data-student-id="${s.id||''}" data-student-name="${(s.name||'').replace(/"/g,'&quot;')}">${s.name}</td>
       <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(s.course||'')}">${s.courseCode?'<span style="font-size:11px;color:var(--text-3);margin-right:4px;">['+s.courseCode+']</span>':''}${escHtml(s.course||'—')}</td>
       <td style="font-size:.78rem;color:var(--text-2);">${s.commenced?fmtDate(s.commenced):'—'}</td>
       <td style="font-size:.78rem;color:var(--text-2);">${s.expectedEnd?fmtDate(s.expectedEnd):'—'}</td>
-      <td>${checkedIn?'<span class="badge badge-present">Present</span>':'<span class="badge badge-absent">Not In</span>'}</td>
-      <td title="${s.attendedDays||0} attended / ${expectedDays} expected">
-        <div class="rate-bar-row"><div class="rate-bar-bg"><div class="rate-bar-fill ${rateClass}" style="width:${rate}%"></div></div><span class="rate-pct" style="color:${rateColor}">${rate}%</span></div>
+      <td title="${monthlyAtt} attended / ${monthlyExp} expected this month">
+        ${monthlyExp>0?`<span style="font-weight:700;color:${mColor}">${monthlyRate}%</span><span style="font-size:10px;color:var(--text-3);margin-left:3px;">${monthlyAtt}/${monthlyExp}</span>`:'<span style="color:var(--text-3);font-size:var(--text-xs);">—</span>'}
       </td>
-      <td>${rate>=80?'<span class="badge badge-ok">On Track</span>':expectedDays>0?'<span class="badge badge-warn">At Risk</span>':'<span class="badge badge-info">Pending</span>'}</td>
+      <td title="${s.attendedDays||0} attended / ${expectedDays} expected overall">
+        <div class="rate-bar-row"><div class="rate-bar-bg"><div class="rate-bar-fill ${rateClass}" style="width:${overallRate}%"></div></div><span class="rate-pct" style="color:${rateColor}">${overallRate}%</span></div>
+      </td>
+      <td>${overallRate>=80?'<span class="badge badge-ok">On Track</span>':expectedDays>0?'<span class="badge badge-warn">At Risk</span>':'<span class="badge badge-info">Pending</span>'}</td>
       <td><button class="btn btn-ghost btn-sm" onclick="openMarkModal(this.dataset.id)" data-id="${s.id}">Mark</button></td>
     </tr>`;
   }).join('');
@@ -2413,16 +2430,19 @@ function refreshMyClass(){ loadSummary(); showToast('Refreshed'); }
 function exportMyClassCSV(){
   if(!summaryData.length){ showToast('No data.',true); return; }
   const todayIn=new Set(dailyRows.map(r=>r.studentId));
-  const headers=['Student ID','Name','Course','Trainer','Campus','Start Date','Expected End','Attendance %','Today','Status'];
+  const headers=['Student ID','Name','Course','Trainer','Campus','Start Date','Expected End','Monthly %','Overall %','Today','Status'];
   const rows=summaryData.filter(s=>viewMode!=='trainer'||!loggedInTrainerName||s.trainer===loggedInTrainerName);
   const csv=[headers.join(','),...rows.map(s=>{
     const exp=calcExpectedSessions(s);
-    const rate=exp?Math.min(100,Math.round((s.attendedDays||0)/exp*100)):0;
+    const mExp=calcMonthlyExpectedSessions(s);
+    const mAtt=getMonthlyAttended(s);
+    const overallRate=exp?Math.min(100,Math.round((s.attendedDays||0)/exp*100)):0;
+    const monthlyRate=mExp?Math.min(100,Math.round(mAtt/mExp*100)):0;
     const started=normISO(s.commenced)||'';
     const ends=normISO(s.expectedEnd)||'';
-    const today=todayIn.has(s.id)?'Present':'Absent';
-    const status=rate>=80?'On Track':exp>0?'At Risk':'Pending';
-    return [s.id,'"'+(s.name||'')+'"','"'+(s.course||'')+'"','"'+(s.trainer||'')+'"','"'+(s.campus||'')+'"',started,ends,rate+'%',today,status].join(',');
+    const todayStatus=todayIn.has(s.id)?'Present':'Absent';
+    const status=overallRate>=80?'On Track':exp>0?'At Risk':'Pending';
+    return [s.id,'"'+(s.name||'')+'"','"'+(s.course||'')+'"','"'+(s.trainer||'')+'"','"'+(s.campus||'')+'"',started,ends,mExp>0?monthlyRate+'%':'—',overallRate+'%',todayStatus,status].join(',');
   })].join('\n');
   const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='myclass.csv'; a.click();
 }

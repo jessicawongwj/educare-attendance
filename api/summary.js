@@ -38,7 +38,8 @@ module.exports = async (req, res) => {
         e.expectedEnd,
         e.isPrimary,
         (SELECT COUNT(*) FROM enrollments WHERE studentId = s.id) AS enrollmentCount,
-        COUNT(a.id)        AS attendedDays,
+        COUNT(a.id) AS attendedDays,
+        SUM(CASE WHEN a.attendanceDate >= CAST(DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1) AS DATE) THEN 1 ELSE 0 END) AS monthlyAttendedDays,
         MAX(a.checkinTime) AS lastCheckin
       FROM students s
       JOIN enrollments e ON e.studentId = s.id
@@ -54,6 +55,9 @@ module.exports = async (req, res) => {
     `);
 
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Brisbane' });
+    const [yr, mo] = today.split('-');
+    const monthStart = `${yr}-${mo}-01`;
+
     const cutoffDate = new Date(today + 'T00:00:00Z');
     cutoffDate.setUTCDate(cutoffDate.getUTCDate() - 90);
     const cutoff = cutoffDate.toISOString().slice(0, 10);
@@ -64,7 +68,9 @@ module.exports = async (req, res) => {
         : null;
       const periodStart = commencedStr && commencedStr > cutoff ? commencedStr : cutoff;
       const expectedDays = workingDaysInRange(periodStart, today);
-      return { ...r, expectedDays };
+      const monthlyPeriodStart = commencedStr && commencedStr > monthStart ? commencedStr : monthStart;
+      const monthlyExpectedDays = monthlyPeriodStart <= today ? workingDaysInRange(monthlyPeriodStart, today) : 0;
+      return { ...r, expectedDays, monthlyExpectedDays };
     });
 
     res.status(200).json(rows);
