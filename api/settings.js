@@ -1,6 +1,16 @@
 const { getPool, sql } = require('./_db');
 const { validateToken, isAdminUser } = require('./_auth');
 
+const CREATE_TABLE = `
+  IF NOT EXISTS (
+    SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'app_settings'
+  )
+  CREATE TABLE app_settings (
+    [key]  VARCHAR(100)    NOT NULL PRIMARY KEY,
+    value  NVARCHAR(MAX)   NOT NULL
+  )
+`;
+
 module.exports = async (req, res) => {
   const key = req.query.key;
   if (!key) return res.status(400).json({ error: 'Missing key' });
@@ -10,6 +20,7 @@ module.exports = async (req, res) => {
 
   try {
     const pool = await getPool();
+    await pool.request().query(CREATE_TABLE);
 
     if (req.method === 'GET') {
       const result = await pool.request()
