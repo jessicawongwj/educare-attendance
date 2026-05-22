@@ -2285,81 +2285,103 @@ function renderRateCheck(){
 function refreshAttendanceRates(){ loadSummary(); showToast('Refreshed'); }
 
 /* ── Student Attendance History ── */
-let _studentHistoryData = [];
-const _historyCache = new Map();   // session cache: studentId → records[]
+// All records loaded once at startup — history modal filters in-memory (no extra API call)
+let _allRecords = null;       // null = not loaded yet, [] = loaded but empty
+let _studentHistoryData = []; // current modal's records (for CSV download)
+let _studentHistoryPending = null;
 let _prefetchTimer = null;
 
-function _historySkeletonHtml() {
-  return `<table style="font-size:.82rem;">
-    <thead><tr><th>Date</th><th>Day</th><th>Course</th><th>Check In</th><th>Check Out</th><th>Status</th></tr></thead>
-    <tbody>${Array.from({length:6},()=>`<tr>${Array.from({length:6},()=>`<td><span class="skeleton" style="display:inline-block;width:${60+Math.random()*40|0}px;height:12px;border-radius:3px;"></span></td>`).join('')}</tr>`).join('')}</tbody>
-  </table>`;
-}
-
-async function _fetchHistory(studentId) {
-  if (_historyCache.has(studentId)) return _historyCache.get(studentId);
-  const res = await authFetch('/api/records?student=' + encodeURIComponent(studentId));
-  if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+async function _ensureRecordsLoaded() {
+  if (_allRecords !== null) return;
+  const res = await authFetch('/api/records');
+  if (!res.ok) throw new Error('Failed to load records');
   const data = await res.json();
-  const records = Array.isArray(data) ? data : [];
-  _historyCache.set(studentId, records);
-  return records;
+  _allRecords = Array.isArray(data) ? data : [];
 }
 
-async function openStudentHistory(studentId, studentName) {
-  const modal = document.getElementById('studentDatesModal');
+function openStudentHistory(studentId, studentName) {
+  const student = summaryData.find(s => s.id === studentId) || { id: studentId, name: studentName };
+  _studentHistoryPending = student;
+
+  // Open modal immediately — show known info right away from summaryData
   document.getElementById('studentDatesTitle').textContent = studentName + ' — Attendance History';
   document.getElementById('studentHistoryCsvBtn').style.display = 'none';
-  _studentHistoryData = [];
-  modal.classList.add('show');
 
-  if (_historyCache.has(studentId)) {
-    // Instant — already cached
-    document.getElementById('studentDatesMeta').textContent = '';
-    _studentHistoryData = _historyCache.get(studentId);
-    renderStudentHistory(studentId, studentName);
-  } else {
-    // Show skeleton table while fetching
-    document.getElementById('studentDatesMeta').textContent = 'Loading…';
-    document.getElementById('studentDatesBody').innerHTML = _historySkeletonHtml();
-    try {
-      _studentHistoryData = await _fetchHistory(studentId);
-      renderStudentHistory(studentId, studentName);
-    } catch(e) {
-      document.getElementById('studentDatesMeta').textContent = '';
-      document.getElementById('studentDatesBody').innerHTML = '<div class="empty-state"><div class="empty-state-title">Failed to load history</div><div class="empty-state-sub">' + escHtml(e.message) + '</div></div>';
-    }
-  }
+  const commenced = normISO(student.commenced);
+  const expectedEnd = normISO(student.expectedEnd);
+  const startFmt = commenced ? fmtDate(student.commenced) : '—';
+  const endFmt   = expectedEnd ? fmtDate(student.expectedEnd) : '—';
+  const exp      = calcExpectedSessions(student);
+  const rate     = exp ? Math.min(100, Math.round((student.attendedDays||0)/exp*100)) : 0;
+  const rateColor = rate>=80?'var(--success)':rate>=50?'var(--warning)':'var(--danger)';
+  document.getElementById('studentDatesMeta').innerHTML =
+    (student.courseCode ? `<span style="font-size:.72rem;font-weight:700;color:var(--text-2);margin-right:4px;">${student.courseCode}</span>` : '') +
+    `<strong>${escHtml(student.course||'')}</strong>` +
+    ` &nbsp;·&nbsp; Start: <strong>${startFmt}</strong>` +
+    ` &nbsp;·&nbsp; End: <strong>${endFmt}</strong>` +
+    (exp ? ` &nbsp;·&nbsp; <span style="font-weight:700;color:${rateColor};">${rate}%</span> (${student.attendedDays||0}/${exp} days)` : '');
+
+  document.getElementById('studentDatesBody').innerHTML =
+    '<div style="text-align:center;padding:2rem;color:var(--text-2);font-size:.85rem;">Loading history…</div>';
+  document.getElementById('studentDatesModal').classList.add('show');
+
+  _ensureRecordsLoaded().then(() => {
+    _renderHistoryPills(student);
+  }).catch(e => {
+    document.getElementById('studentDatesBody').innerHTML =
+      `<div class="empty-state"><div class="empty-state-title">Failed to load records</div>` +
+      `<div class="empty-state-sub">${escHtml(e.message)}</div>` +
+      `<button class="btn btn-primary btn-sm" style="margin-top:.75rem;" onclick="openStudentHistory('${studentId.replace(/'/g,"\\'")}','${studentName.replace(/'/g,"\\'")}')">↻ Retry</button></div>`;
+  });
 }
-function renderStudentHistory(studentId, studentName) {
-  const records = _studentHistoryData;
-  const attended = records.filter(r => r.checkinTime).length;
-  document.getElementById('studentDatesMeta').textContent = studentId + ' · ' + records.length + ' days in last 90 days · ' + attended + ' attended';
-  document.getElementById('studentHistoryCsvBtn').style.display = records.length ? 'inline-flex' : 'none';
-  if (!records.length) {
-    document.getElementById('studentDatesBody').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No records in last 90 days</div></div>';
+
+function _renderHistoryPills(student) {
+  const todayDate = todayStr();
+  const sid = String(student.id);
+
+  // Get present dates from all-records cache
+  const presentDates = new Set(
+    (_allRecords||[])
+      .filter(r => String(r.studentId) === sid && r.checkinTime)
+      .map(r => normISO(r.attendanceDate))
+      .filter(Boolean)
+  );
+  // Merge today from dailyRows if checked in
+  if (dailyRows.some(r => String(r.studentId) === sid && r.checkinTime)) {
+    presentDates.add(todayDate);
+  }
+
+  const sorted = [...presentDates].filter(d => d <= todayDate).sort().reverse();
+  _studentHistoryData = (_allRecords||[]).filter(r => String(r.studentId) === sid);
+
+  document.getElementById('studentHistoryCsvBtn').style.display = sorted.length ? 'inline-flex' : 'none';
+
+  if (!sorted.length) {
+    document.getElementById('studentDatesBody').innerHTML =
+      '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No check-in records in last 90 days</div></div>';
     return;
   }
-  document.getElementById('studentDatesBody').innerHTML = `<table style="font-size:.82rem;">
-    <thead><tr><th>Date</th><th>Day</th><th>Course</th><th>Check In</th><th>Check Out</th><th>Status</th></tr></thead>
-    <tbody>${records.map(r => {
-      const d = new Date(r.attendanceDate);
-      const dateStr = isNaN(d) ? '—' : d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
-      const dayStr  = isNaN(d) ? '' : d.toLocaleDateString('en-AU',{weekday:'short',timeZone:'UTC'});
-      const status  = r.checkoutTime ? '<span class="badge badge-present">Present</span>'
-                    : r.checkinTime  ? '<span class="badge badge-warn">Checked In</span>'
-                    : '<span class="badge badge-absent">Absent</span>';
-      return `<tr>
-        <td style="font-weight:700;">${dateStr}</td>
-        <td style="color:var(--text-2);">${dayStr}</td>
-        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(r.course||'')}">${escHtml(r.course||'—')}</td>
-        <td>${r.checkinTime ? fmtTime(r.checkinTime) : '—'}</td>
-        <td>${r.checkoutTime ? fmtTime(r.checkoutTime) : '—'}</td>
-        <td>${status}</td>
-      </tr>`;
-    }).join('')}</tbody>
-  </table>`;
+
+  // Group by month — same format as reference
+  const byMonth = {};
+  sorted.forEach(d => { const m = d.slice(0,7); (byMonth[m]||(byMonth[m]=[])).push(d); });
+
+  const html = Object.entries(byMonth).sort((a,b)=>b[0].localeCompare(a[0])).map(([month,dates]) => {
+    const label = new Date(month+'-01T00:00:00').toLocaleDateString('en-AU',{month:'long',year:'numeric'});
+    const pills = dates.map(d => {
+      const isToday = d === todayDate;
+      const day = new Date(d+'T00:00:00Z').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'});
+      return `<span style="display:inline-block;background:${isToday?'#dcfce7':'var(--surface-2)'};border:1px solid ${isToday?'#86efac':'var(--border)'};border-radius:6px;padding:.25rem .6rem;font-size:.75rem;font-weight:600;margin:.2rem;">${escHtml(day)}${isToday?' ✓':''}</span>`;
+    }).join('');
+    return `<div style="margin-bottom:1rem;">
+      <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-2);margin-bottom:.35rem;">${label}</div>
+      <div>${pills}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('studentDatesBody').innerHTML = html;
 }
+
 function downloadStudentHistoryCSV() {
   if (!_studentHistoryData.length) return;
   const title = document.getElementById('studentDatesTitle').textContent.replace(' — Attendance History','');
@@ -2913,14 +2935,13 @@ document.addEventListener('click', function(e) {
   if (sid) openStudentHistory(sid, name);
 });
 
-// Prefetch on hover so data is usually ready before the click
+// Pre-warm the bulk records load on hover so data is usually ready before the click
 document.addEventListener('mouseover', function(e) {
   const td = e.target.closest('.td-name[data-student-id]');
   if (!td) { clearTimeout(_prefetchTimer); return; }
-  const sid = td.dataset.studentId;
-  if (!sid || _historyCache.has(sid)) return;
+  if (_allRecords !== null) return; // already loaded
   clearTimeout(_prefetchTimer);
-  _prefetchTimer = setTimeout(() => _fetchHistory(sid).catch(() => {}), 150);
+  _prefetchTimer = setTimeout(() => _ensureRecordsLoaded().catch(() => {}), 150);
 });
 document.addEventListener('mouseout', function(e) {
   if (!e.target.closest('.td-name[data-student-id]')) clearTimeout(_prefetchTimer);
