@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title>Educare — Attendance Monitoring Portal</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2/lib/msal-browser.min.js"></script>
 <style>
 /* ── Design tokens ── */
@@ -19,18 +17,21 @@
   --danger:#b91c1c; --danger-bg:#fef2f2; --danger-border:#fecaca;
 
   --bg:#F2F6FA; --surface:#ffffff; --surface-2:#EBF3FA;
+  --bg-main:#F2F6FA; --bg-secondary:#EBF3FA; --bg-primary:#ffffff;
   --text:#18202c; --text-2:#52657a; --text-3:#94a3b8;
+  --text-primary:#18202c; --text-secondary:#52657a;
   --border:#d4e4f0; --border-2:#e8f0f7;
 
   /* Type scale */
-  --text-xs:0.6875rem;   /* 11px — badges, tiny caps */
-  --text-sm:0.8125rem;   /* 13px — secondary / helper */
-  --text-base:0.9375rem; /* 15px — body / table cells */
-  --text-md:1rem;        /* 16px — sub-headings */
-  --text-lg:1.125rem;    /* 18px — card titles */
-  --text-xl:1.375rem;    /* 22px — page section headings */
+  --text-xs:0.6875rem;
+  --text-sm:0.8125rem;
+  --text-base:0.9375rem;
+  --text-md:1rem;
+  --text-lg:1.125rem;
+  --text-xl:1.375rem;
 
   --radius-sm:6px; --radius-md:10px; --radius-lg:14px; --radius-xl:18px;
+  --shadow-card:0 2px 8px rgba(0,0,0,0.07);
   --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
   --shadow-md:0 4px 12px rgba(30,132,196,.10),0 1px 3px rgba(0,0,0,.06);
   --shadow-lg:0 12px 40px rgba(0,0,0,.14),0 2px 6px rgba(0,0,0,.06);
@@ -183,7 +184,7 @@ header{
 /* ══════════════════════════════════════════
    MAIN CONTAINER
 ══════════════════════════════════════════ */
-.container{ padding:1.5rem 2rem; flex:1; }
+.container{ max-width:1600px; margin:0 auto; padding:1.5rem 2rem; flex:1; }
 
 /* ══════════════════════════════════════════
    STAT CARDS
@@ -191,19 +192,20 @@ header{
 .stats-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; margin-bottom:1.25rem; }
 .stat-card{
   background:var(--surface); border-radius:var(--radius-lg);
-  padding:1rem 1.25rem; box-shadow:var(--shadow-sm);
-  border-top:3px solid var(--brand); cursor:pointer;
+  padding:0.75rem 1rem; box-shadow:var(--shadow-card);
+  border-left:4px solid var(--brand); cursor:pointer;
   transition:box-shadow var(--transition), transform var(--transition);
 }
 .stat-card:hover{ box-shadow:var(--shadow-md); transform:translateY(-1px); }
 .stat-label{
-  font-size:var(--text-xs); font-weight:700; text-transform:uppercase;
-  letter-spacing:0.6px; color:var(--text-2); margin-bottom:0.5rem;
+  font-size:0.68rem; font-weight:600; text-transform:uppercase;
+  letter-spacing:0.5px; color:var(--text-2); margin-bottom:0.4rem;
   display:flex; align-items:center; justify-content:space-between;
 }
 .stat-value{
   font-size:2rem; font-weight:800; color:var(--brand); line-height:1;
   font-variant-numeric:tabular-nums;
+  font-family:'Playfair Display', serif;
 }
 
 /* ══════════════════════════════════════════
@@ -316,11 +318,45 @@ td{ padding:0.875rem 1rem; font-size:var(--text-sm); color:var(--text); vertical
   font-size:var(--text-xs); margin-left:4px; font-weight:700;
 }
 
+/* Status badges — reference-compatible aliases */
+.status-badge{
+  display:inline-flex; align-items:center;
+  padding:0.25rem 0.7rem; border-radius:20px;
+  font-size:var(--text-xs); font-weight:700; white-space:nowrap; line-height:1;
+}
+.status-present{ background:var(--success-bg); color:#065f46; border:1px solid var(--success-border); }
+.status-absent{ background:var(--danger-bg); color:#991b1b; border:1px solid var(--danger-border); }
+.status-risk{ background:var(--danger-bg); color:#991b1b; border:1px solid var(--danger-border); }
+.status-warn{ background:var(--warning-bg); color:#92400e; border:1px solid var(--warning-border); }
+.status-ok{ background:var(--success-bg); color:#065f46; border:1px solid var(--success-border); }
+
+/* Inline filter select */
+.inline-filter-select{
+  padding:0.5rem 0.875rem; border:1.5px solid var(--border);
+  border-radius:var(--radius-md); background:var(--surface); color:var(--brand);
+  font-weight:600; font-size:var(--text-sm); min-width:160px; height:38px;
+  cursor:pointer; outline:none; transition:border-color var(--transition);
+}
+.inline-filter-select:focus{ border-color:var(--brand); }
+
+/* List card */
+.list-card{
+  background:var(--surface); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-sm); overflow:hidden;
+}
+.list-header{
+  padding:1rem 1.5rem; border-bottom:1px solid var(--border-2);
+  display:flex; justify-content:space-between; align-items:center;
+  flex-wrap:wrap; gap:0.75rem;
+  background:var(--surface-2);
+}
+.list-title{ font-size:var(--text-lg); font-weight:700; color:var(--text); }
+
 /* ══════════════════════════════════════════
    RATE BAR
 ══════════════════════════════════════════ */
 .rate-bar-row{ display:flex; align-items:center; gap:0.6rem; min-width:140px; }
-.rate-bar-bg{ flex:1; height:5px; background:var(--border); border-radius:99px; overflow:hidden; }
+.rate-bar-bg{ flex:1; height:6px; background:var(--border); border-radius:99px; overflow:hidden; }
 .rate-bar-fill{ height:100%; border-radius:99px; background:var(--success); transition:width .4s; }
 .rate-bar-fill.mid{ background:var(--warning); }
 .rate-bar-fill.low{ background:var(--danger); }
@@ -330,20 +366,33 @@ td{ padding:0.875rem 1rem; font-size:var(--text-sm); color:var(--text); vertical
    BUTTONS
 ══════════════════════════════════════════ */
 .btn{
-  display:inline-flex; align-items:center; gap:0.35rem;
-  padding:0.375rem 0.875rem; border:none; border-radius:var(--radius-sm);
-  font-size:var(--text-sm); font-weight:600; cursor:pointer;
-  transition:opacity var(--transition); line-height:1.4; white-space:nowrap;
+  display:inline-flex; align-items:center; justify-content:center; gap:0.35rem;
+  height:36px; padding:0 1rem;
+  border:1.5px solid transparent; border-radius:var(--radius-md);
+  font-size:var(--text-sm); font-weight:600; font-family:inherit; cursor:pointer;
+  transition:all var(--transition); line-height:1.4; white-space:nowrap;
+  text-decoration:none; letter-spacing:0.1px;
 }
-.btn:hover{ opacity:0.84; }
-.btn-sm{ padding:0.25rem 0.65rem; font-size:var(--text-xs); }
-.btn-primary{ background:var(--brand); color:white; }
-.btn-success{ background:var(--success); color:white; }
-.btn-warning{ background:var(--warning); color:white; }
-.btn-ghost{ background:var(--surface); color:var(--text); border:1.5px solid var(--border); }
-.btn-ghost:hover{ border-color:var(--brand); color:var(--brand); opacity:1; }
-.btn-outline-primary{ background:var(--surface); color:var(--brand); border:1.5px solid var(--brand); }
-.btn-outline-success{ background:var(--surface); color:var(--success); border:1.5px solid var(--success); }
+.btn:disabled{ opacity:0.45; cursor:not-allowed; }
+.btn-primary{ background:var(--brand); color:white; border-color:var(--brand); }
+.btn-primary:hover{ background:var(--brand-light); border-color:var(--brand-light); }
+.btn-success{ background:var(--success); color:white; border-color:var(--success); }
+.btn-success:hover{ opacity:0.88; }
+.btn-warning{ background:var(--warning); color:white; border-color:var(--warning); }
+.btn-warning:hover{ opacity:0.88; }
+.btn-danger{ background:var(--danger); color:white; border-color:var(--danger); }
+.btn-danger:hover{ opacity:0.88; }
+.btn-secondary{ background:var(--surface); color:var(--text); border-color:var(--border); }
+.btn-secondary:hover{ border-color:var(--brand); color:var(--brand); }
+.btn-ghost{ background:transparent; color:var(--text-2); border-color:var(--border); }
+.btn-ghost:hover{ background:var(--surface-2); color:var(--text); }
+.btn-outline-primary{ background:var(--surface); color:var(--brand); border-color:var(--brand); }
+.btn-outline-primary:hover{ background:var(--brand); color:white; }
+.btn-outline-success{ background:var(--surface); color:var(--success); border-color:var(--success); }
+.btn-outline-success:hover{ background:var(--success); color:white; }
+.btn-sm{ height:30px; padding:0 0.7rem; font-size:var(--text-xs); border-radius:var(--radius-sm); }
+.btn-lg{ height:42px; padding:0 1.4rem; font-size:0.9rem; border-radius:var(--radius-lg); }
+.btn-block{ width:100%; }
 .action-group{ display:flex; gap:0.4rem; align-items:center; }
 
 /* ══════════════════════════════════════════
@@ -754,19 +803,19 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
 
     <!-- Stat cards -->
     <div class="stats-row">
-      <div class="stat-card" style="border-top-color:var(--brand);" onclick="filterByCardClick('all')">
+      <div class="stat-card" style="border-left-color:var(--brand);" onclick="filterByCardClick('all')">
         <div class="stat-label">Total Students <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
         <div class="stat-value" id="statTotal">0</div>
       </div>
-      <div class="stat-card" style="border-top-color:var(--success);" onclick="filterByCardClick('present')">
+      <div class="stat-card" style="border-left-color:var(--success);" onclick="filterByCardClick('present')">
         <div class="stat-label" style="color:var(--success);">Present <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.7"><polyline points="20 6 9 17 4 12"/></svg></div>
         <div class="stat-value" id="statPresent" style="color:var(--success);">0</div>
       </div>
-      <div class="stat-card" style="border-top-color:var(--danger);" onclick="filterByCardClick('absent')">
+      <div class="stat-card" style="border-left-color:var(--danger);" onclick="filterByCardClick('absent')">
         <div class="stat-label" style="color:var(--danger);">Absent <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.7"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
         <div class="stat-value" id="statAbsent" style="color:var(--danger);">0</div>
       </div>
-      <div class="stat-card" style="border-top-color:var(--warning);">
+      <div class="stat-card" style="border-left-color:var(--warning);">
         <div class="stat-label" style="color:var(--warning);">Attendance Rate</div>
         <div class="stat-value" id="statRate" style="color:var(--warning);">—</div>
       </div>
