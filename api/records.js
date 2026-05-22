@@ -22,8 +22,14 @@ module.exports = async (req, res) => {
       trainerNames.forEach((n, i) => request.input(`t${i}`, sql.NVarChar(200), n));
       where += ` AND trainer IN (${placeholders})`;
     } else if (!adminUser && trainerNames.length === 0) {
-      // Authenticated but not a known trainer or admin — return empty
       return res.status(200).json([]);
+    }
+
+    // Optional student filter (admin or trainer scoped to their own students)
+    const studentId = req.query.student;
+    if (studentId) {
+      request.input('sid', sql.NVarChar(50), studentId);
+      where += ' AND studentId = @sid';
     }
 
     const result = await request.query(`

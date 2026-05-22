@@ -828,7 +828,10 @@ function overallRate(s) {
 }
 
 function renderClass() {
-  if (!trainerName) return;
+  if (!trainerName) {
+    document.getElementById('classTableBody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-2);">Select a trainer from the Daily Attendance tab first.</td></tr>';
+    return;
+  }
   const myStudents = summaryData.filter(s => s.trainer===trainerName && (!currentCourse||s.course===currentCourse));
   const active   = myStudents.filter(s=>s.status==='active');
   const notStart = myStudents.filter(s=>s.status==='not-started');

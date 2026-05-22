@@ -885,6 +885,8 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
               <th>Course</th>
               <th>Trainer</th>
               <th>Campus</th>
+              <th>Start Date</th>
+              <th>Expected End</th>
               <th>Last Check-In</th>
               <th>Attendance Rate</th>
               <th>Status</th>
@@ -892,7 +894,7 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
             </tr>
           </thead>
           <tbody id="rateTableBody">
-            <tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-title">No student data available</div><div class="empty-state-sub">Connect the API to load the student roster.</div></div></td></tr>
+            <tr><td colspan="11"><div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-title">No student data available</div><div class="empty-state-sub">Connect the API to load the student roster.</div></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -1312,7 +1314,10 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
         <div class="modal-title" id="studentDatesTitle">Attendance History</div>
         <div class="modal-subtitle" id="studentDatesMeta"></div>
       </div>
-      <button class="modal-close" onclick="document.getElementById('studentDatesModal').classList.remove('show')">×</button>
+      <div style="display:flex;align-items:center;gap:.5rem;">
+        <button class="btn btn-outline btn-sm" id="studentHistoryCsvBtn" onclick="downloadStudentHistoryCSV()" style="display:none;color:var(--success);border-color:var(--success);">⬇ Download CSV</button>
+        <button class="modal-close" onclick="document.getElementById('studentDatesModal').classList.remove('show')">×</button>
+      </div>
     </div>
     <div style="overflow-y:auto;max-height:60vh;padding:1.25rem 1.5rem;">
       <div id="studentDatesBody"><div class="empty-state">No records found.</div></div>
@@ -2113,26 +2118,98 @@ function renderRateCheck(){
 
   document.getElementById('allCount').textContent=rows.length+' students';
   const tbody=document.getElementById('rateTableBody');
-  if(!rows.length){ tbody.innerHTML='<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-title">No students match</div></div></td></tr>'; document.getElementById('ratePagination').style.display='none'; return; }
+  if(!rows.length){ tbody.innerHTML='<tr><td colspan="11"><div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-title">No students match</div></div></td></tr>'; document.getElementById('ratePagination').style.display='none'; return; }
   tbody.innerHTML=rows.map(s=>{
     const rate=workDays?Math.min(100,Math.round((s.attendedDays||0)/workDays*100)):0;
     const rateClass=rate>=80?'':'mid';
     const multiTag=(s.enrollmentCount||1)>1?`<span style="margin-left:4px;font-size:10px;font-weight:700;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;border-radius:4px;padding:1px 5px;">${s.enrollmentCount} COURSES</span>`:'';
+    const safeId=s.id.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    const safeName=(s.name||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
     return `<tr>
       <td>${s.id}</td>
-      <td class="td-name">${s.name}${multiTag}</td>
+      <td class="td-name" style="cursor:pointer;color:var(--brand-dark);text-decoration:underline;text-underline-offset:2px;" onclick="openStudentHistory('${safeId}','${safeName}')">${s.name}${multiTag}</td>
       <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${s.course}">${s.courseCode?'<span style="font-size:11px;color:var(--text-3);margin-right:4px;">['+s.courseCode+']</span>':''}${s.course}</td>
       <td>${s.trainer||'—'}</td>
       <td>${s.campus||'—'}</td>
+      <td style="font-size:.78rem;color:var(--text-2);">${s.commenced?fmtDate(s.commenced):'—'}</td>
+      <td style="font-size:.78rem;color:var(--text-2);">${s.expectedEnd?fmtDate(s.expectedEnd):'—'}</td>
       <td>${s.lastCheckin?fmtDate(s.lastCheckin):'Never'}</td>
       <td><div class="rate-bar-row"><div class="rate-bar-bg"><div class="rate-bar-fill ${rateClass}" style="width:${rate}%"></div></div><span class="rate-pct" style="color:${rate>=80?'var(--success)':'var(--warning)'}">${rate}%</span></div></td>
       <td>${rate>=80?'<span class="badge badge-ok">On Track</span>':'<span class="badge badge-warn">At Risk</span>'}</td>
-      <td><button class="btn btn-ghost" style="font-size:var(--text-xs);padding:0.25rem 0.6rem;" onclick="openMarkModal('${s.id.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">Mark</button></td>
+      <td><button class="btn btn-ghost" style="font-size:var(--text-xs);padding:0.25rem 0.6rem;" onclick="openMarkModal('${safeId}')">Mark</button></td>
     </tr>`;
   }).join('');
   document.getElementById('ratePagination').style.display='none';
 }
 function refreshAttendanceRates(){ loadSummary(); showToast('Refreshed'); }
+
+/* ── Student Attendance History ── */
+let _studentHistoryData = [];
+async function openStudentHistory(studentId, studentName) {
+  const modal = document.getElementById('studentDatesModal');
+  document.getElementById('studentDatesTitle').textContent = studentName + ' — Attendance History';
+  document.getElementById('studentDatesMeta').textContent = 'Loading…';
+  document.getElementById('studentDatesBody').innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏳</div></div>';
+  document.getElementById('studentHistoryCsvBtn').style.display = 'none';
+  _studentHistoryData = [];
+  modal.classList.add('show');
+  try {
+    const res = await authFetch('/api/records?student=' + encodeURIComponent(studentId));
+    if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+    const data = await res.json();
+    _studentHistoryData = Array.isArray(data) ? data : [];
+    renderStudentHistory(studentId, studentName);
+  } catch(e) {
+    document.getElementById('studentDatesMeta').textContent = '';
+    document.getElementById('studentDatesBody').innerHTML = '<div class="empty-state"><div class="empty-state-title">Failed to load history</div><div class="empty-state-sub">' + escHtml(e.message) + '</div></div>';
+  }
+}
+function renderStudentHistory(studentId, studentName) {
+  const records = _studentHistoryData;
+  const attended = records.filter(r => r.checkinTime).length;
+  document.getElementById('studentDatesMeta').textContent = studentId + ' · ' + records.length + ' days in last 90 days · ' + attended + ' attended';
+  document.getElementById('studentHistoryCsvBtn').style.display = records.length ? 'inline-flex' : 'none';
+  if (!records.length) {
+    document.getElementById('studentDatesBody').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No records in last 90 days</div></div>';
+    return;
+  }
+  document.getElementById('studentDatesBody').innerHTML = `<table class="data-table" style="font-size:.82rem;">
+    <thead><tr><th>Date</th><th>Day</th><th>Course</th><th>Check In</th><th>Check Out</th><th>Status</th></tr></thead>
+    <tbody>${records.map(r => {
+      const d = new Date((r.attendanceDate||'').replace('T00:00:00.000Z','')+'T00:00:00');
+      const dateStr = d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+      const dayStr  = d.toLocaleDateString('en-AU',{weekday:'short',timeZone:'UTC'});
+      const status  = r.checkoutTime ? '<span class="badge badge-present">Present</span>'
+                    : r.checkinTime  ? '<span class="badge badge-warn">Checked In</span>'
+                    : '<span class="badge badge-absent">Absent</span>';
+      return `<tr>
+        <td style="font-weight:700;">${dateStr}</td>
+        <td style="color:var(--text-2);">${dayStr}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(r.course||'')}">${escHtml(r.course||'—')}</td>
+        <td>${r.checkinTime ? fmtTime(r.checkinTime) : '—'}</td>
+        <td>${r.checkoutTime ? fmtTime(r.checkoutTime) : '—'}</td>
+        <td>${status}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+function downloadStudentHistoryCSV() {
+  if (!_studentHistoryData.length) return;
+  const title = document.getElementById('studentDatesTitle').textContent.replace(' — Attendance History','');
+  const headers = ['Date','Day','Course','Trainer','Campus','Check In','Check Out','Status'];
+  const rows = _studentHistoryData.map(r => {
+    const d = new Date((r.attendanceDate||'').replace('T00:00:00.000Z','')+'T00:00:00');
+    const dateStr = d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+    const dayStr  = d.toLocaleDateString('en-AU',{weekday:'short',timeZone:'UTC'});
+    const status  = r.checkoutTime ? 'Present' : r.checkinTime ? 'Checked In' : 'Absent';
+    return [dateStr, dayStr, '"'+(r.course||'')+'"', '"'+(r.trainer||'')+'"', '"'+(r.campus||'')+'"', r.checkinTime?fmtTime(r.checkinTime):'', r.checkoutTime?fmtTime(r.checkoutTime):'', status].join(',');
+  });
+  const csv = [headers.join(','), ...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'attendance-history-' + title.replace(/\s+/g,'-').toLowerCase() + '.csv';
+  a.click();
+}
 
 /* ── My Class ── */
 let markStudent=null, currentMarkType='absent';
