@@ -1881,14 +1881,20 @@ function initPortal(){
 }
 
 async function loadSummary(){
-  const loadingRow='<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-2);">Loading students…</td></tr>';
-  ['rateTableBody','notStartedTableBody'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=loadingRow;});
-  document.getElementById('campusTabStats').innerHTML='<span style="color:var(--text-2);">Loading…</span>';
-  document.getElementById('trainerCourseTableBody').innerHTML='<div style="padding:2rem;text-align:center;color:var(--text-2);">Loading attendance data…</div>';
+  const hasStale = summaryData.length > 0;
+  if(!hasStale){
+    const loadingRow='<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-2);">Loading students…</td></tr>';
+    ['rateTableBody','notStartedTableBody','myClassTableBody'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=loadingRow;});
+    document.getElementById('campusTabStats').innerHTML='<span style="color:var(--text-2);">Loading…</span>';
+    document.getElementById('trainerCourseTableBody').innerHTML='<div style="padding:2rem;text-align:center;color:var(--text-2);">Loading attendance data…</div>';
+  }
   try{
-    // Cache holidays for accurate rate calculations (commenced date + holiday exclusion)
-    if(!_cachedHolidays) _cachedHolidays = await getHolidays();
-    const res = await authFetch('/api/summary');
+    // Fetch holidays and summary in parallel — holidays only fetched once then cached
+    const [holidays, res] = await Promise.all([
+      _cachedHolidays ? Promise.resolve(_cachedHolidays) : getHolidays(),
+      authFetch('/api/summary')
+    ]);
+    if(!_cachedHolidays) _cachedHolidays = holidays;
     const data = await res.json();
     if(!res.ok) throw new Error(data.error || res.statusText);
     if(!Array.isArray(data)) throw new Error('Unexpected response from /api/summary');
@@ -1900,10 +1906,12 @@ async function loadSummary(){
     renderDashboard();
   } catch(e){
     console.error('summary load failed',e);
-    const errRow=`<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--danger);">Failed to load: ${e.message}</td></tr>`;
-    ['rateTableBody','notStartedTableBody'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=errRow;});
-    document.getElementById('campusTabStats').innerHTML=`<span style="color:var(--danger);">Failed to load data — <a href="javascript:loadSummary()" style="color:var(--brand);">try again</a></span>`;
-    document.getElementById('trainerCourseTableBody').innerHTML=`<div style="padding:2rem;text-align:center;color:var(--danger);">Could not load attendance data: ${e.message}<br><br><button class="btn btn-primary" onclick="loadSummary()">↻ Retry</button></div>`;
+    if(!hasStale){
+      const errRow=`<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--danger);">Failed to load: ${e.message}</td></tr>`;
+      ['rateTableBody','notStartedTableBody','myClassTableBody'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=errRow;});
+      document.getElementById('campusTabStats').innerHTML=`<span style="color:var(--danger);">Failed to load data — <a href="javascript:loadSummary()" style="color:var(--brand);">try again</a></span>`;
+      document.getElementById('trainerCourseTableBody').innerHTML=`<div style="padding:2rem;text-align:center;color:var(--danger);">Could not load attendance data: ${e.message}<br><br><button class="btn btn-primary" onclick="loadSummary()">↻ Retry</button></div>`;
+    }
     showToast('Data failed to load: '+e.message,true);
   }
 }
