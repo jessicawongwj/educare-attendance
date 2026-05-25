@@ -4,7 +4,8 @@
     { "path": "/api/cron-report", "schedule": "0 22 1,15 * *" }
   ],
   "redirects": [
-    { "source": "/", "destination": "/educare-portal", "permanent": false }
+    { "source": "/", "destination": "/educare-portal", "permanent": false },
+    { "source": "/trainer-portal", "destination": "/educare-portal", "permanent": true }
   ],
   "headers": [
     {
