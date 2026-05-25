@@ -39,7 +39,7 @@ module.exports = async (req, res) => {
         COALESCE(e.commenced,   s.commenced)   AS commenced,
         COALESCE(e.expectedEnd, s.expectedEnd) AS expectedEnd,
         COALESCE(e.isPrimary, 1)               AS isPrimary,
-        ISNULL(ec.enrollmentCount, 0)          AS enrollmentCount,
+        MAX(ISNULL(ec.enrollmentCount, 0))     AS enrollmentCount,
         COUNT(a.id) AS attendedDays,
         SUM(CASE WHEN a.attendanceDate >= CAST(DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1) AS DATE) THEN 1 ELSE 0 END) AS monthlyAttendedDays,
         MAX(a.checkinTime) AS lastCheckin
