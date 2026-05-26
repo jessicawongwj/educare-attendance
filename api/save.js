@@ -16,7 +16,8 @@ module.exports = async (req, res) => {
   }
 
   const { studentId, studentName, course, courseCode, trainer, campus,
-          dates, status, reason, markedBy, note } = req.body;
+          dates, status, reason, markedBy, note,
+          checkinTime: rawCheckinTime, checkoutTime: rawCheckoutTime } = req.body;
 
   if (!studentId || !Array.isArray(dates) || !dates.length || !status) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -54,32 +55,47 @@ module.exports = async (req, res) => {
         ].filter(Boolean).join(' ');
 
         if (existing.recordset.length > 0) {
-          await pool.request()
-            .input('sid', sql.VarChar(20), studentId)
-            .input('date', sql.Date, date)
-            .input('notes', sql.NVarChar(500), noteText)
-            .query('UPDATE attendance SET notes = @notes WHERE studentId = @sid AND attendanceDate = @date');
+          const updCheckinDT = rawCheckinTime
+            ? new Date(date + 'T' + rawCheckinTime + ':00.000+10:00')
+            : null;
+          const updCheckoutDT = rawCheckoutTime
+            ? new Date(date + 'T' + rawCheckoutTime + ':00.000+10:00')
+            : null;
+          const updReq = pool.request()
+            .input('sid',   sql.VarChar(20),  studentId)
+            .input('date',  sql.Date,          date)
+            .input('notes', sql.NVarChar(500), noteText);
+          let updSet = 'notes = @notes';
+          if (updCheckinDT) { updReq.input('cin', sql.DateTime2, updCheckinDT); updSet += ', checkinTime = @cin'; }
+          if (updCheckoutDT) { updReq.input('cout', sql.DateTime2, updCheckoutDT); updSet += ', checkoutTime = @cout'; }
+          await updReq.query(`UPDATE attendance SET ${updSet} WHERE studentId = @sid AND attendanceDate = @date`);
           results.push({ date, action: 'updated' });
         } else {
-          // Use noon AEST (UTC+10) on the given date as a neutral manual timestamp
-          const checkinTime = new Date(date + 'T02:00:00.000Z');
+          // Use provided time (AEST) or default to noon AEST (02:00 UTC)
+          const checkinDT = rawCheckinTime
+            ? new Date(date + 'T' + rawCheckinTime + ':00.000+10:00')
+            : new Date(date + 'T02:00:00.000Z');
+          const checkoutDT = rawCheckoutTime
+            ? new Date(date + 'T' + rawCheckoutTime + ':00.000+10:00')
+            : null;
           await pool.request()
-            .input('sid',        sql.VarChar(20),   studentId)
-            .input('sname',      sql.NVarChar(200),  studentName || '')
-            .input('course',     sql.NVarChar(300),  course      || '')
-            .input('courseCode', sql.VarChar(20),    courseCode  || '')
-            .input('trainer',    sql.NVarChar(200),  trainer     || '')
-            .input('campus',     sql.NVarChar(100),  campus      || '')
-            .input('checkinTime', sql.DateTime2,     checkinTime)
+            .input('sid',         sql.VarChar(20),   studentId)
+            .input('sname',       sql.NVarChar(200),  studentName || '')
+            .input('course',      sql.NVarChar(300),  course      || '')
+            .input('courseCode',  sql.VarChar(20),    courseCode  || '')
+            .input('trainer',     sql.NVarChar(200),  trainer     || '')
+            .input('campus',      sql.NVarChar(100),  campus      || '')
+            .input('checkinTime', sql.DateTime2,      checkinDT)
+            .input('checkoutTime',sql.DateTime2,      checkoutDT)
             .input('date',        sql.Date,           date)
             .input('notes',       sql.NVarChar(500),  noteText)
             .query(`
               INSERT INTO attendance
                 (studentId, studentName, course, courseCode, trainer, campus,
-                 checkinTime, attendanceDate, notes)
+                 checkinTime, checkoutTime, attendanceDate, notes)
               VALUES
                 (@sid, @sname, @course, @courseCode, @trainer, @campus,
-                 @checkinTime, @date, @notes)
+                 @checkinTime, @checkoutTime, @date, @notes)
             `);
           results.push({ date, action: 'inserted' });
         }

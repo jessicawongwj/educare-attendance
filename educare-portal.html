@@ -1300,6 +1300,16 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
       <div id="presentNoteWrap" class="form-group" style="display:none;">
         <label class="form-label">Note <span style="color:var(--text-2);font-weight:400;">(optional)</span></label>
         <textarea id="presentNote" class="form-input" placeholder="e.g. Student attended but forgot to check in…"></textarea>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.625rem;">
+          <div>
+            <label class="form-label" style="font-size:.68rem;margin-bottom:.2rem;">Check-in Time (AEST) <span style="color:var(--text-2);font-weight:400;">optional</span></label>
+            <input type="time" id="presentCheckinTime" class="form-input">
+          </div>
+          <div>
+            <label class="form-label" style="font-size:.68rem;margin-bottom:.2rem;">Check-out Time (AEST) <span style="color:var(--text-2);font-weight:400;">optional</span></label>
+            <input type="time" id="presentCheckoutTime" class="form-input">
+          </div>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Marked By</label>
@@ -1369,18 +1379,35 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
 <!-- Student Attendance History Modal -->
 <div class="modal-overlay" id="studentDatesModal" style="z-index:1100;">
   <div class="modal modal-lg">
-    <div class="modal-header">
-      <div>
-        <div class="modal-title" id="studentDatesTitle">Attendance History</div>
-        <div class="modal-subtitle" id="studentDatesMeta"></div>
+    <div class="modal-header" style="flex-direction:column;align-items:stretch;gap:0;padding-bottom:0;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:.75rem;">
+        <div>
+          <div class="modal-title" id="studentDatesTitle">Attendance History</div>
+          <div class="modal-subtitle" id="studentDatesMeta"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <button class="btn btn-outline btn-sm" id="studentHistoryCsvBtn" onclick="downloadStudentHistoryCSV()" style="display:none;color:var(--success);border-color:var(--success);">⬇ CSV</button>
+          <button class="modal-close" onclick="document.getElementById('studentDatesModal').classList.remove('show')">×</button>
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:.5rem;">
-        <button class="btn btn-outline btn-sm" id="studentHistoryCsvBtn" onclick="downloadStudentHistoryCSV()" style="display:none;color:var(--success);border-color:var(--success);">⬇ Download CSV</button>
-        <button class="modal-close" onclick="document.getElementById('studentDatesModal').classList.remove('show')">×</button>
+      <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin:0 -1.5rem;padding:0 1.5rem;">
+        <button id="histTabBtn" onclick="switchStudentModalTab('history')" style="padding:.45rem 1.1rem;border:none;background:none;font-size:.82rem;font-weight:700;cursor:pointer;color:var(--brand);border-bottom:2.5px solid var(--brand);margin-bottom:-2px;">Attendance</button>
+        <button id="notesTabBtn" onclick="switchStudentModalTab('notes')" style="padding:.45rem 1.1rem;border:none;background:none;font-size:.82rem;font-weight:600;cursor:pointer;color:var(--text-2);border-bottom:2.5px solid transparent;margin-bottom:-2px;">Notes</button>
       </div>
     </div>
-    <div style="overflow-y:auto;max-height:60vh;padding:1.25rem 1.5rem;">
+    <div id="histTabContent" style="overflow-y:auto;max-height:58vh;padding:1.25rem 1.5rem;">
       <div id="studentDatesBody"><div class="empty-state">No records found.</div></div>
+    </div>
+    <div id="notesTabContent" style="display:none;overflow-y:auto;max-height:58vh;padding:1.25rem 1.5rem;">
+      <div id="studentNotesBody"><div class="empty-state"><div class="empty-state-title">Loading…</div></div></div>
+      <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);">
+        <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-2);margin-bottom:.5rem;">Add Note</div>
+        <textarea id="newNoteText" class="form-input" rows="3" placeholder="Write a note about this student…" style="margin-bottom:.5rem;resize:vertical;"></textarea>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+          <input type="text" id="newNoteBy" class="form-input" placeholder="Your name (optional)" style="flex:1;min-width:140px;">
+          <button class="btn btn-primary btn-sm" onclick="submitStudentNote()">Save Note</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -2152,6 +2179,8 @@ function markFromClassList(studentId, type){
   document.getElementById('absentDateTo').value = todayStr();
   document.getElementById('absentReason').value = '';
   document.getElementById('presentNote').value = '';
+  document.getElementById('presentCheckinTime').value='';
+  document.getElementById('presentCheckoutTime').value='';
   document.getElementById('absentMarkedBy').value = '';
   setMarkType(type);
   setModalDateMode('single');
@@ -2219,7 +2248,7 @@ function applyDailyFilters(){
     <td>${fmtTime(r.checkinTime)}</td>
     <td>${fmtTime(r.checkoutTime)}</td>
     <td>${r.checkoutTime?'<span class="badge badge-present">Present</span>':r.checkinTime?'<span class="badge badge-warn">Checked In</span>':'<span class="badge badge-absent">Absent</span>'}</td>
-    <td>—</td>
+    <td style="font-size:11px;color:var(--text-2);max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(r.notes||'')}">${r.notes?escHtml(r.notes):'—'}</td>
     <td><button class="btn btn-ghost btn-sm" onclick="openMarkModal('${(r.studentId||'').replace(/'/g,"\\'")}')" title="Mark attendance">Mark</button></td>
   </tr>`).join('');
   document.getElementById('dailyPagination').style.display='none';
@@ -2349,6 +2378,8 @@ async function _ensureRecordsLoaded() {
 }
 
 function openStudentHistory(studentId, studentName) {
+  _currentStudentId = studentId;
+  switchStudentModalTab('history');
   const student = summaryData.find(s => s.id === studentId) || { id: studentId, name: studentName };
   _studentHistoryPending = student;
 
@@ -2388,21 +2419,17 @@ function _renderHistoryPills(student) {
   const todayDate = todayStr();
   const sid = String(student.id);
 
-  // Get present dates from all-records cache
-  const presentDates = new Set(
-    (_allRecords||[])
-      .filter(r => String(r.studentId) === sid && r.checkinTime)
-      .map(r => normISO(r.attendanceDate))
-      .filter(Boolean)
-  );
-  // Merge today from dailyRows if checked in
-  if (dailyRows.some(r => String(r.studentId) === sid && r.checkinTime)) {
-    presentDates.add(todayDate);
-  }
+  // Merge _allRecords with today's dailyRows (dailyRows may not be in _allRecords cache yet)
+  const todayRec = dailyRows.find(r => String(r.studentId) === sid && r.checkinTime);
+  const baseRecs = (_allRecords||[]).filter(r => String(r.studentId) === sid);
+  const allRecs = todayRec && !baseRecs.some(r => normISO(r.attendanceDate) === todayDate)
+    ? [todayRec, ...baseRecs] : baseRecs;
 
-  const sorted = [...presentDates].filter(d => d <= todayDate).sort().reverse();
-  _studentHistoryData = (_allRecords||[]).filter(r => String(r.studentId) === sid);
+  const sorted = allRecs
+    .filter(r => r.checkinTime && normISO(r.attendanceDate) <= todayDate)
+    .sort((a,b) => normISO(b.attendanceDate).localeCompare(normISO(a.attendanceDate)));
 
+  _studentHistoryData = allRecs;
   document.getElementById('studentHistoryCsvBtn').style.display = sorted.length ? 'inline-flex' : 'none';
 
   if (!sorted.length) {
@@ -2411,20 +2438,45 @@ function _renderHistoryPills(student) {
     return;
   }
 
-  // Group by month — same format as reference
+  // Group by month
   const byMonth = {};
-  sorted.forEach(d => { const m = d.slice(0,7); (byMonth[m]||(byMonth[m]=[])).push(d); });
+  sorted.forEach(r => { const m = normISO(r.attendanceDate).slice(0,7); (byMonth[m]||(byMonth[m]=[])).push(r); });
 
-  const html = Object.entries(byMonth).sort((a,b)=>b[0].localeCompare(a[0])).map(([month,dates]) => {
+  const html = Object.entries(byMonth).sort((a,b)=>b[0].localeCompare(a[0])).map(([month, recs]) => {
     const label = new Date(month+'-01T00:00:00').toLocaleDateString('en-AU',{month:'long',year:'numeric'});
-    const pills = dates.map(d => {
-      const isToday = d === todayDate;
-      const day = new Date(d+'T00:00:00Z').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'});
-      return `<span style="display:inline-block;background:${isToday?'#dcfce7':'var(--surface-2)'};border:1px solid ${isToday?'#86efac':'var(--border)'};border-radius:6px;padding:.25rem .6rem;font-size:.75rem;font-weight:600;margin:.2rem;">${escHtml(day)}${isToday?' ✓':''}</span>`;
+    const rows = recs.map(r => {
+      const iso = normISO(r.attendanceDate);
+      const isToday = iso === todayDate;
+      const d = new Date(iso+'T00:00:00Z');
+      const dateStr = d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'});
+      const cin = r.checkinTime ? fmtTime(r.checkinTime) : '—';
+      const cout = r.checkoutTime ? fmtTime(r.checkoutTime) : '—';
+      let dur = '—';
+      if (r.checkinTime && r.checkoutTime) {
+        const mins = Math.round((new Date(r.checkoutTime)-new Date(r.checkinTime))/60000);
+        if (mins > 0) dur = `${Math.floor(mins/60)}h ${mins%60}m`;
+      }
+      const noteText = r.notes ? escHtml(r.notes) : '';
+      return `<tr style="${isToday?'background:#f0fdf4;':''}" >
+        <td style="white-space:nowrap;font-weight:${isToday?'700':'500'};color:${isToday?'var(--success)':'var(--text)'};">${dateStr}${isToday?' <span style="font-size:9px;background:var(--success);color:#fff;border-radius:3px;padding:1px 4px;vertical-align:middle;">TODAY</span>':''}</td>
+        <td style="white-space:nowrap;">${cin}</td>
+        <td style="white-space:nowrap;">${cout}</td>
+        <td style="white-space:nowrap;color:var(--text-2);">${dur}</td>
+        <td style="font-size:.72rem;color:var(--text-2);max-width:200px;word-break:break-word;">${noteText||'—'}</td>
+      </tr>`;
     }).join('');
-    return `<div style="margin-bottom:1rem;">
-      <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-2);margin-bottom:.35rem;">${label}</div>
-      <div>${pills}</div>
+    return `<div style="margin-bottom:1.5rem;">
+      <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-2);margin-bottom:.4rem;">${label} &nbsp;·&nbsp; <span style="color:var(--brand);">${recs.length} day${recs.length!==1?'s':''}</span></div>
+      <table style="width:100%;border-collapse:collapse;font-size:.8rem;">
+        <thead><tr style="background:var(--surface-2);">
+          <th style="padding:.3rem .6rem;text-align:left;border-bottom:1px solid var(--border);font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--text-2);">Date</th>
+          <th style="padding:.3rem .6rem;text-align:left;border-bottom:1px solid var(--border);font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--text-2);">Check In</th>
+          <th style="padding:.3rem .6rem;text-align:left;border-bottom:1px solid var(--border);font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--text-2);">Check Out</th>
+          <th style="padding:.3rem .6rem;text-align:left;border-bottom:1px solid var(--border);font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--text-2);">Duration</th>
+          <th style="padding:.3rem .6rem;text-align:left;border-bottom:1px solid var(--border);font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--text-2);">Notes</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
     </div>`;
   }).join('');
 
@@ -2544,6 +2596,80 @@ function exportMyClassCSV(){
   const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='myclass.csv'; a.click();
 }
 
+/* ── Student Notes ── */
+let _currentStudentId = null;
+
+function switchStudentModalTab(tab) {
+  const isHist = tab === 'history';
+  document.getElementById('histTabContent').style.display = isHist ? 'block' : 'none';
+  document.getElementById('notesTabContent').style.display = isHist ? 'none' : 'block';
+  const csvBtn = document.getElementById('studentHistoryCsvBtn');
+  if(csvBtn) csvBtn.style.display = isHist && _studentHistoryData.length ? 'inline-flex' : 'none';
+  const hb = document.getElementById('histTabBtn');
+  const nb = document.getElementById('notesTabBtn');
+  if(hb){ hb.style.color = isHist?'var(--brand)':'var(--text-2)'; hb.style.borderBottomColor = isHist?'var(--brand)':'transparent'; }
+  if(nb){ nb.style.color = !isHist?'var(--brand)':'var(--text-2)'; nb.style.borderBottomColor = !isHist?'var(--brand)':'transparent'; }
+  if (!isHist && _currentStudentId) loadStudentNotes(_currentStudentId);
+}
+
+async function loadStudentNotes(studentId) {
+  const body = document.getElementById('studentNotesBody');
+  if (!body) return;
+  body.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-2);font-size:.85rem;">Loading notes…</div>';
+  try {
+    const res = await authFetch('/api/notes?student=' + encodeURIComponent(studentId));
+    const notes = await res.json();
+    if (!res.ok) throw new Error(notes.error || 'Failed');
+    if (!notes.length) {
+      body.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><div class="empty-state-title">No notes yet</div><div class="empty-state-sub">Add notes about this student below.</div></div>';
+      return;
+    }
+    body.innerHTML = notes.map(n => {
+      const dt = new Date(n.createdAt).toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Australia/Brisbane'});
+      return `<div style="border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;margin-bottom:.6rem;">
+        <div style="font-size:.85rem;line-height:1.5;white-space:pre-wrap;">${escHtml(n.note)}</div>
+        <div style="font-size:.68rem;color:var(--text-3);margin-top:.35rem;display:flex;align-items:center;gap:.4rem;">
+          ${n.createdBy?'<span>'+escHtml(n.createdBy)+'</span><span>·</span>':''}<span>${dt}</span>
+          <button onclick="deleteStudentNote(${n.id},'${studentId.replace(/'/g,"\\'")}','${(n.createdBy||'').replace(/'/g,"\\'")}')" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--danger);font-size:.72rem;padding:.1rem .3rem;opacity:.65;" title="Delete note">✕ Delete</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    body.innerHTML = `<div style="color:var(--danger);padding:1rem;font-size:.82rem;">${escHtml(e.message)}</div>`;
+  }
+}
+
+async function submitStudentNote() {
+  if (!_currentStudentId) return;
+  const note = (document.getElementById('newNoteText').value||'').trim();
+  if (!note) { showToast('Please enter a note.', true); return; }
+  const createdBy = (document.getElementById('newNoteBy').value||'').trim();
+  try {
+    const res = await authFetch('/api/notes', {
+      method: 'POST',
+      body: JSON.stringify({ studentId: _currentStudentId, note, createdBy })
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Failed to save note');
+    document.getElementById('newNoteText').value = '';
+    showToast('Note saved');
+    loadStudentNotes(_currentStudentId);
+  } catch(e) { showToast('Error: ' + e.message, true); }
+}
+
+async function deleteStudentNote(id, studentId) {
+  if (!confirm('Delete this note?')) return;
+  try {
+    const res = await authFetch('/api/notes', {
+      method: 'DELETE',
+      body: JSON.stringify({ id, studentId })
+    });
+    if (!res.ok) throw new Error('Failed to delete note');
+    showToast('Note deleted');
+    loadStudentNotes(studentId);
+  } catch(e) { showToast('Error: ' + e.message, true); }
+}
+
 /* ── Not Started ── */
 let notStartedTab='not-checked-in';
 function switchNotStartedTab(tab){
@@ -2559,8 +2685,9 @@ function switchNotStartedTab(tab){
 function renderNotStarted(){
   if(!summaryData.length) return;
   const todayIn=new Set(dailyRows.map(r=>r.studentId));
-  const notIn=summaryData.filter(s=>s.status==='active'&&!todayIn.has(s.id));
-  const upcoming=summaryData.filter(s=>s.status==='not-started');
+  const myScope=(viewMode==='trainer'&&loggedInTrainerName)?summaryData.filter(s=>s.trainer===loggedInTrainerName):summaryData;
+  const notIn=myScope.filter(s=>s.status==='active'&&!todayIn.has(s.id));
+  const upcoming=myScope.filter(s=>s.status==='not-started');
 
   // Nav badge (top-level tab)
   const badge=document.getElementById('notStartedBadge');
@@ -2869,6 +2996,8 @@ function openMarkModalFromRow(row, defaultType){
   document.getElementById('absentDateTo').value=row.attendanceDate||todayStr();
   document.getElementById('absentReason').value='';
   document.getElementById('presentNote').value='';
+  document.getElementById('presentCheckinTime').value='';
+  document.getElementById('presentCheckoutTime').value='';
   document.getElementById('absentMarkedBy').value='';
   setMarkType(defaultType||'absent');
   setModalDateMode('single');
@@ -2884,6 +3013,8 @@ function openMarkModal(id){
   document.getElementById('absentDateTo').value=todayStr();
   document.getElementById('absentReason').value='';
   document.getElementById('presentNote').value='';
+  document.getElementById('presentCheckinTime').value='';
+  document.getElementById('presentCheckoutTime').value='';
   document.getElementById('absentMarkedBy').value='';
   setMarkType('absent');
   setModalDateMode('single');
@@ -2914,6 +3045,8 @@ async function confirmMarkAbsent(){
   const reason=document.getElementById('absentReason').value.trim();
   const note=document.getElementById('presentNote').value.trim();
   const markedBy=document.getElementById('absentMarkedBy').value.trim();
+  const checkinTime=document.getElementById('presentCheckinTime').value||'';
+  const checkoutTime=document.getElementById('presentCheckoutTime').value||'';
   const btn=document.getElementById('absentModalSubmit');
   btn.disabled=true; btn.textContent='Saving…';
   try{
@@ -2923,12 +3056,15 @@ async function confirmMarkAbsent(){
         studentId:markStudent.id, studentName:markStudent.name,
         course:markStudent.course, courseCode:markStudent.courseCode,
         trainer:markStudent.trainer, campus:markStudent.campus,
-        dates, status:currentMarkType, reason, markedBy, note
+        dates, status:currentMarkType, reason, markedBy, note,
+        checkinTime: checkinTime||undefined,
+        checkoutTime: checkoutTime||undefined
       })
     });
     const data=await resp.json();
     if(!resp.ok) throw new Error(data.error||'Server error');
     showToast(currentMarkType==='absent'?'Marked absent for '+dates.length+' day(s)':'Marked present for '+dates.length+' day(s)');
+    _allRecords = null; // invalidate cache so history modal shows fresh data
     closeAbsentModal();
     loadSummary();
     if(dates.includes(todayStr())) loadDailyAttendance();
