@@ -68,7 +68,7 @@ input,select,textarea,button{ font-family:inherit; }
 .login-logo{
   display:flex; justify-content:center; margin-bottom:1rem;
 }
-.login-logo img{ width:140px; height:auto; }
+.login-logo img{ width:190px; height:auto; }
 .login-divider{
   width:40px; height:3px; background:var(--accent);
   border-radius:2px; margin:0 auto 1rem;
@@ -132,7 +132,7 @@ header{
   padding:4px 8px; display:flex; align-items:center;
   box-shadow:0 1px 4px rgba(0,0,0,.15);
 }
-.header-logo-wrap img{ height:32px; width:auto; }
+.header-logo-wrap img{ height:40px; width:auto; }
 .header-brand-text{ line-height:1.25; }
 .header-brand-name{ font-size:var(--text-md); font-weight:700; letter-spacing:-0.2px; }
 .header-brand-sub{ font-size:var(--text-xs); opacity:0.65; font-weight:500; margin-top:1px; }
@@ -171,11 +171,12 @@ header{
 .header-nav{ padding:0 2rem; display:flex; }
 .nav-tabs{ display:flex; gap:0; }
 .nav-tab{
-  padding:0.55rem 1.1rem; border:none; background:transparent;
+  padding:0.6rem 0; border:none; background:transparent;
   color:rgba(255,255,255,.6); font-size:var(--text-sm); font-weight:600;
   cursor:pointer; white-space:nowrap; letter-spacing:0.01em;
   border-bottom:2.5px solid transparent; transition:all var(--transition);
-  display:flex; align-items:center; gap:5px;
+  display:flex; align-items:center; justify-content:center; gap:5px;
+  min-width:120px;
 }
 .nav-tab:hover{ color:rgba(255,255,255,.9); background:rgba(255,255,255,.06); }
 .nav-tab.active{ color:white; border-bottom-color:var(--accent); }
@@ -647,7 +648,7 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
 <div id="loginScreen">
   <div class="login-card">
     <div class="login-logo">
-      <img src="116e9b7c-475c-4603-b0f8-9a28f1a1160e-20181105090601220.jpg" alt="Educare Training Institute Australasia">
+      <img src="images.png" alt="Educare Training Institute Australasia">
     </div>
     <div class="login-divider"></div>
     <div class="login-heading">Attendance Monitoring Portal</div>
@@ -689,11 +690,10 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
   <div class="header-inner">
     <div class="header-brand">
       <div class="header-logo-wrap">
-        <img src="116e9b7c-475c-4603-b0f8-9a28f1a1160e-20181105090601220.jpg" alt="Educare">
+        <img src="images.png" alt="Educare">
       </div>
       <div class="header-brand-text">
-        <div class="header-brand-name">Educare College</div>
-        <div class="header-brand-sub">Attendance Monitoring Portal</div>
+        <div class="header-brand-sub" style="opacity:0.8;font-size:var(--text-sm);font-weight:600;">Attendance Monitoring Portal</div>
       </div>
     </div>
     <div class="header-controls">
