@@ -2091,8 +2091,10 @@ function renderDashboard(){
     const trainerTotal = Object.values(data.courses).reduce((a,c)=>a+c.total,0);
 
     const courseRows = Object.entries(data.courses).map(([course,c])=>{
-      const {code,name} = parseCourseCode(course);
+      const {code: parsedCode, name} = parseCourseCode(course);
+      const displayCode = c.courseCode || parsedCode;
       const shortName = name.replace(/Certificate (III|IV) in /,'Cert $1 ').replace(/Diploma of /,'Dip. ');
+      const codeTag = displayCode ? `<span style="font-size:.67rem;font-weight:700;color:var(--text-3);margin-right:3px;font-family:monospace;">${displayCode}</span>` : '';
       const presentN = presentForTrainerCourse(trainer, course, c.courseCode);
       const rateN = c.active>0 ? Math.round(presentN/c.active*100) : 0;
       const rateColor = rateN>=80?'var(--success)':rateN>=50?'var(--warning)':'var(--danger)';
@@ -2100,12 +2102,12 @@ function renderDashboard(){
 
       if(c.active===0){
         return `<div class="course-row">
-          <span class="course-name" title="${course}"><strong>${code}</strong> ${shortName}</span>
+          <span class="course-name" title="${displayCode} ${course}">${codeTag}<strong>${shortName}</strong></span>
           <span style="color:var(--text-3);font-size:0.72rem;font-style:italic;">no class</span>
         </div>`;
       }
       return `<div class="course-row" onclick="openClassList('${tEsc}','${cEsc}')" style="cursor:pointer;" title="View class list">
-        <span class="course-name" title="${course}"><strong>${code}</strong> ${shortName}</span>
+        <span class="course-name" title="${displayCode} ${course}">${codeTag}<strong>${shortName}</strong></span>
         <div class="course-stat-wrap">
           <span style="color:${rateColor};font-weight:700;font-size:0.75rem;">${presentN} active</span>
           <div class="rate-mini">
