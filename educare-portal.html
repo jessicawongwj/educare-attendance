@@ -2617,7 +2617,7 @@ async function loadStudentNotes(studentId) {
   if (!body) return;
   body.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-2);font-size:.85rem;">Loading notes…</div>';
   try {
-    const res = await authFetch('/api/notes?student=' + encodeURIComponent(studentId));
+    const res = await authFetch('/api/records?type=notes&student=' + encodeURIComponent(studentId));
     const notes = await res.json();
     if (!res.ok) throw new Error(notes.error || 'Failed');
     if (!notes.length) {
@@ -2645,7 +2645,7 @@ async function submitStudentNote() {
   if (!note) { showToast('Please enter a note.', true); return; }
   const createdBy = (document.getElementById('newNoteBy').value||'').trim();
   try {
-    const res = await authFetch('/api/notes', {
+    const res = await authFetch('/api/records?type=notes', {
       method: 'POST',
       body: JSON.stringify({ studentId: _currentStudentId, note, createdBy })
     });
@@ -2660,7 +2660,7 @@ async function submitStudentNote() {
 async function deleteStudentNote(id, studentId) {
   if (!confirm('Delete this note?')) return;
   try {
-    const res = await authFetch('/api/notes', {
+    const res = await authFetch('/api/records?type=notes', {
       method: 'DELETE',
       body: JSON.stringify({ id, studentId })
     });
