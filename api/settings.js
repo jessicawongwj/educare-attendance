@@ -1,5 +1,5 @@
 const { getPool, sql } = require('./_db');
-const { validateToken, isAdminUser } = require('./_auth');
+const { validateToken, isAdminUser, ensureAdminCache } = require('./_auth');
 
 const CREATE_TABLE = `
   IF NOT EXISTS (
@@ -21,6 +21,7 @@ module.exports = async (req, res) => {
   try {
     const pool = await getPool();
     await pool.request().query(CREATE_TABLE);
+    await ensureAdminCache(pool);
 
     if (req.method === 'GET') {
       const result = await pool.request()

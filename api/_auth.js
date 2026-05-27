@@ -1,3 +1,5 @@
+const { sql } = require('./_db');
+
 const tokenCache = new Map();
 
 const ADMIN_EMAILS = new Set([
@@ -7,6 +9,29 @@ const ADMIN_EMAILS = new Set([
   'jason.yang@niet.edu.au',
   'maria.a.b@educare.edu.au',
 ]);
+
+// DB-backed admin cache (refreshed every 5 min)
+let dbAdminCache = new Set();
+let dbAdminCacheExpiry = 0;
+
+async function ensureAdminCache(pool) {
+  const now = Date.now();
+  if (now < dbAdminCacheExpiry) return;
+  try {
+    const result = await pool.request()
+      .input('k', sql.VarChar(100), 'admin_emails')
+      .query('SELECT value FROM app_settings WHERE [key] = @k');
+    if (result.recordset.length) {
+      const parsed = JSON.parse(result.recordset[0].value);
+      dbAdminCache = new Set(Array.isArray(parsed) ? parsed.map(e => e.toLowerCase()) : []);
+    } else {
+      dbAdminCache = new Set();
+    }
+    dbAdminCacheExpiry = now + 5 * 60 * 1000;
+  } catch (e) {
+    console.error('ensureAdminCache error:', e.message);
+  }
+}
 
 async function validateToken(req) {
   const auth = req.headers.authorization;
@@ -35,7 +60,8 @@ async function validateToken(req) {
 }
 
 function isAdminUser(email) {
-  return ADMIN_EMAILS.has((email || '').toLowerCase());
+  const e = (email || '').toLowerCase();
+  return ADMIN_EMAILS.has(e) || dbAdminCache.has(e);
 }
 
-module.exports = { validateToken, isAdminUser };
+module.exports = { validateToken, isAdminUser, ensureAdminCache };

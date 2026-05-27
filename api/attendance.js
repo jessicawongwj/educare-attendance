@@ -1,5 +1,5 @@
 const { getPool, sql } = require('./_db');
-const { validateToken, isAdminUser } = require('./_auth');
+const { validateToken, isAdminUser, ensureAdminCache } = require('./_auth');
 const { trainersFromEmail } = require('./_trainers');
 
 module.exports = async (req, res) => {
@@ -8,18 +8,18 @@ module.exports = async (req, res) => {
   if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
   const email = (user.mail || user.userPrincipalName || '').toLowerCase();
-  const adminUser = isAdminUser(email);
-  const trainerNames = adminUser ? [] : trainersFromEmail(email);
-
-  if (!adminUser && trainerNames.length === 0) {
-    return res.status(200).json([]);
-  }
-
   const date = req.query.date ||
     new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Brisbane' });
 
   try {
     const pool = await getPool();
+    await ensureAdminCache(pool);
+    const adminUser = isAdminUser(email);
+    const trainerNames = adminUser ? [] : trainersFromEmail(email);
+
+    if (!adminUser && trainerNames.length === 0) {
+      return res.status(200).json([]);
+    }
     const request = pool.request().input('date', sql.Date, date);
 
     let trainerWhere = '';

@@ -1,11 +1,13 @@
 const { getPool, sql } = require('./_db');
-const { validateToken, isAdminUser } = require('./_auth');
+const { validateToken, isAdminUser, ensureAdminCache } = require('./_auth');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).end();
   const user = await validateToken(req);
   if (!user) return res.status(401).json({ error: 'Unauthorized' });
   const email = (user.mail || user.userPrincipalName || '').toLowerCase();
+  const pool = await getPool();
+  await ensureAdminCache(pool);
   if (!isAdminUser(email)) return res.status(403).json({ error: 'Admin only' });
 
   const { studentId, name, course, courseCode, trainer, campus, commenced, expectedEnd } = req.body;
@@ -14,8 +16,6 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-
     // Upsert student record
     const studentCheck = await pool.request()
       .input('id', sql.VarChar(20), studentId)
@@ -51,11 +51,10 @@ module.exports = async (req, res) => {
         .input('course',      sql.NVarChar(300),  course)
         .input('courseCode',  sql.VarChar(20),    courseCode || '')
         .input('trainer',     sql.NVarChar(200),  trainer)
-        .input('campus',      sql.NVarChar(100),  campus || '')
         .input('commenced',   sql.Date,            commenced || new Date())
         .input('expectedEnd', sql.Date,            expectedEnd || null)
-        .query(`INSERT INTO enrollments (studentId,studentName,course,courseCode,trainer,campus,commenced,expectedEnd,status,isPrimary)
-                VALUES (@studentId,@name,@course,@courseCode,@trainer,@campus,@commenced,@expectedEnd,'active',1)`);
+        .query(`INSERT INTO enrollments (studentId,studentName,course,courseCode,trainer,commenced,expectedEnd,status,isPrimary)
+                VALUES (@studentId,@name,@course,@courseCode,@trainer,@commenced,@expectedEnd,'active',1)`);
     }
 
     res.status(200).json({ ok: true });

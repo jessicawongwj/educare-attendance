@@ -1,5 +1,5 @@
-const { getPool } = require('./_db');
-const { validateToken, isAdminUser } = require('./_auth');
+const { getPool, sql } = require('./_db');
+const { validateToken, isAdminUser, ensureAdminCache } = require('./_auth');
 const { sendMail } = require('./_graph');
 
 const { workingDaysInRange } = require('./_calendar');
@@ -27,17 +27,18 @@ module.exports = async (req, res) => {
   const { type } = req.body || {};
   if (!type) return res.status(400).json({ error: 'Missing type' });
 
-  // Allow cron-secret OR authenticated admin
-  const cronSecret = req.headers['x-cron-secret'];
-  if (cronSecret !== process.env.CRON_SECRET) {
-    const user = await validateToken(req);
-    if (!user) return res.status(401).json({ error: 'Unauthorized' });
-    const email = (user.mail || user.userPrincipalName || '').toLowerCase();
-    if (!isAdminUser(email)) return res.status(403).json({ error: 'Admin only' });
-  }
-
   try {
     const pool = await getPool();
+
+    // Allow cron-secret OR authenticated admin
+    const cronSecret = req.headers['x-cron-secret'];
+    if (cronSecret !== process.env.CRON_SECRET) {
+      const user = await validateToken(req);
+      if (!user) return res.status(401).json({ error: 'Unauthorized' });
+      const email = (user.mail || user.userPrincipalName || '').toLowerCase();
+      await ensureAdminCache(pool);
+      if (!isAdminUser(email)) return res.status(403).json({ error: 'Admin only' });
+    }
     const today = todayAEST();
 
     // Load recipients from app_settings, fall back to hardcoded
@@ -66,21 +67,24 @@ module.exports = async (req, res) => {
       const workDays = workingDaysInRange(startDate, today);
       const label = isMonthly ? 'Monthly' : 'Fortnightly';
 
-      const result = await pool.request().query(`
-        SELECT
-          e.trainer, e.course,
-          COUNT(DISTINCT e.studentId)             AS enrolled,
-          COUNT(DISTINCT a.studentId)             AS present
-        FROM enrollments e
-        LEFT JOIN attendance a
-          ON  a.studentId = e.studentId
-          AND a.course    = e.course
-          AND a.attendanceDate >= '${startDate}'
-          AND a.attendanceDate <= '${today}'
-        WHERE e.status = 'active'
-        GROUP BY e.trainer, e.course
-        ORDER BY e.trainer, e.course
-      `);
+      const result = await pool.request()
+        .input('startDate', sql.Date, startDate)
+        .input('today',     sql.Date, today)
+        .query(`
+          SELECT
+            e.trainer, e.course,
+            COUNT(DISTINCT e.studentId)             AS enrolled,
+            COUNT(DISTINCT a.studentId)             AS present
+          FROM enrollments e
+          LEFT JOIN attendance a
+            ON  a.studentId = e.studentId
+            AND a.course    = e.course
+            AND a.attendanceDate >= @startDate
+            AND a.attendanceDate <= @today
+          WHERE e.status = 'active'
+          GROUP BY e.trainer, e.course
+          ORDER BY e.trainer, e.course
+        `);
 
       const rows = result.recordset;
       let html = `
@@ -129,18 +133,20 @@ module.exports = async (req, res) => {
       cutoff.setUTCDate(cutoff.getUTCDate() - 14);
       const cutoffStr = cutoff.toISOString().slice(0, 10);
 
-      const result = await pool.request().query(`
-        SELECT
-          s.id, s.name, e.trainer, e.course, e.campus,
-          MAX(a.attendanceDate) AS lastAttendance
-        FROM students s
-        JOIN enrollments e ON e.studentId = s.id AND e.status = 'active'
-        LEFT JOIN attendance a ON a.studentId = s.id AND a.course = e.course
-        WHERE s.withdrawn = 0
-        GROUP BY s.id, s.name, e.trainer, e.course, e.campus
-        HAVING MAX(a.attendanceDate) < '${cutoffStr}' OR MAX(a.attendanceDate) IS NULL
-        ORDER BY e.trainer, s.name
-      `);
+      const result = await pool.request()
+        .input('cutoff', sql.Date, cutoffStr)
+        .query(`
+          SELECT
+            s.id, s.name, e.trainer, e.course, e.campus,
+            MAX(a.attendanceDate) AS lastAttendance
+          FROM students s
+          JOIN enrollments e ON e.studentId = s.id AND e.status = 'active'
+          LEFT JOIN attendance a ON a.studentId = s.id AND a.course = e.course
+          WHERE s.withdrawn = 0
+          GROUP BY s.id, s.name, e.trainer, e.course, e.campus
+          HAVING MAX(a.attendanceDate) < @cutoff OR MAX(a.attendanceDate) IS NULL
+          ORDER BY e.trainer, s.name
+        `);
 
       const rows = result.recordset;
       let html = `

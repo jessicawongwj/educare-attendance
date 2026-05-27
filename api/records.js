@@ -1,5 +1,5 @@
 const { getPool, sql } = require('./_db');
-const { validateToken, isAdminUser } = require('./_auth');
+const { validateToken, isAdminUser, ensureAdminCache } = require('./_auth');
 const { trainersFromEmail } = require('./_trainers');
 
 async function ensureNotesTable(pool) {
@@ -68,15 +68,21 @@ module.exports = async (req, res) => {
   if (req.method !== 'GET') return res.status(405).end();
 
   const email = (user.mail || user.userPrincipalName || '').toLowerCase();
-  const adminUser = isAdminUser(email);
-  const trainerNames = adminUser ? [] : trainersFromEmail(email);
 
   try {
     const pool = await getPool();
+    await ensureAdminCache(pool);
+    const adminUser = isAdminUser(email);
+    const trainerNames = adminUser ? [] : trainersFromEmail(email);
     const request = pool.request();
-    let where = 'WHERE attendanceDate >= DATEADD(day, -90, CAST(GETDATE() AS DATE))';
+    const studentId = req.query.student;
 
-    // Non-admin trainers: scope to own records only (IDOR prevention)
+    // When fetching a single student, return full history (no date cap)
+    let where = studentId
+      ? 'WHERE 1=1'
+      : 'WHERE attendanceDate >= DATEADD(day, -90, CAST(GETDATE() AS DATE))';
+
+    // Non-admin trainers: scope to own records only
     if (!adminUser && trainerNames.length > 0) {
       const placeholders = trainerNames.map((_, i) => `@t${i}`).join(',');
       trainerNames.forEach((n, i) => request.input(`t${i}`, sql.NVarChar(200), n));
@@ -85,8 +91,6 @@ module.exports = async (req, res) => {
       return res.status(200).json([]);
     }
 
-    // Optional student filter (admin or trainer scoped to their own students)
-    const studentId = req.query.student;
     if (studentId) {
       request.input('sid', sql.NVarChar(50), studentId);
       where += ' AND studentId = @sid';

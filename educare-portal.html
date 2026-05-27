@@ -117,25 +117,22 @@ input,select,textarea,button{ font-family:inherit; }
    HEADER
 ══════════════════════════════════════════ */
 header{
-  background:linear-gradient(90deg,#0a3352,#1464a0,#198c6c);
-  color:white; box-shadow:0 2px 12px rgba(0,0,0,.2);
+  background:linear-gradient(to right,#ffffff 0%,#dff2e8 18%,#39B54A 52%,#1565C0 100%);
+  color:white; box-shadow:0 4px 20px rgba(21,101,192,.22);
   position:sticky; top:0; z-index:100;
 }
 .header-inner{
   display:flex; align-items:center; justify-content:space-between;
-  padding:0.75rem 2.5rem;
-  border-bottom:1px solid rgba(255,255,255,.08);
+  padding:0.7rem 2rem;
 }
-.header-brand{ display:flex; align-items:center; gap:0.875rem; }
+.header-brand{ display:flex; align-items:center; gap:0.75rem; }
 .header-logo-wrap{
-  background:rgba(255,255,255,0.97); border-radius:10px;
-  padding:6px 14px; display:flex; align-items:center;
-  border:1px solid rgba(255,255,255,0.25);
+  display:flex; align-items:center;
 }
-.header-logo-wrap img{ height:46px; width:auto; }
-.header-brand-text{ line-height:1.25; }
-.header-brand-name{ font-size:var(--text-md); font-weight:700; letter-spacing:-0.2px; }
-.header-brand-sub{ font-size:var(--text-xs); opacity:0.65; font-weight:500; margin-top:1px; }
+.header-logo-wrap img{ height:44px; width:auto; }
+.header-brand-text{ line-height:1.25; color:#0d3520; }
+.header-brand-name{ font-size:var(--text-lg); font-weight:800; letter-spacing:-0.3px; }
+.header-brand-sub{ font-size:var(--text-xs); opacity:1; font-weight:600; color:#1a5c35; letter-spacing:0.2px; margin-top:2px; }
 
 .header-controls{ display:flex; align-items:center; gap:0.5rem; }
 .user-badge{
@@ -168,19 +165,19 @@ header{
 .signout-btn:hover{ background:rgba(220,38,38,.18); border-color:rgba(220,38,38,.45); color:#fca5a5; }
 
 /* Nav tabs row */
-.header-nav{ padding:0; display:flex; }
+.header-nav{ padding:0; display:flex; background:rgba(0,0,0,.22); border-top:1px solid rgba(255,255,255,.06); }
 .nav-tabs{ display:flex; gap:0; width:100%; }
 .nav-tab{
-  flex:1; padding:0.65rem 0.5rem; border:none; background:transparent;
-  color:rgba(255,255,255,.6); font-size:var(--text-sm); font-weight:600;
+  flex:1; padding:0.6rem 0.5rem; border:none; background:transparent;
+  color:rgba(255,255,255,.55); font-size:var(--text-sm); font-weight:600;
   cursor:pointer; white-space:nowrap; letter-spacing:0.01em;
   border-bottom:2.5px solid transparent; transition:all var(--transition);
   display:flex; align-items:center; justify-content:center; gap:5px;
   min-width:0;
 }
-.nav-tab:hover{ color:rgba(255,255,255,.9); background:rgba(255,255,255,.06); }
-.nav-tab.active{ color:white; border-bottom-color:var(--accent); }
-.nav-tab svg{ flex-shrink:0; }
+.nav-tab:hover{ color:rgba(255,255,255,.9); background:rgba(255,255,255,.07); }
+.nav-tab.active{ color:white; background:rgba(255,255,255,.08); border-bottom-color:var(--accent); }
+.nav-tab svg{ flex-shrink:0; opacity:0.8; }
 
 /* ══════════════════════════════════════════
    MAIN CONTAINER
@@ -588,7 +585,10 @@ body.dark{
   --border:#1e3050; --border-2:#1a2a44;
   --shadow-sm:0 1px 3px rgba(0,0,0,.3); --shadow-md:0 4px 16px rgba(0,0,0,.4);
 }
-body.dark header{ background:linear-gradient(90deg,#08192e,#0d2540,#0a3028); }
+body.dark header{ background:linear-gradient(135deg,#050e1a 0%,#0a1e3a 55%,#0d2d4a 100%); }
+body.dark .header-logo-wrap img{ filter:brightness(0) invert(1); }
+body.dark .header-brand-text{ color:rgba(255,255,255,.9); }
+body.dark .header-brand-sub{ color:rgba(255,255,255,.65); }
 body.dark .card, body.dark .modal{ background:var(--surface); }
 body.dark tbody tr:hover{ background:#1a2f4a; }
 body.dark .campus-pill{ background:var(--surface); }
@@ -606,7 +606,7 @@ body.dark .toast{ background:var(--surface); color:var(--text); }
 body.dark .pin-key{ background:var(--surface); color:var(--brand-light); border-color:var(--border); }
 body.dark .pin-key:hover{ background:var(--surface-2); border-color:var(--brand); }
 body.dark .login-card{ background:#162030; }
-body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
+body.dark .header-logo-wrap{ background:none; }
 
 /* ══════════════════════════════════════════
    RESPONSIVE
@@ -987,10 +987,7 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
           Current Students <span id="myClassCurrentBadge" class="badge-count" style="background:var(--brand);"></span>
         </button>
         <button id="myClassTabNotstarted" class="sub-tab" onclick="switchMyClassTab('notstarted')">
-          Not Started <span id="myClassNotStartedBadge" class="badge-count"></span>
-        </button>
-        <button id="myClassTabUpcoming" class="sub-tab" onclick="switchMyClassTab('upcoming')">
-          Upcoming <span id="myClassUpcomingBadge" class="badge-count" style="background:#d97706;"></span>
+          Not Started / Upcoming <span id="myClassNotStartedBadge" class="badge-count"></span>
         </button>
       </div>
       <div class="table-wrap">
@@ -1070,55 +1067,45 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
   <!-- ══ SETTINGS ══ -->
   <div id="settingsView" style="display:none;">
 
-    <!-- Admin Access (PIN-gated) -->
-    <div class="card" style="margin-bottom:1.25rem;">
+    <!-- Settings sub-tabs -->
+    <div class="sub-tabs" style="margin-bottom:1.25rem;">
+      <button id="stTabEmail"  class="sub-tab active" onclick="switchSettingsTab('email')">Email Reports</button>
+      <button id="stTabQr"    class="sub-tab"        onclick="switchSettingsTab('qr')">QR Code</button>
+      <button id="stTabRoster" class="sub-tab"       onclick="switchSettingsTab('roster')">Roster</button>
+      <button id="stTabAdmin" class="sub-tab"        onclick="switchSettingsTab('admin')">Admin Access</button>
+    </div>
+
+    <!-- Email Reports panel -->
+    <div id="stPanelEmail" class="card">
       <div class="card-header">
         <div>
-          <div class="card-title">Admin Access</div>
-          <div class="card-meta" id="adminCountLabel">Manage who can access this portal</div>
-        </div>
-        <button id="adminLockBtn" class="btn btn-ghost" onclick="lockAdminSection()" style="display:none;">🔒 Lock</button>
-      </div>
-      <!-- PIN gate -->
-      <div id="adminPinSection" style="padding:2rem 1.5rem;text-align:center;">
-        <div style="font-size:2rem;margin-bottom:0.625rem;">🔒</div>
-        <div style="font-size:var(--text-md);font-weight:700;color:var(--text);margin-bottom:0.25rem;">PIN required to manage admin access</div>
-        <div style="font-size:var(--text-sm);color:var(--text-2);margin-bottom:1.25rem;">Enter your 4-digit PIN below</div>
-        <div class="pin-dots" id="adminPinDots" style="justify-content:center;">
-          <div class="pin-dot" id="apd0"></div>
-          <div class="pin-dot" id="apd1"></div>
-          <div class="pin-dot" id="apd2"></div>
-          <div class="pin-dot" id="apd3"></div>
-        </div>
-        <div id="adminPinError" style="font-size:var(--text-sm);color:var(--danger);font-weight:600;min-height:1.2em;margin:0.4rem 0;"></div>
-        <div class="pin-keypad" style="max-width:200px;margin:0 auto;">
-          <button class="pin-key" onclick="adminPinPress('1')">1</button>
-          <button class="pin-key" onclick="adminPinPress('2')">2</button>
-          <button class="pin-key" onclick="adminPinPress('3')">3</button>
-          <button class="pin-key" onclick="adminPinPress('4')">4</button>
-          <button class="pin-key" onclick="adminPinPress('5')">5</button>
-          <button class="pin-key" onclick="adminPinPress('6')">6</button>
-          <button class="pin-key" onclick="adminPinPress('7')">7</button>
-          <button class="pin-key" onclick="adminPinPress('8')">8</button>
-          <button class="pin-key" onclick="adminPinPress('9')">9</button>
-          <div></div>
-          <button class="pin-key" onclick="adminPinPress('0')">0</button>
-          <button class="pin-key del" onclick="adminPinDelete()">⌫</button>
+          <div class="card-title">Email Reports</div>
+          <div class="card-meta">Attendance reports sent automatically on the 1st and 15th of each month</div>
         </div>
       </div>
-      <!-- Admin list -->
-      <div id="adminManageSection" style="display:none;">
-        <div id="adminListBody" style="max-height:240px;overflow-y:auto;border-top:1px solid var(--border-2);"></div>
-        <div style="padding:0.875rem 1.25rem;border-top:1px solid var(--border-2);display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;background:var(--surface-2);">
-          <input id="newAdminEmail" type="email" placeholder="Add admin email address" class="search-input" style="flex:1;min-width:220px;" onkeydown="if(event.key==='Enter')submitAddAdmin()">
-          <button class="btn btn-primary" onclick="submitAddAdmin()">Add Admin</button>
-          <span id="addAdminMsg" style="font-size:var(--text-sm);width:100%;"></span>
+      <div style="padding:1.25rem 1.5rem;">
+        <div style="margin-bottom:1.25rem;">
+          <label style="display:block;font-size:var(--text-sm);font-weight:600;color:var(--text);margin-bottom:.4rem;">Recipients</label>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+            <input id="emailRecipients" type="text" placeholder="email1@example.com, email2@example.com" class="search-input" style="flex:1;min-width:240px;">
+            <button class="btn btn-primary" onclick="saveEmailRecipients()">Save</button>
+          </div>
+          <div id="emailRecipientsMsg" style="font-size:var(--text-sm);margin-top:.4rem;min-height:1.2em;color:var(--success);"></div>
+        </div>
+        <div style="border-top:1px solid var(--border-2);padding-top:1.25rem;">
+          <div style="font-size:var(--text-sm);font-weight:600;color:var(--text);margin-bottom:.6rem;">Send Now</div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+            <button class="btn btn-ghost" onclick="sendEmailReport('fortnightly')">Fortnightly Report</button>
+            <button class="btn btn-ghost" onclick="sendEmailReport('monthly')">Monthly Report</button>
+            <button class="btn btn-ghost" onclick="sendEmailReport('absence')">Absence Alert</button>
+          </div>
+          <div id="emailSendMsg" style="font-size:var(--text-sm);margin-top:.5rem;min-height:1.2em;color:var(--text-2);"></div>
         </div>
       </div>
     </div>
 
-    <!-- QR Code -->
-    <div class="card" style="margin-bottom:1.25rem;">
+    <!-- QR Code panel -->
+    <div id="stPanelQr" class="card" style="display:none;">
       <div class="card-header">
         <div>
           <div class="card-title">Student Check-In QR Code</div>
@@ -1131,14 +1118,14 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
           <div style="font-size:var(--text-sm);color:var(--text-2);margin-bottom:1rem;line-height:1.6;">Display this poster at each campus. Students scan the QR code to open the check-in form on their device.</div>
           <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
             <button class="btn btn-primary" onclick="openQrModal()">View QR Code</button>
-            <button class="btn btn-ghost" onclick="printCheckinPoster()">🖨 Print Poster</button>
+            <button class="btn btn-ghost" onclick="printCheckinPoster()">Print Poster</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Roster Update -->
-    <div class="card">
+    <!-- Roster panel -->
+    <div id="stPanelRoster" class="card" style="display:none;">
       <div class="card-header">
         <div>
           <div class="card-title">Update Student Roster</div>
@@ -1164,32 +1151,22 @@ body.dark .header-logo-wrap{ background:rgba(255,255,255,.95); }
       </div>
     </div>
 
-    <!-- Email Reports -->
-    <div class="card" style="margin-top:1.25rem;">
+    <!-- Admin Access panel -->
+    <div id="stPanelAdmin" class="card" style="display:none;">
       <div class="card-header">
         <div>
-          <div class="card-title">Email Reports</div>
-          <div class="card-meta">Attendance reports sent automatically on the 1st and 15th of each month</div>
+          <div class="card-title">Admin Access</div>
+          <div class="card-meta" id="adminCountLabel">Manage who has admin access to this portal</div>
         </div>
+        <button class="btn btn-ghost btn-sm" onclick="loadAdminEmails()" title="Refresh list">↻ Refresh</button>
       </div>
-      <div style="padding:1.25rem 1.5rem;">
-        <div style="margin-bottom:1.25rem;">
-          <label style="display:block;font-size:var(--text-sm);font-weight:600;color:var(--text);margin-bottom:.4rem;">Recipients</label>
-          <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
-            <input id="emailRecipients" type="text" placeholder="email1@example.com, email2@example.com" class="search-input" style="flex:1;min-width:240px;">
-            <button class="btn btn-primary" onclick="saveEmailRecipients()">Save</button>
-          </div>
-          <div id="emailRecipientsMsg" style="font-size:var(--text-sm);margin-top:.4rem;min-height:1.2em;color:var(--success);"></div>
-        </div>
-        <div style="border-top:1px solid var(--border-2);padding-top:1.25rem;">
-          <div style="font-size:var(--text-sm);font-weight:600;color:var(--text);margin-bottom:.6rem;">Send Now</div>
-          <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
-            <button class="btn btn-ghost" onclick="sendEmailReport('fortnightly')">Fortnightly Report</button>
-            <button class="btn btn-ghost" onclick="sendEmailReport('monthly')">Monthly Report</button>
-            <button class="btn btn-ghost" onclick="sendEmailReport('absence')">Absence Alert</button>
-          </div>
-          <div id="emailSendMsg" style="font-size:var(--text-sm);margin-top:.5rem;min-height:1.2em;color:var(--text-2);"></div>
-        </div>
+      <div id="adminListBody" style="min-height:80px;border-top:1px solid var(--border-2);">
+        <div class="empty-state" style="padding:1.5rem;"><div class="empty-state-title">Loading…</div></div>
+      </div>
+      <div style="padding:0.875rem 1.25rem;border-top:1px solid var(--border-2);display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;background:var(--surface-2);border-radius:0 0 var(--radius-lg) var(--radius-lg);">
+        <input id="newAdminEmail" type="email" placeholder="Add admin email address" class="search-input" style="flex:1;min-width:220px;" onkeydown="if(event.key==='Enter')submitAddAdmin()">
+        <button class="btn btn-primary" onclick="submitAddAdmin()">Add Admin</button>
+        <span id="addAdminMsg" style="font-size:var(--text-sm);width:100%;min-height:1.2em;"></span>
       </div>
     </div>
 
@@ -1934,10 +1911,10 @@ async function loadSummary(){
   } catch(e){
     console.error('summary load failed',e);
     if(!hasStale){
-      const errRow=`<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--danger);">Failed to load: ${e.message}</td></tr>`;
+      const errRow=`<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--danger);">Failed to load: ${escHtml(e.message)}</td></tr>`;
       ['rateTableBody','notStartedTableBody','myClassTableBody'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=errRow;});
       document.getElementById('campusTabStats').innerHTML=`<span style="color:var(--danger);">Failed to load data — <a href="javascript:loadSummary()" style="color:var(--brand);">try again</a></span>`;
-      document.getElementById('trainerCourseTableBody').innerHTML=`<div style="padding:2rem;text-align:center;color:var(--danger);">Could not load attendance data: ${e.message}<br><br><button class="btn btn-primary" onclick="loadSummary()">↻ Retry</button></div>`;
+      document.getElementById('trainerCourseTableBody').innerHTML=`<div style="padding:2rem;text-align:center;color:var(--danger);">Could not load attendance data: ${escHtml(e.message)}<br><br><button class="btn btn-primary" onclick="loadSummary()">↻ Retry</button></div>`;
     }
     showToast('Data failed to load: '+e.message,true);
   }
@@ -1954,7 +1931,7 @@ function switchTab(tab){
     document.getElementById(v+'NavTab').classList.toggle('active',v===tab);
   });
   if(tab==='holidays') renderHolidaysList();
-  if(tab==='settings') loadEmailRecipients();
+  if(tab==='settings') switchSettingsTab(currentSettingsTab);
 }
 
 /* ── Dark Mode ── */
@@ -2025,10 +2002,10 @@ function parseCourseCode(raw){ const m=(raw||'').trim().match(/^([A-Z]{3}\d+)\s+
 function renderDashboard(){
   if(!summaryData.length){ return; }
 
-  // In trainer view, show only the logged-in trainer's data
+  // In trainer view, show only the logged-in trainer's active students
   const filtered = (viewMode==='trainer' && loggedInTrainerName)
-    ? summaryData.filter(s => s.trainer === loggedInTrainerName)
-    : summaryData.filter(s => TRAINER_CAMPUS[s.trainer] === currentCampus);
+    ? summaryData.filter(s => s.trainer === loggedInTrainerName && s.status === 'active')
+    : summaryData.filter(s => TRAINER_CAMPUS[s.trainer] === currentCampus && s.status === 'active');
 
   // Get today's schedule to determine who has class today
   const dayMap={0:null,1:'Mon',2:'Tue',3:'Wed',4:'Thu',5:'Fri',6:null};
@@ -2155,7 +2132,7 @@ function openClassList(trainer, course){
         : '<span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;">Absent</span>';
       return `<tr>
         <td style="font-size:12px;color:var(--text-2);font-family:monospace;">${s.id}</td>
-        <td class="td-name">${s.name}</td>
+        <td class="td-name">${escHtml(s.name)}</td>
         <td style="text-align:center;">${badge}</td>
         <td style="text-align:right;white-space:nowrap;">
           <button class="btn btn-ghost" style="font-size:11px;padding:0.2rem 0.6rem;margin-right:6px;border-color:#16a34a;color:#16a34a;" onclick="markFromClassList('${s.id.replace(/'/g,"\\'")}','present')">Mark Present</button>
@@ -2345,7 +2322,7 @@ function renderRateCheck(){
     const rateColor=rate>=80?'var(--success)':rate>=50?'var(--warning)':'var(--danger)';
     return `<tr>
       <td style="font-size:var(--text-xs);font-family:monospace;color:var(--text-2);">${s.id}</td>
-      <td class="td-name" data-student-id="${s.id||''}" data-student-name="${(s.name||'').replace(/"/g,'&quot;')}">${s.name}${multiTag}</td>
+      <td class="td-name" data-student-id="${s.id||''}" data-student-name="${escHtml(s.name||'')}">${escHtml(s.name)}${multiTag}</td>
       <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(s.course||'')}">${s.courseCode?'<span style="font-size:11px;color:var(--text-3);margin-right:4px;">['+s.courseCode+']</span>':''}${escHtml(s.course||'—')}</td>
       <td>${s.trainer||'—'}</td>
       <td>${s.campus||'—'}</td>
@@ -2407,8 +2384,17 @@ function openStudentHistory(studentId, studentName) {
     '<div style="text-align:center;padding:2rem;color:var(--text-2);font-size:.85rem;">Loading history…</div>';
   document.getElementById('studentDatesModal').classList.add('show');
 
-  _ensureRecordsLoaded().then(() => {
-    _renderHistoryPills(student);
+  // Fetch the full history for this student directly (bypasses the 90-day bulk cache)
+  authFetch(`/api/records?student=${encodeURIComponent(studentId)}`).then(async res => {
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const data = await res.json();
+    const studentRecs = Array.isArray(data) ? data : [];
+    // Merge with today's dailyRows in case today's check-in isn't committed yet
+    const todayDate = todayStr();
+    const todayRec = dailyRows.find(r => String(r.studentId) === String(studentId) && r.checkinTime);
+    const allRecs = todayRec && !studentRecs.some(r => normISO(r.attendanceDate) === todayDate)
+      ? [todayRec, ...studentRecs] : studentRecs;
+    _renderHistoryPills(student, allRecs);
   }).catch(e => {
     document.getElementById('studentDatesBody').innerHTML =
       `<div class="empty-state"><div class="empty-state-title">Failed to load records</div>` +
@@ -2417,15 +2403,8 @@ function openStudentHistory(studentId, studentName) {
   });
 }
 
-function _renderHistoryPills(student) {
+function _renderHistoryPills(student, allRecs) {
   const todayDate = todayStr();
-  const sid = String(student.id);
-
-  // Merge _allRecords with today's dailyRows (dailyRows may not be in _allRecords cache yet)
-  const todayRec = dailyRows.find(r => String(r.studentId) === sid && r.checkinTime);
-  const baseRecs = (_allRecords||[]).filter(r => String(r.studentId) === sid);
-  const allRecs = todayRec && !baseRecs.some(r => normISO(r.attendanceDate) === todayDate)
-    ? [todayRec, ...baseRecs] : baseRecs;
 
   const sorted = allRecs
     .filter(r => r.checkinTime && normISO(r.attendanceDate) <= todayDate)
@@ -2436,7 +2415,7 @@ function _renderHistoryPills(student) {
 
   if (!sorted.length) {
     document.getElementById('studentDatesBody').innerHTML =
-      '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No check-in records in last 90 days</div></div>';
+      '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No check-in records found</div></div>';
     return;
   }
 
@@ -2508,7 +2487,7 @@ let markStudent=null, currentMarkType='absent';
 let myClassTab='current';
 function switchMyClassTab(tab){
   myClassTab=tab;
-  ['current','notstarted','upcoming'].forEach(t=>{
+  ['current','notstarted'].forEach(t=>{
     const id='myClassTab'+t.charAt(0).toUpperCase()+t.slice(1);
     const el=document.getElementById(id);
     if(el) el.classList.toggle('active',t===tab);
@@ -2543,7 +2522,6 @@ function renderMyClass(){
     if(viewMode==='trainer'&&loggedInTrainerName&&s.trainer!==loggedInTrainerName) return false;
     if(myClassTab==='current'&&s.status!=='active') return false;
     if(myClassTab==='notstarted'&&s.status!=='not-started') return false;
-    if(myClassTab==='upcoming'&&s.status!=='not-started') return false;
     if(search&&!(s.name||'').toLowerCase().includes(search)&&!(s.id||'').includes(search)) return false;
     return true;
   });
@@ -2562,7 +2540,7 @@ function renderMyClass(){
     const mColor=monthlyRate>=80?'var(--success)':monthlyRate>=50?'var(--warning)':'var(--danger)';
     return `<tr>
       <td style="font-size:var(--text-xs);font-family:monospace;color:var(--text-2);">${s.id}</td>
-      <td class="td-name" data-student-id="${s.id||''}" data-student-name="${(s.name||'').replace(/"/g,'&quot;')}">${s.name}</td>
+      <td class="td-name" data-student-id="${s.id||''}" data-student-name="${escHtml(s.name||'')}">${escHtml(s.name)}</td>
       <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(s.course||'')}">${s.courseCode?'<span style="font-size:11px;color:var(--text-3);margin-right:4px;">['+s.courseCode+']</span>':''}${escHtml(s.course||'—')}</td>
       <td style="font-size:.78rem;color:var(--text-2);">${s.commenced?fmtDate(s.commenced):'—'}</td>
       <td style="font-size:.78rem;color:var(--text-2);">${s.expectedEnd?fmtDate(s.expectedEnd):'—'}</td>
@@ -2688,8 +2666,9 @@ function renderNotStarted(){
   if(!summaryData.length) return;
   const todayIn=new Set(dailyRows.map(r=>r.studentId));
   const myScope=(viewMode==='trainer'&&loggedInTrainerName)?summaryData.filter(s=>s.trainer===loggedInTrainerName):summaryData;
-  const notIn=myScope.filter(s=>s.status==='active'&&!todayIn.has(s.id));
-  const upcoming=myScope.filter(s=>s.status==='not-started');
+  // "Not Checked In" = active students + not-started students who have previously attended
+  const notIn=myScope.filter(s=>!todayIn.has(s.id)&&(s.status==='active'||(s.status==='not-started'&&s.lastCheckin)));
+  const upcoming=myScope.filter(s=>s.status==='not-started'&&!s.lastCheckin);
 
   // Nav badge (top-level tab)
   const badge=document.getElementById('notStartedBadge');
@@ -2701,25 +2680,37 @@ function renderNotStarted(){
   const tentBadge=document.getElementById('nsTabTentativeBadge');
   if(tentBadge){tentBadge.textContent=upcoming.length;tentBadge.style.display=upcoming.length?'inline':'none';}
 
-  const baseRows=notStartedTab==='not-checked-in'?notIn:upcoming;
   const search=(document.getElementById('notStartedSearch')?.value||'').toLowerCase();
-  const rows=search?baseRows.filter(s=>(s.name||'').toLowerCase().includes(search)||(s.id||'').includes(search)):baseRows;
-
   const countLabel=document.getElementById('notStartedCountLabel');
-  if(countLabel) countLabel.textContent=rows.length+' students';
-
   const tbody=document.getElementById('notStartedTableBody');
   if(!tbody) return;
-  if(!rows.length){ tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-title">'+(notStartedTab==='not-checked-in'?'All active students have checked in':'No upcoming students')+'</div></div></td></tr>'; return; }
-  tbody.innerHTML=rows.map(s=>`<tr>
+
+  if(notStartedTab==='not-checked-in'){
+    const rows=search?notIn.filter(s=>(s.name||'').toLowerCase().includes(search)||(s.id||'').includes(search)):notIn;
+    if(countLabel) countLabel.textContent=rows.length+' students';
+    if(!rows.length){ tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-title">All active students have checked in</div></div></td></tr>'; return; }
+    tbody.innerHTML=rows.map(s=>_nsRow(s)).join('');
+    return;
+  }
+
+  // Tentative tab — only truly upcoming (no attendance history)
+  const filterFn=s=>!search||((s.name||'').toLowerCase().includes(search)||(s.id||'').includes(search));
+  const filteredNew=upcoming.filter(filterFn);
+  if(countLabel) countLabel.textContent=filteredNew.length+' students';
+  if(!filteredNew.length){ tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📅</div><div class="empty-state-title">No upcoming students</div></div></td></tr>'; return; }
+  tbody.innerHTML=filteredNew.map(s=>_nsRow(s,false)).join('');
+}
+function _nsRow(s,flagActive=false){
+  const markActiveBtn=flagActive?`<button class="btn btn-sm" style="background:#d97706;color:#fff;border:none;" onclick="markStudentActive('${s.id}')">Mark Active</button>`:'';
+  return `<tr${flagActive?' style="background:#fffbeb;"':''}>
     <td style="font-size:var(--text-xs);font-family:monospace;color:var(--text-2);">${s.id}</td>
-    <td class="td-name" data-student-id="${s.id||''}" data-student-name="${(s.name||'').replace(/"/g,'&quot;')}">${s.name}</td>
+    <td class="td-name" data-student-id="${s.id||''}" data-student-name="${escHtml(s.name||'')}">${escHtml(s.name)}</td>
     <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(s.course||'')}">${escHtml(s.course||'—')}</td>
     <td>${s.trainer||'—'}</td>
     <td>${s.campus||'—'}</td>
     <td>${s.lastCheckin?fmtDate(s.lastCheckin):'Never'}</td>
-    <td><button class="btn btn-ghost btn-sm" onclick="openMarkModal(this.dataset.id)" data-id="${s.id}">Mark</button></td>
-  </tr>`).join('');
+    <td style="display:flex;gap:.35rem;flex-wrap:wrap;">${markActiveBtn}<button class="btn btn-ghost btn-sm" onclick="openMarkModal('${s.id}')">Mark</button></td>
+  </tr>`;
 }
 
 /* ── Holidays ── */
@@ -2885,30 +2876,86 @@ async function confirmAddHoliday(){
   showToast('Holiday saved');
 }
 
-/* ── Settings PIN ── */
-let adminPinBuffer='';
-function adminPinPress(d){ if(adminPinBuffer.length>=4) return; adminPinBuffer+=d; updateAdminPinDots(); if(adminPinBuffer.length===4) setTimeout(checkAdminPin,120); }
-function adminPinDelete(){ adminPinBuffer=adminPinBuffer.slice(0,-1); updateAdminPinDots(); document.getElementById('adminPinError').textContent=''; }
-function updateAdminPinDots(){ for(let i=0;i<4;i++) document.getElementById('apd'+i).classList.toggle('filled',i<adminPinBuffer.length); }
-function checkAdminPin(){
-  if(adminPinBuffer===PORTAL_PIN){
-    document.getElementById('adminPinSection').style.display='none';
-    document.getElementById('adminManageSection').style.display='block';
-    document.getElementById('adminLockBtn').style.display='inline-flex';
-    document.getElementById('adminListBody').innerHTML='<div class="empty-state" style="padding:1.5rem;"><div class="empty-state-title">No admins configured</div><div class="empty-state-sub">Add an email address above.</div></div>';
-  } else {
-    document.getElementById('adminPinError').textContent='Incorrect PIN.';
-    adminPinBuffer=''; updateAdminPinDots();
+/* ── Settings Tabs ── */
+let currentSettingsTab='email';
+function switchSettingsTab(tab){
+  currentSettingsTab=tab;
+  const map={email:'stPanelEmail',qr:'stPanelQr',roster:'stPanelRoster',admin:'stPanelAdmin'};
+  const btnMap={email:'stTabEmail',qr:'stTabQr',roster:'stTabRoster',admin:'stTabAdmin'};
+  Object.keys(map).forEach(t=>{
+    const panel=document.getElementById(map[t]);
+    const btn=document.getElementById(btnMap[t]);
+    if(panel) panel.style.display=t===tab?'':'none';
+    if(btn) btn.classList.toggle('active',t===tab);
+  });
+  if(tab==='admin') loadAdminEmails();
+  if(tab==='email') loadEmailRecipients();
+}
+
+/* ── Admin Access (DB-backed) ── */
+let _adminEmails=[];
+async function loadAdminEmails(){
+  const body=document.getElementById('adminListBody');
+  if(body) body.innerHTML='<div style="padding:1rem 1.25rem;color:var(--text-2);font-size:var(--text-sm);">Loading…</div>';
+  try{
+    const res=await authFetch('/api/settings?key=admin_emails');
+    if(res.ok){ _adminEmails=await res.json(); if(!Array.isArray(_adminEmails)) _adminEmails=[]; }
+    else if(res.status===404){ _adminEmails=[]; }
+    else{ if(body) body.innerHTML='<div style="padding:1rem 1.25rem;color:var(--danger);font-size:var(--text-sm);">Failed to load admin list.</div>'; return; }
+  }catch(e){ _adminEmails=[]; }
+  renderAdminList();
+}
+function renderAdminList(){
+  const body=document.getElementById('adminListBody');
+  const lbl=document.getElementById('adminCountLabel');
+  if(lbl) lbl.textContent=`${_adminEmails.length} admin${_adminEmails.length!==1?'s':''} configured`;
+  if(!body) return;
+  if(!_adminEmails.length){
+    body.innerHTML='<div class="empty-state" style="padding:1.5rem;"><div class="empty-state-title">No additional admins</div><div class="empty-state-sub">Add email addresses below to grant admin access.</div></div>';
+    return;
   }
+  body.innerHTML=_adminEmails.map((email,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.55rem 1.25rem;border-bottom:1px solid var(--border-2);">
+      <span style="font-size:var(--text-sm);">${escHtml(email)}</span>
+      <button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="removeAdminEmail(${i})">Remove</button>
+    </div>`).join('');
 }
-function lockAdminSection(){
-  adminPinBuffer=''; updateAdminPinDots();
-  document.getElementById('adminPinSection').style.display='block';
-  document.getElementById('adminManageSection').style.display='none';
-  document.getElementById('adminLockBtn').style.display='none';
-  document.getElementById('adminPinError').textContent='';
+async function submitAddAdmin(){
+  const input=document.getElementById('newAdminEmail');
+  const msg=document.getElementById('addAdminMsg');
+  const email=(input?.value||'').trim().toLowerCase();
+  if(msg) msg.textContent='';
+  if(!email||!email.includes('@')){ if(msg){msg.style.color='var(--danger)';msg.textContent='Enter a valid email address.';} return; }
+  if(_adminEmails.includes(email)){ if(msg){msg.style.color='var(--warning)';msg.textContent='Already in the list.';} return; }
+  const updated=[..._adminEmails,email];
+  try{
+    const res=await authFetch('/api/settings?key=admin_emails',{method:'PUT',body:JSON.stringify(updated)});
+    const d=await res.json();
+    if(res.ok){ _adminEmails=updated; if(input) input.value=''; renderAdminList(); if(msg){msg.style.color='var(--success)';msg.textContent=email+' added as admin.';} }
+    else{ if(msg){msg.style.color='var(--danger)';msg.textContent='Error: '+(d.error||res.statusText);} }
+  }catch(e){ if(msg){msg.style.color='var(--danger)';msg.textContent='Error: '+e.message;} }
 }
-function submitAddAdmin(){ showToast('Admin management requires API integration.',true); }
+async function removeAdminEmail(index){
+  const email=_adminEmails[index];
+  const msg=document.getElementById('addAdminMsg');
+  const updated=_adminEmails.filter((_,i)=>i!==index);
+  try{
+    const res=await authFetch('/api/settings?key=admin_emails',{method:'PUT',body:JSON.stringify(updated)});
+    const d=await res.json();
+    if(res.ok){ _adminEmails=updated; renderAdminList(); if(msg){msg.style.color='var(--success)';msg.textContent=email+' removed.';} }
+    else{ if(msg){msg.style.color='var(--danger)';msg.textContent='Error: '+(d.error||res.statusText);} }
+  }catch(e){ if(msg){msg.style.color='var(--danger)';msg.textContent='Error: '+e.message;} }
+}
+
+/* ── Mark student active (from Not Started tab) ── */
+async function markStudentActive(studentId){
+  if(!confirm('Mark this student as Active?')) return;
+  try{
+    const res=await authFetch('/api/students',{method:'PATCH',body:JSON.stringify({id:studentId,status:'active'})});
+    if(res.ok){ showToast('Student marked active'); summaryData=summaryData.map(s=>s.id===studentId?{...s,status:'active'}:s); renderNotStarted(); }
+    else{ const d=await res.json(); showToast('Error: '+(d.error||res.statusText),true); }
+  }catch(e){ showToast('Error: '+e.message,true); }
+}
 
 /* ── Email Reports ── */
 async function loadEmailRecipients(){
