@@ -3,12 +3,28 @@ const { validateToken, isAdminUser, ensureAdminCache } = require('./_auth');
 const { trainersFromEmail } = require('./_trainers');
 const { workingDaysInRange } = require('./_calendar');
 
+const CACHE_TTL_MS = 90_000; // 90 seconds
+const _cache = new Map(); // key → { ts, data }
+
+function cacheGet(key) {
+  const entry = _cache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL_MS) { _cache.delete(key); return null; }
+  return entry.data;
+}
+function cacheSet(key, data) { _cache.set(key, { ts: Date.now(), data }); }
+
 module.exports = async (req, res) => {
   if (req.method !== 'GET') return res.status(405).end();
   const user = await validateToken(req);
   if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
   const email = (user.mail || user.userPrincipalName || '').toLowerCase();
+
+  // Serve from cache if fresh (keyed per user so trainer scope is preserved)
+  const cacheKey = email;
+  const cached = cacheGet(cacheKey);
+  if (cached) return res.status(200).json(cached);
 
   try {
     const pool = await getPool();
@@ -106,6 +122,7 @@ module.exports = async (req, res) => {
       return { ...r, expectedDays, monthlyExpectedDays, firstAttendanceDate: firstAttendanceStr };
     });
 
+    cacheSet(cacheKey, rows);
     res.status(200).json(rows);
   } catch (err) {
     console.error(err);

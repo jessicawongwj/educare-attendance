@@ -728,8 +728,8 @@ body.dark .header-logo-wrap{ background:none; }
     </div>
   </div>
   <!-- Course chips (trainers with multiple courses) -->
-  <div id="courseChipsBar" style="display:none;padding:.45rem 1.25rem;background:rgba(0,0,0,.1);display:none;align-items:center;gap:.5rem;flex-wrap:wrap;">
-    <span style="font-size:.65rem;font-weight:800;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.4px;">Class:</span>
+  <div id="courseChipsBar" style="display:none;padding:.4rem 1.25rem;background:linear-gradient(to right,#1464a0 0%,#198c6c 50%,#3ab84a 100%);align-items:center;gap:.5rem;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.12);">
+    <span style="font-size:.65rem;font-weight:800;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.5px;">Class:</span>
     <div id="courseChips" style="display:flex;gap:.4rem;flex-wrap:wrap;"></div>
   </div>
   <!-- Nav tabs -->
@@ -2207,6 +2207,13 @@ function populateDailyFilters(){
   const cf=document.getElementById('courseFilter');
   cf.innerHTML='<option value="all">All Courses</option>';
   courses.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; cf.appendChild(o); });
+  // Lock course filter to selected chip when trainer has chosen a specific course
+  if(isTrainerMode && currentTrainerCourse){
+    cf.value=currentTrainerCourse;
+    cf.disabled=true;
+  } else {
+    cf.disabled=false;
+  }
 }
 
 function applyDailyFilters(){
@@ -2520,8 +2527,10 @@ function renderMyClass(){
   const todayIn=new Set(dailyRows.map(r=>r.studentId));
   const workDays=Array.from({length:90},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); return d.getDay(); }).filter(d=>d>0&&d<6).length;
 
-  // Summary cards — scoped to trainer view if applicable
-  const myScope = (viewMode==='trainer'&&loggedInTrainerName) ? summaryData.filter(s=>s.trainer===loggedInTrainerName) : summaryData;
+  // Summary cards — scoped to trainer + selected course
+  const myScope = (viewMode==='trainer'&&loggedInTrainerName)
+    ? summaryData.filter(s=>s.trainer===loggedInTrainerName&&(!currentTrainerCourse||s.course===currentTrainerCourse))
+    : summaryData;
   const currentCount=myScope.filter(s=>s.status==='active').length;
   const nsCount=myScope.filter(s=>s.status==='not-started').length;
   const atRiskCount=myScope.filter(s=>{if(s.status!=='active')return false;const exp=calcExpectedSessions(s);return exp>0&&(s.attendedDays||0)/exp*100<80;}).length;
@@ -2540,6 +2549,8 @@ function renderMyClass(){
   let rows=summaryData.filter(s=>{
     // In trainer view, My Class shows only that trainer's students
     if(viewMode==='trainer'&&loggedInTrainerName&&s.trainer!==loggedInTrainerName) return false;
+    // Filter by selected course chip
+    if(viewMode==='trainer'&&currentTrainerCourse&&s.course!==currentTrainerCourse) return false;
     if(myClassTab==='current'&&s.status!=='active') return false;
     if(myClassTab==='notstarted'&&s.status!=='not-started') return false;
     if(search&&!(s.name||'').toLowerCase().includes(search)&&!(s.id||'').includes(search)) return false;
