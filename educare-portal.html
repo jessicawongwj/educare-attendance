@@ -66,9 +66,9 @@ input,select,textarea,button{ font-family:inherit; }
   text-align:center;
 }
 .login-logo{
-  display:flex; justify-content:center; margin-bottom:1rem;
+  display:flex; justify-content:center; align-items:center; margin-bottom:1rem;
 }
-.login-logo img{ width:190px; height:auto; }
+.login-logo img{ width:210px; height:auto; display:block; margin:0 auto; }
 .login-divider{
   width:40px; height:3px; background:var(--accent);
   border-radius:2px; margin:0 auto 1rem;
@@ -117,8 +117,8 @@ input,select,textarea,button{ font-family:inherit; }
    HEADER
 ══════════════════════════════════════════ */
 header{
-  background:linear-gradient(to right,#ffffff 0%,#dff2e8 18%,#39B54A 52%,#1565C0 100%);
-  color:white; box-shadow:0 4px 20px rgba(21,101,192,.22);
+  background:white;
+  color:#1a1a2e; box-shadow:0 2px 12px rgba(0,0,0,.1);
   position:sticky; top:0; z-index:100;
 }
 .header-inner{
@@ -137,9 +137,9 @@ header{
 .header-controls{ display:flex; align-items:center; gap:0.5rem; }
 .user-badge{
   display:flex; align-items:center; gap:0.5rem;
-  background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.14);
+  background:rgba(0,0,0,.06); border:1px solid rgba(0,0,0,.1);
   border-radius:20px; padding:0.3rem 0.875rem 0.3rem 0.35rem;
-  font-size:var(--text-sm); font-weight:600; color:rgba(255,255,255,.92);
+  font-size:var(--text-sm); font-weight:600; color:#1a3d28;
 }
 .user-avatar{
   width:26px; height:26px; border-radius:50%;
@@ -150,33 +150,33 @@ header{
   display:inline-flex; align-items:center; gap:0.35rem;
   height:32px; padding:0 0.75rem; border-radius:16px;
   font-size:var(--text-sm); font-weight:600; cursor:pointer; white-space:nowrap;
-  background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16);
-  color:rgba(255,255,255,.88); transition:all var(--transition);
+  background:rgba(0,0,0,.05); border:1px solid rgba(0,0,0,.1);
+  color:#444; transition:all var(--transition);
 }
-.icon-btn:hover{ background:rgba(255,255,255,.18); border-color:rgba(255,255,255,.35); color:white; }
+.icon-btn:hover{ background:rgba(0,0,0,.1); border-color:rgba(0,0,0,.2); color:#111; }
 .icon-btn.icon-only{ padding:0; width:32px; justify-content:center; }
 .signout-btn{
   display:inline-flex; align-items:center; gap:0.35rem;
   height:32px; padding:0 0.75rem; border-radius:16px;
   font-size:var(--text-sm); font-weight:600; cursor:pointer;
-  background:transparent; border:1px solid rgba(255,255,255,.10);
-  color:rgba(255,255,255,.45); transition:all var(--transition);
+  background:transparent; border:1px solid rgba(0,0,0,.1);
+  color:#888; transition:all var(--transition);
 }
-.signout-btn:hover{ background:rgba(220,38,38,.18); border-color:rgba(220,38,38,.45); color:#fca5a5; }
+.signout-btn:hover{ background:rgba(220,38,38,.08); border-color:rgba(220,38,38,.35); color:#dc2626; }
 
-/* Nav tabs row */
-.header-nav{ padding:0; display:flex; background:rgba(0,0,0,.18); border-top:1px solid rgba(255,255,255,.12); }
+/* Nav tabs row — gradient matching login page */
+.header-nav{ padding:0; display:flex; background:linear-gradient(to right,#1464a0 0%,#198c6c 50%,#3ab84a 100%); border-top:none; }
 .nav-tabs{ display:flex; gap:0; width:100%; }
 .nav-tab{
   flex:1; padding:0.6rem 0.5rem; border:none; background:transparent;
-  color:rgba(255,255,255,.55); font-size:var(--text-sm); font-weight:600;
+  color:rgba(255,255,255,.65); font-size:var(--text-sm); font-weight:600;
   cursor:pointer; white-space:nowrap; letter-spacing:0.01em;
   border-bottom:2.5px solid transparent; transition:all var(--transition);
   display:flex; align-items:center; justify-content:center; gap:5px;
   min-width:0;
 }
-.nav-tab:hover{ color:rgba(255,255,255,.9); background:rgba(255,255,255,.07); }
-.nav-tab.active{ color:white; background:rgba(255,255,255,.08); border-bottom-color:var(--accent); }
+.nav-tab:hover{ color:white; background:rgba(255,255,255,.12); }
+.nav-tab.active{ color:white; background:rgba(255,255,255,.1); border-bottom-color:rgba(255,255,255,.9); }
 .nav-tab svg{ flex-shrink:0; opacity:0.8; }
 
 /* ══════════════════════════════════════════
@@ -585,10 +585,16 @@ body.dark{
   --border:#1e3050; --border-2:#1a2a44;
   --shadow-sm:0 1px 3px rgba(0,0,0,.3); --shadow-md:0 4px 16px rgba(0,0,0,.4);
 }
-body.dark header{ background:linear-gradient(to right,#0a1f0f 0%,#102a18 18%,#145e28 52%,#0d3070 100%); }
+body.dark header{ background:#0d1b2a; box-shadow:0 2px 12px rgba(0,0,0,.4); }
+body.dark .header-nav{ background:linear-gradient(to right,#0a2d5c 0%,#0a3a2a 50%,#1a5c28 100%); }
 body.dark .header-logo-wrap img{ filter:brightness(0) invert(1); }
 body.dark .header-brand-text{ color:rgba(255,255,255,.9); }
-body.dark .header-brand-sub{ color:rgba(255,255,255,.65); }
+body.dark .header-brand-sub{ color:rgba(255,255,255,.6); }
+body.dark .user-badge{ background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.12); color:rgba(255,255,255,.9); }
+body.dark .icon-btn{ background:rgba(255,255,255,.07); border-color:rgba(255,255,255,.12); color:rgba(255,255,255,.8); }
+body.dark .icon-btn:hover{ background:rgba(255,255,255,.14); color:white; }
+body.dark .signout-btn{ border-color:rgba(255,255,255,.1); color:rgba(255,255,255,.45); }
+body.dark .signout-btn:hover{ background:rgba(220,38,38,.18); border-color:rgba(220,38,38,.45); color:#fca5a5; }
 body.dark .card, body.dark .modal{ background:var(--surface); }
 body.dark tbody tr:hover{ background:#1a2f4a; }
 body.dark .campus-pill{ background:var(--surface); }
@@ -648,7 +654,7 @@ body.dark .header-logo-wrap{ background:none; }
 <div id="loginScreen">
   <div class="login-card">
     <div class="login-logo">
-      <img src="images.png" alt="Educare Training Institute Australasia">
+      <img src="logo.png" alt="Educare Training Institute Australasia">
     </div>
     <div class="login-divider"></div>
     <div class="login-heading">Attendance Monitoring Portal</div>
@@ -690,7 +696,7 @@ body.dark .header-logo-wrap{ background:none; }
   <div class="header-inner">
     <div class="header-brand">
       <div class="header-logo-wrap">
-        <img src="images.png" alt="Educare">
+        <img src="logo.png" alt="Educare">
       </div>
       <div class="header-brand-text">
         <div class="header-brand-sub" style="opacity:0.8;font-size:var(--text-sm);font-weight:600;">Attendance Monitoring Portal</div>
