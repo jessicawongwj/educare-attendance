@@ -1,8 +1,7 @@
 {
   "cleanUrls": true,
   "crons": [
-    { "path": "/api/cron-report", "schedule": "0 22 1,15 * *" },
-    { "path": "/api/ping", "schedule": "*/10 * * * *" }
+    { "path": "/api/cron-report", "schedule": "0 22 1,15 * *" }
   ],
   "redirects": [
     { "source": "/", "destination": "/educare-portal", "permanent": false },
