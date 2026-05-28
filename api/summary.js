@@ -45,7 +45,8 @@ module.exports = async (req, res) => {
         MAX(ISNULL(ec.enrollmentCount, 0))     AS enrollmentCount,
         COUNT(a.attendanceDate)                AS attendedDays,
         SUM(CASE WHEN a.attendanceDate >= CAST(DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1) AS DATE) THEN 1 ELSE 0 END) AS monthlyAttendedDays,
-        MAX(a.checkinTime)                     AS lastCheckin
+        MAX(a.checkinTime)                     AS lastCheckin,
+        MIN(a.attendanceDate)                  AS firstAttendanceDate
       FROM students s
       LEFT JOIN enrollments e ON e.studentId = s.id
       LEFT JOIN (
@@ -89,11 +90,20 @@ module.exports = async (req, res) => {
       const commencedStr = r.commenced
         ? new Date(r.commenced).toISOString().slice(0, 10)
         : null;
-      const periodStart = commencedStr || fallback;
-      const expectedDays = wd(periodStart, today);
-      const monthlyPeriodStart = commencedStr && commencedStr > monthStart ? commencedStr : monthStart;
-      const monthlyExpectedDays = monthlyPeriodStart <= today ? wd(monthlyPeriodStart, today) : 0;
-      return { ...r, expectedDays, monthlyExpectedDays };
+      // Use first actual check-in as period start (so pre-attendance days don't penalise rate)
+      const firstAttendanceStr = r.firstAttendanceDate
+        ? new Date(r.firstAttendanceDate).toISOString().slice(0, 10)
+        : null;
+      // If student has never checked in, expectedDays = 0 → rate shows as Pending
+      const periodStart = firstAttendanceStr || null;
+      const expectedDays = periodStart ? Math.round(wd(periodStart, today) * 2 / 5) : 0;
+      // Monthly: use firstAttendanceDate or monthStart (whichever is later) if student has attended
+      const monthlyPeriodStart = firstAttendanceStr
+        ? (firstAttendanceStr > monthStart ? firstAttendanceStr : monthStart)
+        : monthStart;
+      const monthlyWorkingDays = (firstAttendanceStr && monthlyPeriodStart <= today) ? wd(monthlyPeriodStart, today) : 0;
+      const monthlyExpectedDays = Math.round(monthlyWorkingDays * 2 / 5);
+      return { ...r, expectedDays, monthlyExpectedDays, firstAttendanceDate: firstAttendanceStr };
     });
 
     res.status(200).json(rows);

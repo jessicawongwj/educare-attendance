@@ -1524,29 +1524,26 @@ function calcWorkingDays(startISO, endISO, holidays) {
 }
 
 function calcExpectedSessions(student){
-  // Prefer server-calculated value (accounts for school breaks + holidays via _calendar.js)
   if(student.expectedDays != null) return student.expectedDays;
-  // Client-side fallback using cached holidays
+  // Client fallback: only count from first check-in (2 days/week schedule)
+  const first = normISO(student.firstAttendanceDate);
+  if(!first) return 0;
   const today = todayStr();
-  const ago90 = new Date(); ago90.setDate(ago90.getDate()-90);
-  const cutoff = ago90.toLocaleDateString('en-CA',{timeZone:'Australia/Brisbane'});
-  const commenced = normISO(student.commenced);
-  const start = (commenced && commenced > cutoff) ? commenced : cutoff;
-  if(start > today) return 0;
-  return calcWorkingDays(start, today, _cachedHolidays||[]);
+  if(first > today) return 0;
+  return Math.round(calcWorkingDays(first, today, _cachedHolidays||[]) * 2 / 5);
 }
 
 function calcMonthlyExpectedSessions(student){
-  // Prefer server-calculated value
   if(student.monthlyExpectedDays != null) return student.monthlyExpectedDays;
-  // Client-side fallback
+  // Client fallback: 2 days/week
+  const first = normISO(student.firstAttendanceDate);
+  if(!first) return 0;
   const today = todayStr();
   const [y,m] = today.split('-');
   const monthStart = `${y}-${m}-01`;
-  const commenced = normISO(student.commenced);
-  const start = (commenced && commenced > monthStart) ? commenced : monthStart;
+  const start = first > monthStart ? first : monthStart;
   if(start > today) return 0;
-  return calcWorkingDays(start, today, _cachedHolidays||[]);
+  return Math.round(calcWorkingDays(start, today, _cachedHolidays||[]) * 2 / 5);
 }
 
 function getMonthlyAttended(student){
@@ -2198,10 +2195,13 @@ async function loadDailyAttendance(){
 
 function populateDailyFilters(){
   const trainers=[...new Set(dailyRows.map(r=>r.trainer).filter(Boolean))].sort();
-  const tf=document.getElementById('trainerFilter'); const cur=tf.value;
+  const tf=document.getElementById('trainerFilter');
+  const isTrainerMode = viewMode==='trainer' && loggedInTrainerName;
+  const cur = isTrainerMode ? loggedInTrainerName : tf.value;
   tf.innerHTML='<option value="all">All Trainers</option>';
   trainers.forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; tf.appendChild(o); });
   tf.value=cur;
+  tf.disabled=!!isTrainerMode;
   const trainer=tf.value;
   const courses=[...new Set(dailyRows.filter(r=>trainer==='all'||r.trainer===trainer).map(r=>r.course).filter(Boolean))].sort();
   const cf=document.getElementById('courseFilter');
@@ -2227,7 +2227,15 @@ function applyDailyFilters(){
   document.getElementById('statRate').textContent=rows.length?Math.round(present/rows.length*100)+'%':'—';
   const tbody=document.getElementById('studentTableBody');
   if(!rows.length){ tbody.innerHTML='<tr><td colspan="10"><div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No records for this date</div><div class="empty-state-sub">No students have checked in yet.</div></div></td></tr>'; document.getElementById('dailyPagination').style.display='none'; return; }
-  tbody.innerHTML=rows.map(r=>`<tr>
+  const summaryMap=new Map(summaryData.map(s=>[s.id,s]));
+  tbody.innerHTML=rows.map(r=>{
+    const stu=summaryMap.get(r.studentId);
+    const mExp=stu?calcMonthlyExpectedSessions(stu):0;
+    const mAtt=stu?getMonthlyAttended(stu):0;
+    const mRate=mExp?Math.min(100,Math.round(mAtt/mExp*100)):null;
+    const mColor=mRate===null?'var(--text-3)':mRate>=80?'var(--success)':mRate>=60?'var(--warning)':'var(--danger)';
+    const mDisplay=mRate===null?'<span style="color:var(--text-3)">—</span>':`<span style="font-weight:700;color:${mColor}">${mRate}%</span>`;
+    return `<tr>
     <td>${r.studentId}</td>
     <td class="td-name" data-student-id="${r.studentId||''}" data-student-name="${(r.studentName||'').replace(/"/g,'&quot;')}">${r.studentName}</td>
     <td style="max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${r.course||''}">${r.course||'—'}</td>
@@ -2236,9 +2244,9 @@ function applyDailyFilters(){
     <td>${fmtTime(r.checkinTime)}</td>
     <td>${fmtTime(r.checkoutTime)}</td>
     <td>${r.checkoutTime?'<span class="badge badge-present">Present</span>':r.checkinTime?'<span class="badge badge-warn">Checked In</span>':'<span class="badge badge-absent">Absent</span>'}</td>
-    <td style="font-size:11px;color:var(--text-2);max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(r.notes||'')}">${r.notes?escHtml(r.notes):'—'}</td>
+    <td title="${r.notes||''}">${mDisplay}</td>
     <td><button class="btn btn-ghost btn-sm" onclick="openMarkModal('${(r.studentId||'').replace(/'/g,"\\'")}')" title="Mark attendance">Mark</button></td>
-  </tr>`).join('');
+  </tr>`;}).join('');
   document.getElementById('dailyPagination').style.display='none';
 }
 
@@ -2339,10 +2347,9 @@ function renderRateCheck(){
       <td style="font-size:.78rem;color:var(--text-2);">${s.expectedEnd?fmtDate(s.expectedEnd):'—'}</td>
       <td>${s.lastCheckin?fmtDate(s.lastCheckin):'Never'}</td>
       <td title="${s.attendedDays||0} attended / ${expectedDays} expected">
-        <div class="rate-bar-row"><div class="rate-bar-bg"><div class="rate-bar-fill ${rateClass}" style="width:${rate}%"></div></div><span class="rate-pct" style="color:${rateColor}">${rate}%</span></div>
-        ${expectedDays===0?'<span style="font-size:10px;color:var(--text-3);">not started</span>':''}
+        ${expectedDays>0?`<div class="rate-bar-row"><div class="rate-bar-bg"><div class="rate-bar-fill ${rateClass}" style="width:${rate}%"></div></div><span class="rate-pct" style="color:${rateColor}">${rate}%</span></div>`:'<span style="font-size:10px;color:var(--text-3);">—</span>'}
       </td>
-      <td>${rate>=80?'<span class="badge badge-ok">On Track</span>':rate>0?'<span class="badge badge-warn">At Risk</span>':'<span class="badge badge-info">Pending</span>'}</td>
+      <td>${(s.attendedDays||0)===0?'<span class="badge badge-info">Pending</span>':rate>=80?'<span class="badge badge-ok">On Track</span>':'<span class="badge badge-warn">At Risk</span>'}</td>
       <td><button class="btn btn-ghost btn-sm" onclick="openMarkModal(this.dataset.id)" data-id="${s.id}">Mark</button></td>
     </tr>`;
   }).join('');
@@ -2505,6 +2512,10 @@ function switchMyClassTab(tab){
 }
 function renderMyClass(){
   if(!summaryData.length) return;
+  // Hide not-started tab in trainer view to avoid confusion
+  const nsTab=document.getElementById('myClassTabNotstarted');
+  if(nsTab) nsTab.style.display=(viewMode==='trainer')?'none':'';
+  if(viewMode==='trainer' && myClassTab==='notstarted') myClassTab='current';
   const search=(document.getElementById('myClassSearch').value||'').toLowerCase();
   const todayIn=new Set(dailyRows.map(r=>r.studentId));
   const workDays=Array.from({length:90},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); return d.getDay(); }).filter(d=>d>0&&d<6).length;
@@ -2553,13 +2564,13 @@ function renderMyClass(){
       <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(s.course||'')}">${s.courseCode?'<span style="font-size:11px;color:var(--text-3);margin-right:4px;">['+s.courseCode+']</span>':''}${escHtml(s.course||'—')}</td>
       <td style="font-size:.78rem;color:var(--text-2);">${s.commenced?fmtDate(s.commenced):'—'}</td>
       <td style="font-size:.78rem;color:var(--text-2);">${s.expectedEnd?fmtDate(s.expectedEnd):'—'}</td>
-      <td title="${monthlyAtt} attended / ${monthlyExp} expected this month">
-        ${monthlyExp>0?`<span style="font-weight:700;color:${mColor}">${monthlyRate}%</span><span style="font-size:10px;color:var(--text-3);margin-left:3px;">${monthlyAtt}/${monthlyExp}</span>`:'<span style="color:var(--text-3);font-size:var(--text-xs);">—</span>'}
+      <td>
+        ${monthlyExp>0?`<span style="font-weight:700;color:${mColor}">${monthlyRate}%</span>`:'<span style="color:var(--text-3);font-size:var(--text-xs);">—</span>'}
       </td>
       <td title="${s.attendedDays||0} attended / ${expectedDays} expected overall">
-        <div class="rate-bar-row"><div class="rate-bar-bg"><div class="rate-bar-fill ${rateClass}" style="width:${overallRate}%"></div></div><span class="rate-pct" style="color:${rateColor}">${overallRate}%</span></div>
+        ${expectedDays>0?`<div class="rate-bar-row"><div class="rate-bar-bg"><div class="rate-bar-fill ${rateClass}" style="width:${overallRate}%"></div></div><span class="rate-pct" style="color:${rateColor}">${overallRate}%</span></div>`:'<span style="color:var(--text-3);font-size:var(--text-xs);">—</span>'}
       </td>
-      <td>${overallRate>=80?'<span class="badge badge-ok">On Track</span>':expectedDays>0?'<span class="badge badge-warn">At Risk</span>':'<span class="badge badge-info">Pending</span>'}</td>
+      <td>${(s.attendedDays||0)===0?'<span class="badge badge-info">Pending</span>':overallRate>=80?'<span class="badge badge-ok">On Track</span>':'<span class="badge badge-warn">At Risk</span>'}</td>
       <td><button class="btn btn-ghost btn-sm" onclick="openMarkModal(this.dataset.id)" data-id="${s.id}">Mark</button></td>
     </tr>`;
   }).join('');
