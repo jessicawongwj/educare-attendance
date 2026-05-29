@@ -1434,16 +1434,15 @@ body.dark .header-logo-wrap{ background:none; }
 
 <!-- QR Code Modal -->
 <div class="modal-overlay" id="qrModal">
-  <div class="modal modal-sm">
+  <div class="modal" style="max-width:640px;">
     <div class="modal-header">
       <div><div class="modal-title">Student Check-In QR Code</div><div class="modal-subtitle">Share or print for each campus</div></div>
       <button class="modal-close" onclick="document.getElementById('qrModal').classList.remove('show')">×</button>
     </div>
-    <div class="modal-body" style="text-align:center;">
-      <img src="/educare-qr.jpg" alt="Educare Check-In QR Code" style="width:220px;height:220px;object-fit:contain;display:block;margin:0 auto 1.25rem;border-radius:12px;">
-      <div style="font-size:.8rem;color:var(--text-2);margin-bottom:1rem;">edc-attendance.com/checkin</div>
-      <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
-        <a href="/educare-qr.jpg" download="educare-checkin-qr.jpg" class="btn btn-primary">⬇ Download</a>
+    <div class="modal-body" style="text-align:center;padding:1.25rem;">
+      <img src="EDUCARE QR .png" alt="Educare Check-In QR Code" style="width:100%;border-radius:12px;display:block;">
+      <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;margin-top:1rem;">
+        <a href="EDUCARE QR .png" download="Educare-CheckIn-QR.png" class="btn btn-primary">⬇ Download</a>
         <button class="btn btn-ghost" onclick="printCheckinPoster()">🖨 Print</button>
       </div>
     </div>
