@@ -2,7 +2,6 @@
 const _map = {
   'sherwin.thiarhia@educare.edu.au':  ['Sherwin Thiarhia'],
   'troy.scott@educare.edu.au':        ['Troy Scott'],
-  'carol.ly@charltonbrown.edu.au':    ['Carol Ly'],
   'maggie@educare.edu.au':            ['Maggie Yu Huang'],
   'kylie.ma@niet.edu.au':             ['Zeyun Ma'],
   'nati.belen@educare.edu.au':        ['Nati Belen'],
