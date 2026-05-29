@@ -525,6 +525,8 @@ textarea.form-input{ min-height:90px; resize:vertical; line-height:1.5; }
 .trainer-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:1rem; padding:1.25rem; }
 .trainer-card{ border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; transition:box-shadow .15s; }
 .trainer-card:hover{ box-shadow:var(--shadow-md); }
+.trainer-card.no-class{ opacity:.45; filter:grayscale(.6); }
+.trainer-card.no-class:hover{ opacity:.7; }
 .trainer-card-header{
   padding:0.65rem 1rem; background:var(--surface-2); border-bottom:1px solid var(--border-2);
   display:flex; justify-content:space-between; align-items:center; gap:0.5rem;
@@ -2096,7 +2098,7 @@ function renderDashboard(){
       </div>`;
     }).join('');
 
-    return campusHeader + `<div class="trainer-card">
+    return campusHeader + `<div class="trainer-card${isToday?'':' no-class'}">
       <div class="trainer-card-header">
         <div style="display:flex;align-items:center;gap:0.45rem;flex:1;min-width:0;">
           <span class="trainer-card-name">${trainer}</span>
