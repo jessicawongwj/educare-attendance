@@ -779,19 +779,14 @@ body.dark .header-logo-wrap{ background:none; }
   <!-- ══ DASHBOARD ══ -->
   <div id="dashboardView">
     <div class="card">
-      <!-- Campus + period toggle -->
-      <div style="display:flex;align-items:stretch;border-bottom:1px solid var(--border-2);background:var(--surface-2);flex-wrap:wrap;">
-        <button class="sub-tab active" data-campus="Brisbane CBD" onclick="switchCampusTab(this)">Brisbane CBD</button>
-        <button class="sub-tab" data-campus="Southport GC" onclick="switchCampusTab(this)">Southport GC</button>
-        <button class="sub-tab" data-campus="Woolloongabba" onclick="switchCampusTab(this)">Woolloongabba</button>
-        <div style="margin-left:auto;display:flex;align-items:center;padding:0.4rem 1rem;gap:0.35rem;border-left:1px solid var(--border-2);">
-          <button class="period-btn active" onclick="setBreakdownPeriod('today',this)">Today</button>
-          <button class="period-btn" onclick="setBreakdownPeriod('yesterday',this)">Yesterday</button>
-          <button class="period-btn" onclick="setBreakdownPeriod('week',this)">Week</button>
-          <button class="period-btn" onclick="setBreakdownPeriod('month',this)">Month</button>
-          <button class="period-btn" onclick="setBreakdownPeriod('quarter',this)">Quarter</button>
-          <button class="period-btn" onclick="setBreakdownPeriod('year',this)">Year</button>
-        </div>
+      <!-- Period toggle -->
+      <div style="display:flex;align-items:center;padding:0.4rem 1rem;gap:0.35rem;border-bottom:1px solid var(--border-2);background:var(--surface-2);flex-wrap:wrap;">
+        <button class="period-btn active" onclick="setBreakdownPeriod('today',this)">Today</button>
+        <button class="period-btn" onclick="setBreakdownPeriod('yesterday',this)">Yesterday</button>
+        <button class="period-btn" onclick="setBreakdownPeriod('week',this)">Week</button>
+        <button class="period-btn" onclick="setBreakdownPeriod('month',this)">Month</button>
+        <button class="period-btn" onclick="setBreakdownPeriod('quarter',this)">Quarter</button>
+        <button class="period-btn" onclick="setBreakdownPeriod('year',this)">Year</button>
       </div>
       <!-- Summary bar -->
       <div id="campusTabStats" style="padding:0.5rem 1.25rem;border-bottom:1px solid var(--border-2);font-size:var(--text-sm);color:var(--text-2);display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
@@ -1957,11 +1952,7 @@ function showToast(msg,isErr){
 }
 
 /* ── Dashboard ── */
-let currentCampus='Brisbane CBD', currentPeriod='today';
-function switchCampusTab(btn){
-  document.querySelectorAll('[data-campus]').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active'); currentCampus=btn.dataset.campus; renderDashboard();
-}
+let currentPeriod='today';
 function setBreakdownPeriod(period,btn){
   document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active'); currentPeriod=period;
@@ -2008,7 +1999,7 @@ function renderDashboard(){
   // In trainer view, show only the logged-in trainer's active students
   const filtered = (viewMode==='trainer' && loggedInTrainerName)
     ? summaryData.filter(s => s.trainer === loggedInTrainerName && s.status === 'active')
-    : summaryData.filter(s => TRAINER_CAMPUS[s.trainer] === currentCampus && s.status === 'active');
+    : summaryData.filter(s => s.status === 'active');
 
   // Get today's schedule to determine who has class today
   const dayMap={0:null,1:'Mon',2:'Tue',3:'Wed',4:'Thu',5:'Fri',6:null};
@@ -2029,10 +2020,10 @@ function renderDashboard(){
     if(s.status==='active') c[s.course].active++;
   });
 
-  // Today's check-ins mapped by trainer+course
+  // Today's check-ins
   const campusDailyRows = viewMode==='trainer'
     ? dailyRows.filter(r=>r.trainer===loggedInTrainerName)
-    : dailyRows.filter(r=>r.campus&&r.campus.includes(currentCampus));
+    : dailyRows;
   const presentIds = new Set(campusDailyRows.map(r=>r.studentId));
 
   function presentForTrainerCourse(trainer, course, courseCode){
@@ -2058,17 +2049,24 @@ function renderDashboard(){
     +(scheduledCount>0?` &nbsp;·&nbsp; <span style="color:var(--warning);font-weight:700;">${rate}% attendance</span>`:'')
     +(atRisk>0?` &nbsp;·&nbsp; <span style="color:var(--danger);">⚠ ${atRisk} at risk</span>`:'');
 
-  // Render trainer cards
-  // Sort: trainers with class TODAY first
+  // Render trainer cards — grouped by campus, sorted TODAY first within each group
+  const CAMPUS_ORDER = ['Brisbane CBD','Southport GC','Woolloongabba'];
   const trainerEntries = Object.entries(byTrainer).sort(([a],[b])=>{
+    const ac = CAMPUS_ORDER.indexOf(TRAINER_CAMPUS[a]??''), bc = CAMPUS_ORDER.indexOf(TRAINER_CAMPUS[b]??'');
+    if(ac!==bc) return ac-bc;
     const at=scheduledToday.has(a)?0:1, bt=scheduledToday.has(b)?0:1;
     if(at!==bt) return at-bt;
     return a.localeCompare(b);
   });
 
+  let lastCampus = null;
   const html = trainerEntries.map(([trainer,data])=>{
     const isToday = scheduledToday.has(trainer);
     const trainerTotal = Object.values(data.courses).reduce((a,c)=>a+c.total,0);
+    const campus = TRAINER_CAMPUS[trainer] || '';
+    const campusHeader = (viewMode!=='trainer' && campus !== lastCampus)
+      ? `<div style="grid-column:1/-1;padding:.35rem .1rem .15rem;font-size:.7rem;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--text-3);border-bottom:1px solid var(--border-2);margin-bottom:.25rem;">${(lastCampus=campus,campus)}</div>`
+      : (lastCampus=campus,'');
 
     const courseRows = Object.entries(data.courses).map(([course,c])=>{
       const {code: parsedCode, name} = parseCourseCode(course);
@@ -2098,7 +2096,7 @@ function renderDashboard(){
       </div>`;
     }).join('');
 
-    return `<div class="trainer-card">
+    return campusHeader + `<div class="trainer-card">
       <div class="trainer-card-header">
         <div style="display:flex;align-items:center;gap:0.45rem;flex:1;min-width:0;">
           <span class="trainer-card-name">${trainer}</span>
@@ -2111,7 +2109,7 @@ function renderDashboard(){
   }).join('');
 
   document.getElementById('trainerCourseTableBody').innerHTML = html ||
-    '<div class="empty-state"><div class="empty-state-icon">📊</div><div class="empty-state-title">No trainers found for this campus</div></div>';
+    '<div class="empty-state"><div class="empty-state-icon">📊</div><div class="empty-state-title">No data available</div></div>';
 }
 function refreshDashboard(){ loadSummary(); showToast('Dashboard refreshed'); }
 function exportDashboardCSV(){ showToast('No data to export.',true); }
