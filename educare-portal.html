@@ -3058,7 +3058,11 @@
             }
             showPortal();
             if (typeof loadData === 'function') {
-                const _initLoad = () => loadData().then(() => refreshAttendanceRates().then(r => { if (r) { filterData(); updateDailySyncTimestamp(); } }));
+                const _initLoad = () => loadData().then(() => refreshAttendanceRates().then(r => {
+                    if (r) { filterData(); updateDailySyncTimestamp(); }
+                    // Re-render dashboard now that allStudents + liveRatesCache are populated
+                    if (document.getElementById('dashboardView')?.style.display !== 'none') renderDashboard();
+                }));
                 const _run = isTrainer ? _initLoad : () => loadTrainerSchedule().then(() => runRosterMigrations()).then(_initLoad);
                 loadRoster().then(_run).then(() => { if (isTrainer) startDailyAutoSync(); });
             }
@@ -5033,6 +5037,7 @@
         }
 
         async function renderBreakdownTables() {
+          try {
             const presentIds = await getPeriodIds();
             _dashboardPresentIds = presentIds;
             const campusStudents = allStudents.filter(s => campusMatch(s.campus, activeCampusTab));
@@ -5163,6 +5168,12 @@
                 tcHtml += '</div>';
             }
             document.getElementById('trainerCourseTableBody').innerHTML = tcHtml;
+          } catch(err) {
+            console.error('renderBreakdownTables error:', err);
+            const el = document.getElementById('trainerCourseTableBody');
+            if (el) el.innerHTML = `<div style="padding:1.5rem;text-align:center;color:var(--danger);font-size:0.85rem;">
+              Failed to render dashboard: ${err.message}<br><button class="btn btn-secondary btn-sm" style="margin-top:0.75rem;" onclick="renderDashboard()">↻ Retry</button></div>`;
+          }
         }
 
         // Delegated click for course rows — fires whenever the dashboard re-renders
