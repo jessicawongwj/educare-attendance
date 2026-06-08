@@ -2864,18 +2864,28 @@
                     if (Array.isArray(data) && data.length > 0) {
                         // Normalize to roster format: strip attendance aggregates,
                         // keep only fields needed by the RTO rendering logic
-                        window._dynamicRoster = data.map(s => ({
-                            id: String(s.id || ''),
-                            name: s.name || '',
-                            course: s.course || '',
-                            courseCode: s.courseCode || '',
-                            trainer: s.trainer || '',
-                            campus: s.campus || '',
-                            commenced: s.commenced ? String(s.commenced).slice(0,10) : null,
-                            expectedEnd: s.expectedEnd ? String(s.expectedEnd).slice(0,10) : null,
-                            status: s.status || 'active',
-                            withdrawn: !!(s.withdrawn)
-                        })).filter(s => s.id && s.name);
+                        window._dynamicRoster = data.map(s => {
+                            // Fill missing campus from TRAINER_SCHEDULE (students imported without campus)
+                            let campus = (s.campus || '').trim();
+                            if (!campus) {
+                                const entry = Object.values(TRAINER_SCHEDULE).find(e =>
+                                    e.t.toLowerCase() === (s.trainer || '').toLowerCase()
+                                );
+                                if (entry) campus = entry.c;
+                            }
+                            return {
+                                id: String(s.id || ''),
+                                name: s.name || '',
+                                course: s.course || '',
+                                courseCode: s.courseCode || '',
+                                trainer: s.trainer || '',
+                                campus,
+                                commenced: s.commenced ? String(s.commenced).slice(0,10) : null,
+                                expectedEnd: s.expectedEnd ? String(s.expectedEnd).slice(0,10) : null,
+                                status: s.status || 'active',
+                                withdrawn: !!(s.withdrawn)
+                            };
+                        }).filter(s => s.id && s.name);
                         console.log('Roster loaded:', window._dynamicRoster.length, 'enrolments');
                         return window._dynamicRoster;
                     }
