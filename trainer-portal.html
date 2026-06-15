@@ -260,7 +260,7 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
           Switch to Admin
         </a>
-        <button onclick="openQrTab()" class="icon-btn" title="Show QR Code">
+        <button onclick="openQrModal()" class="icon-btn" title="Show QR Code">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/></svg>
         </button>
         <button onclick="logout()" class="signout-btn">
@@ -435,8 +435,6 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
       <div id="holidaysContent" style="padding:.75rem 0;"></div>
     </div>
   </div>
-
-  <!-- ── QR Code Tab ── -->
 </div>
 
 <!-- ── Add Student Modal ── -->
@@ -504,6 +502,24 @@ header{background:var(--grad);color:#fff;padding:.9rem 1.25rem 0;box-shadow:0 4p
     </div>
     <div class="modal-footer" style="justify-content:center;">
       <button class="btn btn-ghost" onclick="closeRemoveStudentModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── QR Code Modal ── -->
+<div class="modal-overlay" id="qrModal">
+  <div class="modal" style="max-width:340px;">
+    <div class="modal-header">
+      <div class="modal-title">Check-In QR Code</div>
+      <button class="modal-close" onclick="closeQrModal()">×</button>
+    </div>
+    <div class="modal-body" style="text-align:center;">
+      <canvas id="qrCanvas" style="margin:0 auto;"></canvas>
+      <div id="qrUrlLabel" style="font-size:.75rem;color:var(--text-2);margin-top:.75rem;word-break:break-all;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" style="flex:1;" onclick="downloadQr()">Download PNG</button>
+      <button class="btn btn-ghost" onclick="closeQrModal()">Close</button>
     </div>
   </div>
 </div>
@@ -814,8 +830,6 @@ async function markStudent(studentId, name, course, status) {
 /* ── My Class ── */
 function switchClassTab(tab) {
   classTab = tab;
-  ['current','not-started','upcoming'].forEach(t => document.getElementById('st'+t.charAt(0).toUpperCase()+t.slice(1).replace('-s','S').replace('-s','S')).classList.toggle('active',t===tab));
-  // Fix ID mapping
   document.getElementById('stCurrent').classList.toggle('active', tab==='current');
   document.getElementById('stNotStarted').classList.toggle('active', tab==='not-started');
   document.getElementById('stUpcoming').classList.toggle('active', tab==='upcoming');
@@ -1026,7 +1040,8 @@ function downloadQr() {
   const a=document.createElement('a'); a.download='educare-checkin-qr.png';
   a.href=document.getElementById('qrCanvas').toDataURL('image/png'); a.click();
 }
-function openQrTab() { switchTab('qr'); }
+function openQrModal() { document.getElementById('qrModal').classList.add('show'); renderQr(); }
+function closeQrModal() { document.getElementById('qrModal').classList.remove('show'); }
 
 /* ── Holidays ── */
 async function getHolidays() {
