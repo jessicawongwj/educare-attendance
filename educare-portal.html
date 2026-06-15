@@ -1913,7 +1913,8 @@
             <div class="dashboard-card" style="overflow:hidden;">
                 <!-- Campus tabs + period toggle -->
                 <div style="display:flex;align-items:stretch;border-bottom:1px solid var(--border);background:var(--bg-secondary);flex-wrap:wrap;">
-                    <button class="dash-campus-tab active" data-campus="Brisbane CBD" onclick="switchCampusTab(this)">Brisbane CBD</button>
+                    <button class="dash-campus-tab active" data-campus="all" onclick="switchCampusTab(this)">All Campuses</button>
+                    <button class="dash-campus-tab" data-campus="Brisbane CBD" onclick="switchCampusTab(this)">Brisbane CBD</button>
                     <button class="dash-campus-tab" data-campus="Southport GC" onclick="switchCampusTab(this)">Southport GC</button>
                     <button class="dash-campus-tab" data-campus="Woolloongabba" onclick="switchCampusTab(this)">Woolloongabba</button>
                     <div style="margin-left:auto;display:flex;align-items:center;padding:0 0.75rem;gap:0.25rem;border-left:1px solid var(--border);">
@@ -3425,6 +3426,12 @@
         function getHolidays(campus) {
             return PUBLIC_HOLIDAYS.QLD; // All Educare campuses are in QLD
         }
+        function getTrainerCampus(trainer) {
+            const existing = allStudents.find(s => s.trainer === trainer && s.campus);
+            if (existing) return normCampus(existing.campus);
+            const sched = Object.values(TRAINER_SCHEDULE).find(e => e.t === trainer);
+            return sched ? sched.c : 'Brisbane CBD';
+        }
         function campusMatch(studentCampus, filterCampus) {
             if (!filterCampus || filterCampus === 'all') return true;
             return normCampus(studentCampus) === normCampus(filterCampus);
@@ -4068,7 +4075,7 @@
                 // Sync campus from dashboard so both tabs show the same campus
                 activeCampus = activeCampusTab;
                 document.querySelectorAll('.campus-tab').forEach(b =>
-                    b.classList.toggle('active', b.textContent.trim() === activeCampus)
+                    b.classList.toggle('active', b.textContent.trim() === (activeCampus === 'all' ? 'All Campuses' : activeCampus))
                 );
                 populateFilters();
                 activeTrainerCourse = 'all';
@@ -4078,13 +4085,11 @@
                 startDailyAutoSync();
             } else { stopDailyAutoSync(); }
             if (tab === 'dashboard') {
-                // Sync campus from daily attendance to dashboard (skip if 'all' — dashboard has no all-campus tab)
-                if (activeCampus !== 'all') {
-                    activeCampusTab = activeCampus;
-                    document.querySelectorAll('.dash-campus-tab').forEach(b =>
-                        b.classList.toggle('active', b.dataset.campus === activeCampusTab)
-                    );
-                }
+                // Sync campus from daily attendance to dashboard
+                activeCampusTab = activeCampus;
+                document.querySelectorAll('.dash-campus-tab').forEach(b =>
+                    b.classList.toggle('active', b.dataset.campus === activeCampusTab)
+                );
                 renderDashboard();
                 if (!liveRatesCache) refreshAttendanceRates().then(r => { if (r) renderDashboard(); });
             }
@@ -5037,7 +5042,7 @@
             await renderBreakdownTables();
         }
 
-        let activeCampusTab = 'Brisbane CBD';
+        let activeCampusTab = 'all';
 
         function switchCampusTab(btn) {
             activeCampusTab = btn.dataset.campus;
@@ -5227,7 +5232,8 @@
                     rows.push([today, s.campus, s.trainer, s.course, s.courseCode || '', s.name, s.id, att ? 'Present' : 'Absent', checkIn]);
                 });
 
-            downloadCSV(`classlist_all_${activeCampusTab.replace(/\s+/g,'-')}_${today}.csv`, rows);
+            const campusLabel = activeCampusTab === 'all' ? 'AllCampuses' : activeCampusTab.replace(/\s+/g,'-');
+            downloadCSV(`classlist_all_${campusLabel}_${today}.csv`, rows);
             showToast(`Class list exported — ${scheduled.length} students`);
         }
 
@@ -5253,11 +5259,12 @@
                         ? getStudentsScheduledOnDay(students, schedDay) : students;
                     const present = scheduled.filter(s => presentIds.has(s.id)).length;
                     const rate = scheduled.length ? Math.round(present / scheduled.length * 100) : 0;
-                    rows.push([activeCampusTab, trainer, course, students[0]?.courseCode || '', students.length, present, scheduled.length - present, rate + '%', periodLabel]);
+                    rows.push([normCampus(students[0]?.campus), trainer, course, students[0]?.courseCode || '', students.length, present, scheduled.length - present, rate + '%', periodLabel]);
                 });
             });
 
-            downloadCSV(`dashboard_${activeCampusTab.replace(/\s+/g,'-')}_${breakdownPeriod}_${today}.csv`, rows);
+            const campusLabel = activeCampusTab === 'all' ? 'AllCampuses' : activeCampusTab.replace(/\s+/g,'-');
+            downloadCSV(`dashboard_${campusLabel}_${breakdownPeriod}_${today}.csv`, rows);
             showToast('Dashboard CSV downloaded');
         }
 
@@ -7482,7 +7489,7 @@
             _campusStudentListAll = campusStudents;
             document.getElementById('campusStudentListTitle').textContent = trainerPreset
                 ? `View Students — ${trainerPreset}`
-                : `View Students — ${activeCampusTab}`;
+                : `View Students — ${activeCampusTab === 'all' ? 'All Campuses' : activeCampusTab}`;
             // Populate trainer filters
             const trainers = [...new Set(campusStudents.map(s => s.trainer))].sort();
             const trainerOpts = '<option value="all">All Trainers</option>' + trainers.map(t => `<option value="${t}">${t}</option>`).join('');
@@ -7587,7 +7594,7 @@
             if (!id || !name || !course || !trainer) { msg.style.color='#dc2626'; msg.textContent='Please fill in ID, Name, Course and Trainer.'; return; }
             const roster = window._dynamicRoster || STUDENT_ROSTER;
             if (roster.find(s => s.id === id)) { msg.style.color='#dc2626'; msg.textContent=`Student ID ${id} is already in the roster.`; return; }
-            const campus = activeCampusTab;
+            const campus = activeCampusTab === 'all' ? getTrainerCampus(trainer) : activeCampusTab;
             const newStudent = { id, name, course, courseCode: '', trainer, campus, commenced: commenced || new Date().toISOString().slice(0,10) };
             roster.push(newStudent);
             window._dynamicRoster = roster;
