@@ -6,3 +6,10 @@ attendancecb copy.html
 attendanceportal copy.html
 .vercel
 .env*.local
+
+# One-off DB scripts with hardcoded Azure SQL credentials — never commit these
+check_students.js
+troy_check.js
+update_students_may29.js
+import_students.py
+fix_duplicates.py

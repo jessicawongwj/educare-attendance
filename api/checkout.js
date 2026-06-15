@@ -1,10 +1,7 @@
 const { getPool, sql } = require('./_db');
-const { validateToken } = require('./_auth');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).end();
-  const user = await validateToken(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
   const { StudentID, date: rawDate, checkoutTime: rawCheckoutTime } = req.body;
   if (!StudentID) return res.status(400).json({ error: 'Missing StudentID' });

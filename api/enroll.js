@@ -10,8 +10,8 @@ module.exports = async (req, res) => {
   await ensureAdminCache(pool);
   if (!isAdminUser(email)) return res.status(403).json({ error: 'Admin only' });
 
-  const { studentId, name, course, courseCode, trainer, campus, commenced, expectedEnd } = req.body;
-  if (!studentId || !name || !course || !trainer) {
+  const { studentId, name, course, courseCode, trainer, campus, commenced, expectedEnd, status } = req.body;
+  if (!studentId || !name || !course) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -39,10 +39,11 @@ module.exports = async (req, res) => {
       await pool.request()
         .input('studentId',   sql.VarChar(20),   studentId)
         .input('course',      sql.NVarChar(300),  course)
-        .input('trainer',     sql.NVarChar(200),  trainer)
+        .input('trainer',     sql.NVarChar(200),  trainer || '')
         .input('commenced',   sql.Date,            commenced || new Date())
         .input('expectedEnd', sql.Date,            expectedEnd || null)
-        .query(`UPDATE enrollments SET trainer=@trainer, commenced=@commenced, expectedEnd=@expectedEnd, status='active'
+        .input('status',      sql.VarChar(20),     status || 'active')
+        .query(`UPDATE enrollments SET trainer=@trainer, commenced=@commenced, expectedEnd=@expectedEnd, status=@status
                 WHERE studentId=@studentId AND course=@course`);
     } else {
       await pool.request()
@@ -50,11 +51,12 @@ module.exports = async (req, res) => {
         .input('name',        sql.NVarChar(200),  name)
         .input('course',      sql.NVarChar(300),  course)
         .input('courseCode',  sql.VarChar(20),    courseCode || '')
-        .input('trainer',     sql.NVarChar(200),  trainer)
+        .input('trainer',     sql.NVarChar(200),  trainer || '')
         .input('commenced',   sql.Date,            commenced || new Date())
         .input('expectedEnd', sql.Date,            expectedEnd || null)
+        .input('status',      sql.VarChar(20),     status || 'active')
         .query(`INSERT INTO enrollments (studentId,studentName,course,courseCode,trainer,commenced,expectedEnd,status,isPrimary)
-                VALUES (@studentId,@name,@course,@courseCode,@trainer,@commenced,@expectedEnd,'active',1)`);
+                VALUES (@studentId,@name,@course,@courseCode,@trainer,@commenced,@expectedEnd,@status,1)`);
     }
 
     res.status(200).json({ ok: true });
