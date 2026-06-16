@@ -7359,7 +7359,11 @@
                 const presentDates = new Set(
                     studentRecords
                         .filter(rec => (rec.status || rec.Status || 'Present').toLowerCase() === 'present')
-                        .map(rec => rec.attendanceDate || rec.AttendanceDate)
+                        .map(rec => {
+                            const raw = rec.attendanceDate || rec.AttendanceDate || rec.checkinTime || rec.CheckIn || '';
+                            // Normalize: ISO datetime "2026-04-20T..." → "2026-04-20", also handles "DD/MM/YYYY"
+                            return normaliseDateToISO(typeof raw === 'string' ? raw : (raw instanceof Date ? raw.toISOString() : String(raw)));
+                        })
                         .filter(d => d && d <= todayStr)
                 );
 
