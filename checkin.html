@@ -518,11 +518,9 @@ async function submitCheckIn(){
       updateButtonStates();
     } else if(res.status === 409){
       ['r_id','r_name','r_trainer','r_course'].forEach((k,i)=>localStorage.setItem(k,[elId.value,elName.value,elTrainer.value,elCourse.value][i]));
-      if(!activeSession){
-        activeSession = { studentId:elId.value, name:elName.value, trainer:elTrainer.value, course:elCourse.value, campus:detectedCampus.name, checkInTime:Date.now() };
-        localStorage.setItem('activeSession', JSON.stringify(activeSession));
-        showSessionCard();
-      }
+      // Don't create a phantom session — we can't know if it's still open or already checked out.
+      // Only restore an existing session; never fabricate one from a 409.
+      if(activeSession) showSessionCard();
       setMsg("Your attendance has already been recorded for today. You are all set!", "ok");
       updateButtonStates();
     } else {
@@ -550,6 +548,12 @@ async function submitCheckOut(){
       activeSession = null;
       hideSessionCard();
       setMsg(`Checked out successfully. Total session: <b>${label}</b>`, "ok");
+      updateButtonStates();
+    } else if(res.status === 404){
+      localStorage.removeItem('activeSession');
+      activeSession = null;
+      hideSessionCard();
+      setMsg("Your session has already been closed — no open check-in was found for today. If this is unexpected, speak to your trainer.", "warn");
       updateButtonStates();
     } else {
       setMsg("Check-out failed. Please try again.", "err");
