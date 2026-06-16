@@ -494,8 +494,11 @@ async function fetchWithRetry(url, body, onRetry, maxRetries=5){
   }
 }
 
+function brisbaneHour(){ return parseInt(new Date().toLocaleString('en-AU',{timeZone:'Australia/Brisbane',hour:'numeric',hour12:false})); }
+function brisbaneDate(d){ return (d||new Date()).toLocaleDateString('en-CA',{timeZone:'Australia/Brisbane'}); }
+
 async function submitCheckIn(){
-  if(new Date().getHours() >= 17){ setMsg("Check-in is unavailable after 5:00 PM.", "warn"); return; }
+  if(brisbaneHour() >= 17){ setMsg("Check-in is unavailable after 5:00 PM.", "warn"); return; }
   setMsg("Submitting attendance...", "info");
   elBtnIn.disabled = true;
   try {
@@ -560,8 +563,7 @@ function init(){
   const now   = new Date();
   if(saved){
     const session = JSON.parse(saved);
-    const sessionDate = new Date(session.checkInTime);
-    if(sessionDate.toDateString() !== now.toDateString() || now.getHours() >= 18){
+    if(brisbaneDate(new Date(session.checkInTime)) !== brisbaneDate() || brisbaneHour() >= 18){
       localStorage.removeItem('activeSession');
     } else {
       activeSession = session;
