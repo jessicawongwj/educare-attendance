@@ -587,7 +587,7 @@ function init(){
 }
 
 init();
-fetch('/api/ping').catch(()=>{});
+fetch('/api/records?ping=1').catch(()=>{});
 navigator.geolocation.watchPosition(onGPSSuccess, onGPSError, {enableHighAccuracy:true});
 </script>
 </body>

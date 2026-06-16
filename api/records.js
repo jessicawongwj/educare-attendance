@@ -64,6 +64,28 @@ module.exports = async (req, res) => {
     }
   }
 
+  // ── Ping / DB warmup ──────────────────────────────────────────────────────
+  if (req.method === 'GET' && req.query.ping) {
+    try { await getPool(); return res.status(200).json({ ok: true }); }
+    catch (e) { return res.status(503).json({ ok: false }); }
+  }
+
+  // ── Student dates (deduplicated YYYY-MM-DD list for one student) ───────────
+  if (req.method === 'GET' && req.query.type === 'dates') {
+    const sid = req.query.id || req.query.studentId;
+    if (!sid) return res.status(400).json({ error: 'Missing id' });
+    try {
+      const pool = await getPool();
+      const result = await pool.request()
+        .input('sid', sql.NVarChar(50), String(sid))
+        .query(`SELECT DISTINCT CONVERT(VARCHAR(10), attendanceDate, 120) AS date
+                FROM attendance WHERE studentId = @sid ORDER BY date DESC`);
+      return res.status(200).json(result.recordset.map(r => r.date));
+    } catch (e) {
+      return res.status(500).json({ error: 'Server error' });
+    }
+  }
+
   // ── Attendance Records ─────────────────────────────────────────────────────
   if (req.method !== 'GET') return res.status(405).end();
 

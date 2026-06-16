@@ -7347,7 +7347,7 @@
                 // Simple dedicated endpoint — returns ["YYYY-MM-DD", ...] for this student only
                 const fetchTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 20000));
                 const resp = await Promise.race([
-                    apiFetch(`/api/student-dates?id=${encodeURIComponent(String(s.id))}`),
+                    apiFetch(`/api/records?type=dates&id=${encodeURIComponent(String(s.id))}`),
                     fetchTimeout
                 ]);
                 const dates = await resp.json();
