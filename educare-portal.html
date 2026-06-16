@@ -7358,8 +7358,8 @@
                 const todayStr = todayAEST();
                 const presentDates = new Set(
                     studentRecords
-                        .filter(rec => (rec.Status || 'Present').toLowerCase() === 'present')
-                        .map(rec => rec.AttendanceDate)
+                        .filter(rec => (rec.status || rec.Status || 'Present').toLowerCase() === 'present')
+                        .map(rec => rec.attendanceDate || rec.AttendanceDate)
                         .filter(d => d && d <= todayStr)
                 );
 

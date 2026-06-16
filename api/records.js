@@ -75,7 +75,7 @@ module.exports = async (req, res) => {
     const adminUser = isAdminUser(email);
     const trainerNames = adminUser ? [] : trainersFromEmail(email);
     const request = pool.request();
-    const studentId = req.query.student;
+    const studentId = req.query.student || req.query.studentId;
 
     // When fetching a single student, return full history (no date cap)
     let where = studentId
