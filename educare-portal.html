@@ -4286,20 +4286,30 @@
             const roster = window._dynamicRoster || STUDENT_ROSTER;
             const allMyStudents = filterTrainerStudents(roster.filter(s => !s.withdrawn), trainerName);
 
-            // Course filter tabs — only shown when trainer teaches multiple courses
-            const myCourses = [...new Set(allMyStudents.map(s => s.course).filter(Boolean))].sort();
+            // Course filter tabs — keyed by courseCode, shown when trainer teaches multiple courses
+            const _courseMap = new Map();
+            allMyStudents.forEach(s => {
+                const key = s.courseCode || s.course || '';
+                if (key && !_courseMap.has(key)) _courseMap.set(key, { courseCode: s.courseCode || '', course: s.course || '' });
+            });
+            const courseEntries = [..._courseMap.entries()]
+                .sort((a, b) => a[0].localeCompare(b[0]))
+                .map(([key, v]) => ({ key, ...v }));
             const courseTabsEl = document.getElementById('myClassCourseTabs');
             if (courseTabsEl) {
-                if (myCourses.length > 1) {
-                    const tabs = ['all', ...myCourses].map(c => {
-                        const isNiet = c.includes('(NIET)');
-                        const label = c === 'all' ? 'All Courses' : (c.replace(/^(Certificate (III|IV) in |Diploma of |Advanced Diploma of |Graduate Diploma of )/i, '') || c);
-                        const active = myClassCourse === c;
-                        const base = `padding:0.35rem 0.9rem;font-size:0.78rem;font-weight:600;border-radius:20px;cursor:pointer;border:1.5px solid;white-space:nowrap;transition:all 0.15s;`;
+                if (courseEntries.length > 1) {
+                    const tabs = [{ key: 'all', courseCode: '', course: 'All Courses' }, ...courseEntries].map(entry => {
+                        const isNiet = entry.course.includes('(NIET)');
+                        const shortName = entry.key === 'all' ? 'All Courses'
+                            : (entry.course.replace(/^(Certificate (III|IV) in |Diploma of |Advanced Diploma of |Graduate Diploma of )/i, '') || entry.course);
+                        const codeTag = entry.courseCode ? `<span style="font-size:0.67rem;font-weight:700;opacity:0.75;display:block;line-height:1.2;letter-spacing:0.02em;">${entry.courseCode}</span>` : '';
+                        const label = entry.key === 'all' ? 'All Courses' : `${codeTag}${shortName}`;
+                        const active = myClassCourse === entry.key;
+                        const base = `padding:0.35rem 0.9rem;font-size:0.78rem;font-weight:600;border-radius:20px;cursor:pointer;border:1.5px solid;white-space:nowrap;transition:all 0.15s;line-height:1.4;text-align:left;`;
                         const style = active
                             ? (isNiet ? `${base}background:#7B68EE;color:white;border-color:#7B68EE;` : `${base}background:var(--brand);color:white;border-color:var(--brand);`)
                             : (isNiet ? `${base}background:#f0eeff;color:#5B4FCF;border-color:#c4b5ff;` : `${base}background:white;color:var(--text-secondary);border-color:var(--border);`);
-                        return `<button style="${style}" data-course="${c.replace(/"/g,'&quot;')}" onclick="setMyClassCourse(this.dataset.course)">${label}</button>`;
+                        return `<button style="${style}" data-course="${entry.key.replace(/"/g,'&quot;')}" onclick="setMyClassCourse(this.dataset.course)">${label}</button>`;
                     });
                     courseTabsEl.innerHTML = tabs.join('');
                     courseTabsEl.style.display = 'flex';
@@ -4309,10 +4319,10 @@
                 }
             }
 
-            // Apply course filter
+            // Apply course filter (by courseCode, falling back to course name if no code)
             const myStudents = myClassCourse === 'all'
                 ? allMyStudents
-                : allMyStudents.filter(s => s.course === myClassCourse);
+                : allMyStudents.filter(s => (s.courseCode || s.course) === myClassCourse);
 
             // Ghost cutoff: 3 months ago
             const threeMonthsAgo = (() => {
