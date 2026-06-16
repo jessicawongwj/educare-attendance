@@ -7343,14 +7343,14 @@
             }
 
             try {
-                // Fetch this student's records directly by ID — no full-cache scan
+                // Simple dedicated endpoint — returns ["YYYY-MM-DD", ...] for this student only
                 const fetchTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 20000));
                 const resp = await Promise.race([
-                    apiFetch(`${RECORDS_URL}?studentId=${encodeURIComponent(String(s.id))}`),
+                    apiFetch(`/api/student-dates?id=${encodeURIComponent(String(s.id))}`),
                     fetchTimeout
                 ]);
-                const studentRecords = await resp.json();
-                if (!Array.isArray(studentRecords)) throw new Error('Bad response');
+                const dates = await resp.json();
+                if (!Array.isArray(dates)) throw new Error('Bad response');
 
                 // Also ensure rates cache is loaded for summary stats
                 if (window._normalizedCheckins == null) refreshAttendanceRates();
@@ -7358,16 +7358,7 @@
                 const r = rateSource[rateKey(s.id, s.course)];
 
                 const todayStr = todayAEST();
-                const presentDates = new Set(
-                    studentRecords
-                        .filter(rec => (rec.status || rec.Status || 'Present').toLowerCase() === 'present')
-                        .map(rec => {
-                            const raw = rec.attendanceDate || rec.AttendanceDate || rec.checkinTime || rec.CheckIn || '';
-                            // Normalize: ISO datetime "2026-04-20T..." → "2026-04-20", also handles "DD/MM/YYYY"
-                            return normaliseDateToISO(typeof raw === 'string' ? raw : (raw instanceof Date ? raw.toISOString() : String(raw)));
-                        })
-                        .filter(d => d && d <= todayStr)
-                );
+                const presentDates = new Set(dates.filter(d => d && d <= todayStr));
 
                 // Merge today's in-session check-ins
                 if (attendance.some(a => String(a.studentId) === String(s.id))) {
