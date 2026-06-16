@@ -480,7 +480,7 @@ elTrainer.onchange = () => {
 
 [elId, elName, elCourse].forEach(el => el.oninput = updateButtonStates);
 
-async function fetchWithRetry(url, body, onRetry, maxRetries=3){
+async function fetchWithRetry(url, body, onRetry, maxRetries=5){
   for(let attempt=1; attempt<=maxRetries; attempt++){
     try{
       const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
@@ -581,6 +581,7 @@ function init(){
 }
 
 init();
+fetch('/api/ping').catch(()=>{});
 navigator.geolocation.watchPosition(onGPSSuccess, onGPSError, {enableHighAccuracy:true});
 </script>
 </body>

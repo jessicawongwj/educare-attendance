@@ -34,9 +34,8 @@ A web-based student attendance portal for Educare (an RTO with multiple campuses
 
 ```
 /
-├── educare-portal.html       # Main portal — all-in-one SPA (~8,000+ lines)
+├── educare-portal.html       # Main portal — all-in-one SPA (~8,000+ lines), role-based Admin/Trainer views
 ├── educarecheckin.html       # QR check-in page (public, no login)
-├── trainer-portal.html       # Separate mobile-friendly trainer portal
 ├── vercel.json               # Routing rewrites + cron + cache headers
 ├── package.json              # CommonJS, mssql dependency
 ├── robots.txt                # Disallow all (prevents search indexing)
