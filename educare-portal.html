@@ -7317,8 +7317,9 @@
             }
         }
 
-        // Cached student object for retry
+        // Cached student object and fetched dates for retry / export
         let _studentHistoryPending = null;
+        let _studentHistoryDates   = [];  // ["YYYY-MM-DD", ...] sorted desc
 
         async function openStudentAttendanceDates(s) {
             _studentHistoryPending = s;
@@ -7366,6 +7367,7 @@
                 }
 
                 const sortedDates = [...presentDates].sort().reverse();
+                _studentHistoryDates = sortedDates; // cache for export
                 const attended = sortedDates.length;
                 const sessions = r ? r.sessions : '—';
                 const rate = r ? r.rate : (attended > 0 ? '?' : 0);
@@ -7392,7 +7394,7 @@
                     const html = Object.entries(byMonth).sort((a,b) => b[0].localeCompare(a[0])).map(([month, dates]) => {
                         const label = new Date(month + '-01').toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
                         const pills = dates.map(d => {
-                            const day = new Date(d).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+                            const day = new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'long' });
                             const isToday = d === todayStr;
                             return `<span style="display:inline-block;background:${isToday ? '#dcfce7' : 'var(--bg-secondary)'};border:1px solid ${isToday ? '#86efac' : 'var(--border)'};border-radius:6px;padding:0.25rem 0.6rem;font-size:0.75rem;font-weight:600;margin:0.2rem;">${day}${isToday ? ' ✓' : ''}</span>`;
                         }).join('');
@@ -7414,21 +7416,13 @@
         function exportStudentHistoryCSV() {
             const s = _studentHistoryPending;
             if (!s) return;
-            const allRecords = window._normalizedCheckins || [];
             const rateSource = liveRatesCache || {};
             const r = rateSource[rateKey(s.id, s.course)];
             const today = todayAEST();
             const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }) : '';
 
-            const presentDates = new Set(
-                allRecords
-                    .filter(rec => String(rec.StudentID) === String(s.id) && (rec.Status || 'Present').toLowerCase() === 'present')
-                    .map(rec => rec.AttendanceDate)
-                    .filter(d => d && d <= today)
-            );
-            if (attendance.some(a => String(a.studentId) === String(s.id))) presentDates.add(today);
-
-            const sortedDates = [...presentDates].sort().reverse(); // newest first
+            // Use the dates already fetched by the modal (clean YYYY-MM-DD strings)
+            const sortedDates = _studentHistoryDates.length ? _studentHistoryDates : [];
             const attended = sortedDates.length;
             const sessions = r?.sessions ?? '';
             const overallRate = r?.rate ?? '';
