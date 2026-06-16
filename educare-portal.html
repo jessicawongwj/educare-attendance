@@ -2022,7 +2022,13 @@
                             <span id="allCount" style="font-size:0.72rem;color:var(--text-secondary);font-weight:500;margin-top:0.3rem;display:block;"></span>
                         </div>
                     </div>
-                    <button id="rateRefreshBtn" onclick="refreshAttendanceRates().then(r => { if(r) renderRateCheck(); })" class="btn btn-secondary">Refresh</button>
+                    <div style="display:flex;gap:0.5rem;align-items:center;">
+                        <button id="rateRefreshBtn" onclick="refreshAttendanceRates().then(r => { if(r) renderRateCheck(); })" class="btn btn-secondary">Refresh</button>
+                        <button onclick="printTrainerClassList()" class="btn btn-secondary" title="Print class list for selected trainer" style="display:flex;align-items:center;gap:0.35rem;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                            Print Class List
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Unified filter bar -->
@@ -2727,6 +2733,91 @@
         function printCheckinPoster() {
             const w = window.open('');
             w.document.write('<html><body style="margin:0;"><img src="EDUCARE QR .png" style="width:100%;height:auto;" onload="window.print();window.close();"></body></html>');
+            w.document.close();
+        }
+
+        function printTrainerClassList() {
+            const trainerSel = document.getElementById('rateTrainerFilter');
+            const selectedTrainer = trainerSel ? trainerSel.value : 'all';
+            const today = todayAEST ? todayAEST() : new Date().toISOString().slice(0, 10);
+            const [yr, mo, dy] = today.split('-');
+            const printDate = `${dy}/${mo}/${yr}`;
+
+            // Build trainer → courseCode → students map
+            const source = allStudents.filter(s => !s.withdrawn);
+            const trainers = selectedTrainer === 'all'
+                ? [...new Set(source.map(s => s.trainer).filter(Boolean))].sort()
+                : [selectedTrainer];
+
+            const sections = [];
+            trainers.forEach(trainer => {
+                const ts = source.filter(s => s.trainer === trainer);
+                const courseMap = new Map();
+                ts.forEach(s => {
+                    const key = s.courseCode || s.course || 'Unknown';
+                    if (!courseMap.has(key)) courseMap.set(key, { courseCode: s.courseCode || '', course: s.course || '', students: [] });
+                    courseMap.get(key).students.push(s);
+                });
+                [...courseMap.entries()].sort((a, b) => a[0].localeCompare(b[0])).forEach(([, info]) => {
+                    info.students.sort((a, b) => a.name.localeCompare(b.name));
+                    sections.push({ trainer, ...info });
+                });
+            });
+
+            const rows = sections.map((sec, si) => {
+                const studentRows = sec.students.map((s, i) => `
+                    <tr>
+                        <td style="padding:5px 8px;border:1px solid #d1d5db;text-align:center;color:#6b7280;">${i + 1}</td>
+                        <td style="padding:5px 8px;border:1px solid #d1d5db;font-weight:500;">${s.name}</td>
+                        <td style="padding:5px 8px;border:1px solid #d1d5db;color:#4b5563;">${s.id}</td>
+                        <td style="padding:5px 8px;border:1px solid #d1d5db;color:#4b5563;">${s.campus || '—'}</td>
+                        <td style="padding:5px 8px;border:1px solid #d1d5db;color:#4b5563;">${s.commenced ? s.commenced.slice(0,10).split('-').reverse().join('/') : '—'}</td>
+                        <td style="padding:5px 8px;border:1px solid #d1d5db;"></td>
+                    </tr>`).join('');
+                const pageBreak = si > 0 ? 'page-break-before:always;' : '';
+                return `
+                    <div style="${pageBreak}padding:0 0 1.5rem 0;">
+                        <div style="margin-bottom:0.6rem;">
+                            <div style="font-size:1rem;font-weight:700;color:#111827;">${sec.trainer}</div>
+                            <div style="font-size:0.82rem;color:#374151;margin-top:2px;">
+                                <strong>${sec.courseCode}</strong>${sec.course ? ' — ' + sec.course : ''}
+                            </div>
+                            <div style="font-size:0.75rem;color:#6b7280;margin-top:1px;">${sec.students.length} student${sec.students.length !== 1 ? 's' : ''}</div>
+                        </div>
+                        <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+                            <thead>
+                                <tr style="background:#f3f4f6;">
+                                    <th style="padding:5px 8px;border:1px solid #d1d5db;width:36px;text-align:center;">#</th>
+                                    <th style="padding:5px 8px;border:1px solid #d1d5db;text-align:left;">Student Name</th>
+                                    <th style="padding:5px 8px;border:1px solid #d1d5db;text-align:left;width:100px;">Student ID</th>
+                                    <th style="padding:5px 8px;border:1px solid #d1d5db;text-align:left;width:110px;">Campus</th>
+                                    <th style="padding:5px 8px;border:1px solid #d1d5db;text-align:left;width:90px;">Commenced</th>
+                                    <th style="padding:5px 8px;border:1px solid #d1d5db;text-align:left;width:80px;">Signature</th>
+                                </tr>
+                            </thead>
+                            <tbody>${studentRows}</tbody>
+                        </table>
+                    </div>`;
+            }).join('');
+
+            const titleLabel = selectedTrainer === 'all' ? 'All Trainers' : selectedTrainer;
+            const w = window.open('', '_blank');
+            w.document.write(`<!DOCTYPE html><html><head><title>Class List — ${titleLabel} — ${printDate}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px 28px; color: #111; }
+                    @media print { @page { margin: 14mm 16mm; } }
+                </style>
+            </head><body>
+                <div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:18px;">
+                    <div>
+                        <div style="font-size:1.2rem;font-weight:700;">Educare — Class List</div>
+                        <div style="font-size:0.85rem;color:#374151;margin-top:2px;">${titleLabel}</div>
+                    </div>
+                    <div style="font-size:0.78rem;color:#6b7280;text-align:right;">Printed: ${printDate}</div>
+                </div>
+                ${rows || '<p style="color:#6b7280;">No students found.</p>'}
+                <script>window.onload=function(){window.print();}<\/script>
+            </body></html>`);
             w.document.close();
         }
 
