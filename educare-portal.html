@@ -494,9 +494,9 @@
         }
 
         .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 200px));
-            gap: 0.75rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
 
         .stat-card {
@@ -523,6 +523,19 @@
             color: var(--brand);
             line-height: 1;
         }
+
+        .stat-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.55rem 1.2rem;
+            border-radius: 24px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            transition: filter 0.15s, transform 0.15s;
+        }
+        .stat-pill:hover { filter: brightness(0.92); transform: translateY(-1px); }
+        .stat-pill.clickable { cursor: pointer; }
 
         /* Inline filters below stat cards */
         .inline-filters {
@@ -1123,7 +1136,6 @@
             .header-nav { padding: 0 0.5rem; overflow-x: auto; }
             .nav-tabs { gap: 0; }
             .nav-tab { padding: 0.55rem 0.75rem; font-size: 0.75rem; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
             .inline-filters { flex-wrap: wrap; }
             .inline-filter-select { min-width: 130px; font-size: 0.75rem; }
             table { font-size: 0.78rem; }
@@ -1133,7 +1145,6 @@
             .subtitle { display: none; }
         }
         @media (max-width: 480px) {
-            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
             .stat-value { font-size: 1.25rem; }
             .nav-tab { font-size: 0.7rem; padding: 0.5rem 0.6rem; }
         }
@@ -1338,7 +1349,7 @@
     <div id="loginScreen">
         <div class="login-box">
             <div class="login-logo" style="display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem;">
-                <img src="logo.png" alt="Educare College" style="width:160px;height:auto;display:block;margin:0 auto;">
+                <img src="Favicon@4xsml.jpg" alt="Educare College" style="width:180px;height:180px;display:block;margin:0 auto;border-radius:24px;object-fit:cover;">
             </div>
 
             <div style="background:#f8f9ff;border:1px solid #e8eaf6;border-radius:10px;padding:0.9rem 1rem;margin-bottom:1.5rem;text-align:left;">
@@ -1459,28 +1470,16 @@
             <div class="campus-tabs" id="trainerCourseTabs" style="display:none;"></div>
             <div class="daily-top-bar">
                 <div class="stats-grid" id="statsGrid">
-                    <div class="stat-card" style="border-left-color:var(--brand);cursor:pointer;" onclick="filterByCardClick('all')" title="Show all students">
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
-                            <div class="stat-label">Total Students</div>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                        </div>
-                        <div class="stat-value" id="statTotal">0</div>
-                        <div id="statScheduledNote" style="display:none;font-size:0.65rem;color:var(--text-secondary);margin-top:2px;"></div>
-                    </div>
-                    <div class="stat-card" style="border-left-color:var(--success);cursor:pointer;" onclick="filterByCardClick('present')" title="Show present students">
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
-                            <div class="stat-label">Present</div>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"><polyline points="20 6 9 17 4 12"/></svg>
-                        </div>
-                        <div class="stat-value" id="statPresent" style="color:var(--success);">0</div>
-                    </div>
-                    <div class="stat-card" style="border-left-color:var(--danger);cursor:pointer;" onclick="filterByCardClick('absent')" title="Show absent students">
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
-                            <div class="stat-label">Absent</div>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                        </div>
-                        <div class="stat-value" id="statAbsent" style="color:var(--danger);">0</div>
-                    </div>
+                    <span class="stat-pill clickable" style="background:#f3f4f6;color:#374151;" onclick="filterByCardClick('all')" title="Show all students">
+                        <span id="statTotal" style="font-size:1.2rem;font-weight:800;color:#2563eb;">0</span> Total
+                        <span id="statScheduledNote" style="font-size:0.72rem;font-weight:500;color:#6b7280;display:none;"></span>
+                    </span>
+                    <span class="stat-pill clickable" style="background:#f0fdf4;color:#14532d;" onclick="filterByCardClick('present')" title="Show present students">
+                        <span id="statPresent" style="font-size:1.2rem;font-weight:800;color:#16a34a;">0</span> Present
+                    </span>
+                    <span class="stat-pill clickable" style="background:#fef2f2;color:#991b1b;" onclick="filterByCardClick('absent')" title="Show absent students">
+                        <span id="statAbsent" style="font-size:1.2rem;font-weight:800;color:#dc2626;">0</span> Absent
+                    </span>
                 </div>
                 <div class="inline-filters">
                     <input type="date" class="inline-filter-select" id="dateFilter">
@@ -1951,7 +1950,7 @@
         <!-- My Class View (trainers only) -->
         <div id="myclassView" style="display:none;">
             <div id="myClassCourseTabs" style="display:none;margin-bottom:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;"></div>
-            <div id="myClassSummaryCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.75rem;margin-bottom:1.25rem;"></div>
+            <div id="myClassSummaryCards" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.25rem;"></div>
             <div class="list-card">
                 <div class="list-header">
                     <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
@@ -2009,7 +2008,7 @@
             </div>
 
             <!-- Summary cards — clickable to filter -->
-            <div id="rateSummaryCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.75rem;margin-bottom:1.25rem;"></div>
+            <div id="rateSummaryCards" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.25rem;"></div>
 
             <!-- Single unified card -->
             <div class="list-card">
@@ -2563,7 +2562,7 @@
             auth: {
                 clientId: '2e958225-a191-405f-93a0-a78be04d96d5',
                 authority: 'https://login.microsoftonline.com/organizations',
-                redirectUri: 'https://edc-attendance.com/educare-portal'
+                redirectUri: window.location.origin + '/educare-portal'
             },
             cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
         };
@@ -3081,10 +3080,11 @@
         }
 
         function filterTrainerStudents(students, trainerName) {
+            const groupMembers = getTrainerGroup(trainerName);
             const schedEntry = Object.values(TRAINER_SCHEDULE).find(e => e.t === trainerName);
-            if (!schedEntry) return students.filter(s => s.trainer === trainerName);
+            if (!schedEntry) return students.filter(s => groupMembers.includes(s.trainer));
             return students.filter(s => {
-                if (s.trainer !== trainerName) return false;
+                if (!groupMembers.includes(s.trainer)) return false;
                 if (s.campus && s.campus !== schedEntry.c) return false;
                 if (schedEntry.excludeCodes && s.courseCode && schedEntry.excludeCodes.includes(s.courseCode)) return false;
                 return true;
@@ -3107,12 +3107,22 @@
                 const c = parseCommenced(s.commenced);
                 return c && c > todayStr;
             });
+            // Correct each student's campus to match their trainer's TRAINER_SCHEDULE entry.
+            // Students may be imported with the wrong campus — this ensures the dashboard
+            // and campus tabs always group students by their trainer's actual campus.
+            const correctCampus = roster => roster.map(s => {
+                const sched = Object.values(TRAINER_SCHEDULE).find(e => e.t === s.trainer);
+                return sched && sched.c ? { ...s, campus: sched.c } : s;
+            });
+            const correctedActive = correctCampus(activeRoster);
+            const correctedFuture = correctCampus(futureRoster);
+
             if (isTrainer) {
-                allStudents = filterTrainerStudents(activeRoster, currentUser.trainer);
-                upcomingStudents = filterTrainerStudents(futureRoster, currentUser.trainer);
+                allStudents = filterTrainerStudents(correctedActive, currentUser.trainer);
+                upcomingStudents = filterTrainerStudents(correctedFuture, currentUser.trainer);
             } else {
-                allStudents = activeRoster;
-                upcomingStudents = futureRoster;
+                allStudents = correctedActive;
+                upcomingStudents = correctedFuture;
             }
             const ab = document.getElementById('adminOnlyBtns');
             if (ab) ab.style.display = isTrainer ? 'none' : '';
@@ -3456,11 +3466,21 @@
             "Nati Belen||Southport GC":        {"t":"Nati Belen","c":"Southport GC","courses":{"CHC30121 Certificate III in Early Childhood Education and Care":[0,3],"CHC50121 Diploma of Early Childhood Education and Care":[0,3]}},
             "Vijeta Srivastava||Southport GC": {"t":"Vijeta Srivastava","c":"Southport GC","courses":{"CHC43015 Certificate IV in Ageing Support":[0,1,2,3],"CHC43121 Certificate IV in Disability Support":[0,1,2,3],"CHC52025 Diploma of Community Services":[0,1,2,3]}},
             "Toriqul Mozumder||Southport GC":  {"t":"Toriqul Mozumder","c":"Southport GC","courses":{"CHC33021 Certificate III in Individual Support":[0,2]}},
-            "Alessandro Tavian||Woolloongabba":{"t":"Alessandro Tavian","c":"Woolloongabba","courses":{"CPC30220 Certificate III in Carpentry":[0,1],"CPC31320 Certificate III in Wall and Floor Tiling":[0,1]}},
-            "Benjamin Akari||Woolloongabba":   {"t":"Benjamin Akari","c":"Woolloongabba","courses":{"CPC30220 Certificate III in Carpentry":[4]}}
+            "Alessandro Tavian||Woolloongabba":{"t":"Alessandro Tavian","c":"Woolloongabba","courses":{"CPC30220 Certificate III in Carpentry":[0,1,2,3,4],"CPC31320 Certificate III in Wall and Floor Tiling":[0,1,2,3,4]}},
+            "Benjamin Akari||Woolloongabba":   {"t":"Benjamin Akari","c":"Woolloongabba","courses":{"CPC30220 Certificate III in Carpentry":[0,1,2,3,4]}}
         };
 
         const TRAINER_SCHEDULE_DEFAULT = JSON.parse(JSON.stringify(TRAINER_SCHEDULE));
+
+        // Co-trainer groups — trainers in the same array share the same student cohort.
+        // Each trainer sees all students assigned to any member of their group.
+        const TRAINER_GROUPS = [
+            ['Alessandro Tavian', 'Benjamin Akari']  // Woolloongabba CPC co-trainers
+        ];
+
+        function getTrainerGroup(trainerName) {
+            return TRAINER_GROUPS.find(g => g.includes(trainerName)) || [trainerName];
+        }
 
         const TRAINER_EMAILS = {
             "Sherwin Thiarhia":   "sherwin.thiarhia@educare.edu.au",
@@ -4456,10 +4476,18 @@
             const onTrack = startedList.filter(s => s.rate !== null && s.rate >= 80);
             const totalEnrolled = startedList.length + notStartedList.length + upcomingAll.length;
             document.getElementById('myClassSummaryCards').innerHTML = `
-                <div class="stat-card"><div class="stat-label">Total Enrolled</div><div class="stat-value">${totalEnrolled}</div></div>
-                <div class="stat-card" style="border-left-color:var(--danger)"><div class="stat-label">At Risk</div><div class="stat-value" style="color:var(--danger)">${atRisk.length}</div></div>
-                <div class="stat-card" style="border-left-color:var(--success)"><div class="stat-label">On Track</div><div class="stat-value" style="color:var(--success)">${onTrack.length}</div></div>
-                ${notStartedList.length ? `<div class="stat-card" style="border-left-color:var(--warning);cursor:pointer;" onclick="switchMyClassTab('notstarted')" title="View students with no check-ins"><div class="stat-label">No Check-ins Yet</div><div class="stat-value" style="color:var(--warning);">${notStartedList.length}</div></div>` : ''}
+                <span class="stat-pill" style="background:#f3f4f6;color:#374151;">
+                    <span style="font-size:1.2rem;font-weight:800;color:#2563eb;">${totalEnrolled}</span> Enrolled
+                </span>
+                <span class="stat-pill" style="background:#fef2f2;color:#991b1b;">
+                    <span style="font-size:1.2rem;font-weight:800;color:#dc2626;">${atRisk.length}</span> At Risk
+                </span>
+                <span class="stat-pill" style="background:#f0fdf4;color:#14532d;">
+                    <span style="font-size:1.2rem;font-weight:800;color:#16a34a;">${onTrack.length}</span> On Track
+                </span>
+                ${notStartedList.length ? `<span class="stat-pill clickable" style="background:#fffbeb;color:#92400e;" onclick="switchMyClassTab('notstarted')" title="View students with no check-ins">
+                    <span style="font-size:1.2rem;font-weight:800;color:#d97706;">${notStartedList.length}</span> No Check-ins
+                </span>` : ''}
             `;
 
             // Sub-tab badges + active styling
@@ -4510,9 +4538,50 @@
             const actionBtns = (s, isNotStarted) => {
                 const sJson = JSON.stringify(s).replace(/'/g, '&#39;');
                 const editBtn = `<button onclick='openUpdateStartDateModal(${sJson})' style="display:block;width:100%;margin-bottom:0.3rem;padding:0.28rem 0.65rem;font-size:0.72rem;font-weight:600;background:#eff6ff;color:#2563eb;border:1.5px solid #bfdbfe;border-radius:5px;cursor:pointer;white-space:nowrap;">Edit</button>`;
-                const removeBtn = `<button onclick='removeMyClassStudent("${s.id}", "${s.name.replace(/'/g,'&#39;')}")' style="display:block;width:100%;padding:0.28rem 0.65rem;font-size:0.72rem;font-weight:600;background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;border-radius:5px;cursor:pointer;white-space:nowrap;">Remove</button>`;
+                const removeBtn = `<button onclick='removeMyClassStudent("${s.id}", "${s.name.replace(/'/g,'&#39;')}")' style="display:block;width:100%;margin-bottom:0.3rem;padding:0.28rem 0.65rem;font-size:0.72rem;font-weight:600;background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;border-radius:5px;cursor:pointer;white-space:nowrap;">Remove</button>`;
+                const attBtn = `<button onclick='toggleInlineAttendance("${s.id}")' style="display:block;width:100%;padding:0.28rem 0.65rem;font-size:0.72rem;font-weight:600;background:#f0fdf4;color:#16a34a;border:1.5px solid #86efac;border-radius:5px;cursor:pointer;white-space:nowrap;">+ Attendance</button>`;
                 const startedBtn = isNotStarted ? `<button onclick='markStudentStarted("${s.id}", "${s.course.replace(/'/g,'&#39;')}")' style="display:block;width:100%;margin-bottom:0.3rem;padding:0.28rem 0.65rem;font-size:0.72rem;font-weight:600;background:#d1fae5;color:#059669;border:1.5px solid #6ee7b7;border-radius:5px;cursor:pointer;white-space:nowrap;">Started</button>` : '';
-                return `<div style="min-width:70px;">${startedBtn}${editBtn}${removeBtn}</div>`;
+                return `<div style="min-width:70px;">${startedBtn}${editBtn}${removeBtn}${attBtn}</div>`;
+            };
+
+            // Inline attendance form row builder
+            const attFormRow = (s) => {
+                const sJson = JSON.stringify(s).replace(/'/g, '&#39;');
+                const sid = s.id;
+                return `<tr id="addatt-${sid}" style="display:none;background:#f8fafc;">
+                    <td colspan="9" style="padding:0.75rem 1rem 0.9rem;border-top:none;">
+                        <div style="font-size:0.78rem;font-weight:700;color:var(--brand-dark);margin-bottom:0.5rem;">Add Attendance — ${s.name}</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:0.65rem;align-items:flex-end;">
+                            <div>
+                                <label style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.2rem;">Date</label>
+                                <input type="date" id="addatt-date-${sid}" value="${today}" style="padding:0.3rem 0.5rem;border:1.5px solid var(--border);border-radius:5px;font-size:0.82rem;font-family:inherit;">
+                            </div>
+                            <div>
+                                <label style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.2rem;">To (range, optional)</label>
+                                <input type="date" id="addatt-dateto-${sid}" style="padding:0.3rem 0.5rem;border:1.5px solid var(--border);border-radius:5px;font-size:0.82rem;font-family:inherit;">
+                            </div>
+                            <div>
+                                <label style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.2rem;">Status</label>
+                                <select id="addatt-status-${sid}" style="padding:0.3rem 0.5rem;border:1.5px solid var(--border);border-radius:5px;font-size:0.82rem;font-family:inherit;">
+                                    <option value="Present">Present</option>
+                                    <option value="Absent">Absent</option>
+                                </select>
+                            </div>
+                            <div style="flex:1;min-width:160px;">
+                                <label style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.2rem;">Note</label>
+                                <input type="text" id="addatt-note-${sid}" placeholder="e.g. Placement, Medical Certificate..." style="width:100%;padding:0.3rem 0.5rem;border:1.5px solid var(--border);border-radius:5px;font-size:0.82rem;font-family:inherit;">
+                            </div>
+                            <button onclick='saveInlineAttendance(${sJson})' style="padding:0.35rem 0.9rem;font-size:0.8rem;font-weight:700;background:var(--brand);color:white;border:none;border-radius:5px;cursor:pointer;white-space:nowrap;">Save</button>
+                            <button onclick='toggleInlineAttendance("${sid}")' style="padding:0.35rem 0.7rem;font-size:0.8rem;font-weight:600;background:white;color:var(--text-secondary);border:1.5px solid var(--border);border-radius:5px;cursor:pointer;">Cancel</button>
+                        </div>
+                        <div style="margin-top:0.45rem;display:flex;gap:0.35rem;flex-wrap:wrap;">
+                            <span style="font-size:0.7rem;color:var(--text-secondary);align-self:center;">Quick note:</span>
+                            ${['Placement','Medical Certificate','Personal','Absent — No Contact','Late Arrival'].map(n =>
+                                `<button onclick="document.getElementById('addatt-note-${sid}').value='${n}'" style="padding:0.15rem 0.5rem;font-size:0.7rem;font-weight:600;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;border-radius:4px;cursor:pointer;">${n}</button>`
+                            ).join('')}
+                        </div>
+                    </td>
+                </tr>`;
             };
 
             if (myClassSubTab === 'upcoming') {
@@ -4545,7 +4614,7 @@
                     <td><span style="font-size:0.75rem;color:var(--warning);font-weight:600;">No check-ins yet</span></td>
                     <td><span class="status-badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;">Not Started</span></td>
                     <td>${actionBtns(s, true)}</td>
-                </tr>`).join('');
+                </tr>${attFormRow(s)}`).join('');
                 return;
             }
 
@@ -4585,7 +4654,7 @@
                     <td style="cursor:pointer;" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})' title="Click to see attendance dates">${rateCell}</td>
                     <td><span class="status-badge ${sc}">${sl}</span></td>
                     <td>${actionBtns(s, false)}</td>
-                </tr>`;
+                </tr>${attFormRow(s)}`;
             };
 
             tbody.innerHTML = display.map(buildRow).join('');
@@ -5212,7 +5281,11 @@
                 Object.values(TRAINER_SCHEDULE).forEach(entry => {
                     if (!campusMatch(entry.c, activeCampusTab)) return;
                     const hasTodayCourse = Object.values(entry.courses || {}).some(days => days.includes(schedDay2));
-                    if (hasTodayCourse) trainersToday.add(entry.t);
+                    if (!hasTodayCourse) return;
+                    // Add both the individual name and any combined group name
+                    trainersToday.add(entry.t);
+                    const group = TRAINER_GROUPS.find(g => g.includes(entry.t));
+                    if (group) trainersToday.add(group.join(' / '));
                 });
             }
 
@@ -5222,6 +5295,45 @@
                 if (!trainerCourseMap[s.trainer]) trainerCourseMap[s.trainer] = {};
                 if (!trainerCourseMap[s.trainer][s.course]) trainerCourseMap[s.trainer][s.course] = [];
                 trainerCourseMap[s.trainer][s.course].push(s);
+            });
+            // Ensure every trainer in TRAINER_SCHEDULE for this campus has a card even with 0 students
+            Object.values(TRAINER_SCHEDULE).forEach(entry => {
+                if (!campusMatch(entry.c, activeCampusTab)) return;
+                if (!trainerCourseMap[entry.t]) {
+                    trainerCourseMap[entry.t] = {};
+                    Object.keys(entry.courses || {}).forEach(c => { trainerCourseMap[entry.t][c] = []; });
+                }
+            });
+            // Merge co-trainer groups into a single combined card
+            TRAINER_GROUPS.forEach(group => {
+                const present = group.filter(t => trainerCourseMap[t]);
+                if (present.length < 2) return;
+                const combinedKey = group.join(' / ');
+                // Merge all students, keyed by course name
+                const raw = {};
+                present.forEach(t => {
+                    Object.entries(trainerCourseMap[t]).forEach(([course, studs]) => {
+                        if (!raw[course]) raw[course] = [];
+                        studs.forEach(s => {
+                            if (!raw[course].find(x => String(x.id) === String(s.id)))
+                                raw[course].push(s);
+                        });
+                    });
+                    delete trainerCourseMap[t];
+                });
+                // Deduplicate courses that share the same course code (e.g. "CPC30220 Carpentry" vs "CPC30220 Certificate III in Carpentry")
+                const byCode = {};
+                Object.entries(raw).forEach(([name, studs]) => {
+                    const code = name.split(' ')[0];
+                    if (!byCode[code]) byCode[code] = { name, studs: [] };
+                    else if (name.length > byCode[code].name.length) byCode[code].name = name; // keep longer/fuller name
+                    studs.forEach(s => {
+                        if (!byCode[code].studs.find(x => String(x.id) === String(s.id)))
+                            byCode[code].studs.push(s);
+                    });
+                });
+                trainerCourseMap[combinedKey] = {};
+                Object.values(byCode).forEach(({ name, studs }) => { trainerCourseMap[combinedKey][name] = studs; });
             });
             const trainerNames = Object.keys(trainerCourseMap).sort();
 
@@ -5245,7 +5357,7 @@
                         <div style="padding:0.65rem 0.9rem;display:flex;align-items:center;gap:0.5rem;border-bottom:1px solid #f1f5f9;">
                             <span style="font-weight:700;font-size:0.84rem;color:var(--brand);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">${trainer}</span>
                             ${isToday ? `<span style="flex-shrink:0;background:#dbeafe;color:#1e40af;font-size:0.6rem;font-weight:700;padding:1px 6px;border-radius:4px;letter-spacing:0.3px;">TODAY</span>` : ''}
-                            <span style="flex-shrink:0;background:#f0f4ff;color:#3730a3;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;">${allTStudents.length} students</span>
+                            <span style="flex-shrink:0;background:#f0f4ff;color:#3730a3;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;cursor:pointer;" onclick="openTrainerDailyModal('${trainer.replace(/'/g,"\\'")}')" title="View all students">${allTStudents.length} students</span>
                         </div>`;
 
                     courseNames.forEach(course => {
@@ -5259,7 +5371,7 @@
                         const courseCode = cs[0]?.courseCode || '';
                         const shortCourse = course.replace(/^(Certificate III in |Certificate IV in |Diploma of |Advanced Diploma of |Graduate Diploma of )/i,'');
                         const noClass = isDaily && schedDay2 < 5 && scheduled.length === 0;
-                        const rowClickable = !noClass && breakdownPeriod === 'today';
+                        const rowClickable = breakdownPeriod === 'today' && allTStudents.length > 0;
                         const rowData = rowClickable ? `data-tdm-trainer="${trainer.replace(/"/g,'&quot;')}" data-tdm-course="${course.replace(/"/g,'&quot;')}"` : '';
                         const rowStyle = rowClickable ? 'cursor:pointer;' : '';
                         const hoverClass = rowClickable ? 'tc-row-hover' : '';
@@ -5402,10 +5514,21 @@
                     .filter(([, days]) => days.includes(schedDay))
                     .map(([c]) => c);
                 if (!todayCourses.length) return;
-                // Count active students for this trainer
-                const studentCount = allStudents.filter(s => s.trainer === trainer && campusMatch(s.campus, campus)).length;
+                const groupMembers = getTrainerGroup(trainer);
+                const studentCount = allStudents.filter(s => groupMembers.includes(s.trainer) && campusMatch(s.campus, campus)).length;
                 if (!todayTrainers[campus]) todayTrainers[campus] = [];
                 todayTrainers[campus].push({ trainer, courses: todayCourses, studentCount });
+            });
+            // Merge co-trainer entries in todayTrainers into a single combined row
+            TRAINER_GROUPS.forEach(group => {
+                Object.keys(todayTrainers).forEach(campus => {
+                    const present = todayTrainers[campus].filter(e => group.includes(e.trainer));
+                    if (present.length < 2) return;
+                    const combinedCourses = [...new Set(present.flatMap(e => e.courses))];
+                    const combinedCount = present[0].studentCount; // shared pool, same count
+                    todayTrainers[campus] = todayTrainers[campus].filter(e => !group.includes(e.trainer));
+                    todayTrainers[campus].push({ trainer: group.join(' / '), courses: combinedCourses, studentCount: combinedCount });
+                });
             });
 
             const campusColors = { 'Brisbane CBD': '#1E84C4', 'Southport GC': '#187C46', 'Woolloongabba': '#d97706' };
@@ -5912,26 +6035,21 @@
 
             // Summary cards (no Avg Attendance)
             document.getElementById('rateSummaryCards').innerHTML = `
-                <div class="stat-card" style="cursor:pointer;" onclick="setRateStatus('all')">
-                    <div class="stat-label">Active Students</div>
-                    <div class="stat-value">${campusStudents.length - futureCount}</div>
-                </div>
-                <div class="stat-card" style="border-left-color:var(--danger);cursor:pointer;" onclick="setRateStatus('below80')">
-                    <div class="stat-label">At Risk (&lt;80%)</div>
-                    <div class="stat-value" style="color:var(--danger);">${atRisk.length}</div>
-                </div>
-                <div class="stat-card" style="border-left-color:var(--success);cursor:pointer;" onclick="setRateStatus('above80')">
-                    <div class="stat-label">On Track (≥80%)</div>
-                    <div class="stat-value" style="color:var(--success);">${activeStudents.length - atRisk.length}</div>
-                </div>
-                ${notStarted > 0 ? `<div class="stat-card" style="border-left-color:var(--warning);cursor:pointer;" onclick="setRateStatus('notstarted')">
-                    <div class="stat-label">No Records Yet</div>
-                    <div class="stat-value" style="color:var(--warning);">${notStarted}</div>
-                </div>` : ''}
-                ${futureCount ? `<div class="stat-card" style="border-left-color:var(--accent-gold);cursor:pointer;" onclick="setRateStatus('upcoming')">
-                    <div class="stat-label">Upcoming Intake</div>
-                    <div class="stat-value" style="color:var(--accent-gold);">${futureCount}</div>
-                </div>` : ''}
+                <span class="stat-pill clickable" style="background:#f3f4f6;color:#374151;" onclick="setRateStatus('all')">
+                    <span style="font-size:1.2rem;font-weight:800;color:#2563eb;">${campusStudents.length - futureCount}</span> Active
+                </span>
+                <span class="stat-pill clickable" style="background:#fef2f2;color:#991b1b;" onclick="setRateStatus('below80')">
+                    <span style="font-size:1.2rem;font-weight:800;color:#dc2626;">${atRisk.length}</span> At Risk
+                </span>
+                <span class="stat-pill clickable" style="background:#f0fdf4;color:#14532d;" onclick="setRateStatus('above80')">
+                    <span style="font-size:1.2rem;font-weight:800;color:#16a34a;">${activeStudents.length - atRisk.length}</span> On Track
+                </span>
+                ${notStarted > 0 ? `<span class="stat-pill clickable" style="background:#fffbeb;color:#92400e;" onclick="setRateStatus('notstarted')">
+                    <span style="font-size:1.2rem;font-weight:800;color:#d97706;">${notStarted}</span> No Records
+                </span>` : ''}
+                ${futureCount ? `<span class="stat-pill clickable" style="background:#fefce8;color:#713f12;" onclick="setRateStatus('upcoming')">
+                    <span style="font-size:1.2rem;font-weight:800;color:#ca8a04;">${futureCount}</span> Upcoming
+                </span>` : ''}
             `;
 
             // Build rows helper
@@ -6239,6 +6357,66 @@
         }
 
         // Instant mark — no popup, used inside the trainer daily modal
+        function toggleInlineAttendance(sid) {
+            const row = document.getElementById('addatt-' + sid);
+            if (!row) return;
+            row.style.display = row.style.display === 'none' ? '' : 'none';
+        }
+
+        async function saveInlineAttendance(s) {
+            const sid = String(s.id);
+            const dateFrom = document.getElementById('addatt-date-' + sid)?.value;
+            const dateTo   = document.getElementById('addatt-dateto-' + sid)?.value;
+            const status   = document.getElementById('addatt-status-' + sid)?.value || 'Present';
+            const note     = (document.getElementById('addatt-note-' + sid)?.value || '').trim();
+            if (!dateFrom) { showToast('Please select a date', true); return; }
+
+            // Build date list (single or range)
+            const dates = [];
+            if (dateTo && dateTo >= dateFrom) {
+                let cur = new Date(dateFrom + 'T00:00:00');
+                const end = new Date(dateTo + 'T00:00:00');
+                while (cur <= end) {
+                    const iso = cur.toISOString().slice(0, 10);
+                    const dow = cur.getDay();
+                    if (dow !== 0 && dow !== 6) dates.push(iso); // weekdays only
+                    cur.setDate(cur.getDate() + 1);
+                }
+            } else {
+                dates.push(dateFrom);
+            }
+            if (!dates.length) { showToast('No valid dates in range', true); return; }
+
+            const btn = document.querySelector(`#addatt-${sid} button`);
+            if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+            try {
+                await apiFetch(SAVE_ABSENT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        studentId: s.id, studentName: s.name, course: s.course,
+                        courseCode: s.courseCode || '', trainer: s.trainer, campus: s.campus,
+                        dates, reason: note || (status === 'Present' ? 'Manually marked present' : 'Manually marked absent'),
+                        markedBy: getMarkedBy(), status, note
+                    })
+                });
+                showToast(`${s.name.split(' ')[0]}: ${dates.length} day${dates.length > 1 ? 's' : ''} marked ${status.toLowerCase()}`);
+                toggleInlineAttendance(sid);
+                // Reset form
+                if (document.getElementById('addatt-note-' + sid)) document.getElementById('addatt-note-' + sid).value = '';
+                if (document.getElementById('addatt-dateto-' + sid)) document.getElementById('addatt-dateto-' + sid).value = '';
+                // Sync local state for today
+                const today = todayAEST();
+                if (dates.includes(today)) {
+                    syncNormalizedCheckin(s.id, s.campus, today, status);
+                    filterData();
+                }
+                absenceLogCache = null;
+            } catch { showToast('Failed to save — please try again', true); }
+            finally { if (btn) { btn.disabled = false; btn.textContent = 'Save'; } }
+        }
+
         async function quickMark(s, markPresent) {
             const today = todayAEST();
             const sid = String(s.id);
@@ -6986,7 +7164,7 @@
 
         async function migrateTrainer(from, to, courseCode) {
             try {
-                const resp = await apiFetch('/api/migrate-trainer', {
+                const resp = await apiFetch('/api/enroll?type=migrate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ from, to, courseCode })
@@ -7278,7 +7456,7 @@
             try {
                 const roster = window._dynamicRoster || [];
                 if (!roster.length) { console.warn('saveRosterBulk: roster empty, skipping'); return false; }
-                await apiFetch('/api/update-roster', {
+                await apiFetch('/api/enroll?type=bulk', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ roster })
@@ -7874,9 +8052,10 @@
             const shortCourse = course
                 ? course.replace(/^(Certificate (III|IV) in |Diploma of |Advanced Diploma of )/i,'')
                 : null;
-            // Find course code from allStudents
+            // Find course code from allStudents (handle combined co-trainer keys)
+            const _tGroup = trainer.includes(' / ') ? trainer.split(' / ') : getTrainerGroup(trainer);
             const courseCode = course
-                ? (allStudents.find(s => s.trainer === trainer && s.course === course)?.courseCode || '')
+                ? (allStudents.find(s => _tGroup.includes(s.trainer) && s.course === course)?.courseCode || '')
                 : '';
             const titleEl = document.getElementById('trainerDailyModalTitle');
             if (shortCourse) {
@@ -7925,7 +8104,9 @@
             const today = todayAEST();
             const schedDay = getScheduleDayForDate(today);
             const courseFilter = _trainerDailyModalCourse;
-            const trainerStudents = allStudents.filter(s => s.trainer === trainer && (!courseFilter || s.course === courseFilter));
+            // Support combined co-trainer keys like "Alessandro Tavian / Benjamin Akari"
+            const trainerGroup = trainer.includes(' / ') ? trainer.split(' / ') : getTrainerGroup(trainer);
+            const trainerStudents = allStudents.filter(s => trainerGroup.includes(s.trainer) && (!courseFilter || s.course === courseFilter));
             const scheduled = schedDay < 5
                 ? getStudentsScheduledOnDay(trainerStudents, schedDay)
                 : trainerStudents;
@@ -8199,7 +8380,7 @@
             btn.textContent = 'Uploading...';
             btn.disabled = true;
             try {
-                const resp = await apiFetch('/api/update-roster', {
+                const resp = await apiFetch('/api/enroll?type=bulk', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ roster: window._pendingRoster })
@@ -8211,7 +8392,7 @@
                     document.getElementById('rosterPreview').style.display = 'none';
                     document.getElementById('rosterCsvFilename').textContent = 'No file selected';
                     document.getElementById('rosterCsvInput').value = '';
-                    showToast(`Roster updated — ${result.count} students synced to database`);
+                    showToast(`Roster updated — ${result.updated} students synced to database`);
                 } else {
                     throw new Error(result.error || 'Upload failed');
                 }

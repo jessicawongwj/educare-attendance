@@ -16,6 +16,8 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
+  const normStatus = (status || '').toLowerCase(); // normalise: 'Present'/'Absent' → 'present'/'absent'
+
   try {
     const pool = await getPool();
     await ensureAdminCache(pool);
@@ -35,11 +37,11 @@ module.exports = async (req, res) => {
 
     for (const date of dates) {
       const existing = await pool.request()
-        .input('sid', sql.VarChar(20), studentId)
+        .input('sid', sql.VarChar(20), String(studentId))
         .input('date', sql.Date, date)
         .query('SELECT id FROM attendance WHERE studentId = @sid AND attendanceDate = @date');
 
-      if (status === 'absent') {
+      if (normStatus === 'absent') {
         if (existing.recordset.length > 0) {
           await pool.request()
             .input('sid', sql.VarChar(20), studentId)
@@ -49,8 +51,9 @@ module.exports = async (req, res) => {
         } else {
           results.push({ date, action: 'no-record' });
         }
-      } else if (status === 'present') {
-        const noteText = ['Manually marked present',
+      } else if (normStatus === 'present') {
+        const noteText = [
+          reason && reason !== 'Manually marked present' && reason !== 'Manually marked absent' ? reason : 'Manually marked present',
           markedBy ? `by ${markedBy}` : '',
           note ? `— ${note}` : ''
         ].filter(Boolean).join(' ');
