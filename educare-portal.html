@@ -3550,11 +3550,19 @@
             return normCampus(studentCampus) === normCampus(filterCampus);
         }
 
-        // Educare operates year-round with no scheduled school breaks
-        const SCHOOL_BREAKS = { '4week': [], '8week': [], 'none': [] };
+        // School break periods per 2026 Educare Academic Calendar — one global
+        // schedule applied to every course (mirrors api/_calendar.js SCHOOL_BREAKS).
+        const SCHOOL_BREAKS = {
+            'standard': [
+                { from: '2026-04-06', to: '2026-04-19' },
+                { from: '2026-06-29', to: '2026-07-12' },
+                { from: '2026-09-21', to: '2026-10-04' },
+                { from: '2026-12-21', to: '2027-01-03' }
+            ]
+        };
 
         function getCourseCalendarType(course) {
-            return 'none'; // Educare has no scheduled school breaks
+            return 'standard';
         }
 
         function isSchoolBreakWeek(weekMonday, calendarType) {

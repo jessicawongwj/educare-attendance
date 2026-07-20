@@ -72,9 +72,8 @@ module.exports = async (req, res) => {
         .input('today',     sql.Date, today)
         .query(`
           SELECT
-            e.trainer, e.course,
-            COUNT(DISTINCT e.studentId)             AS enrolled,
-            COUNT(DISTINCT a.studentId)             AS present
+            e.studentId, e.trainer, e.course, e.commenced,
+            COUNT(DISTINCT a.attendanceDate)        AS presentDays
           FROM enrollments e
           LEFT JOIN attendance a
             ON  a.studentId = e.studentId
@@ -82,11 +81,34 @@ module.exports = async (req, res) => {
             AND a.attendanceDate >= @startDate
             AND a.attendanceDate <= @today
           WHERE e.status = 'active'
-          GROUP BY e.trainer, e.course
+          GROUP BY e.studentId, e.trainer, e.course, e.commenced
           ORDER BY e.trainer, e.course
         `);
 
-      const rows = result.recordset;
+      // Memoize workingDaysInRange — many students share the same commenced date
+      const wdCache = {};
+      function wd(start, end) {
+        const k = start + '|' + end;
+        if (wdCache[k] === undefined) wdCache[k] = workingDaysInRange(start, end);
+        return wdCache[k];
+      }
+
+      // Aggregate per (trainer, course), using break/holiday-aware expected sessions
+      // (same flat 2-sessions-per-5-weekdays formula as api/summary.js's expectedDays)
+      const groups = {};
+      result.recordset.forEach(r => {
+        const key = `${r.trainer || ''}|||${r.course || ''}`;
+        if (!groups[key]) groups[key] = { trainer: r.trainer, course: r.course, enrolled: 0, present: 0, expected: 0 };
+        const g = groups[key];
+        g.enrolled++;
+        g.present += r.presentDays;
+        const commencedStr = r.commenced ? new Date(r.commenced).toISOString().slice(0, 10) : null;
+        const periodStart = commencedStr && commencedStr > startDate ? commencedStr : startDate;
+        if (periodStart <= today) g.expected += Math.round(wd(periodStart, today) * 2 / 5);
+      });
+      const rows = Object.values(groups).sort((a, b) =>
+        (a.trainer || '').localeCompare(b.trainer || '') || (a.course || '').localeCompare(b.course || ''));
+
       let html = `
         <div style="font-family:Segoe UI,Arial,sans-serif;max-width:800px;">
         <h2 style="color:#0a3352;margin-bottom:4px;">Educare — ${label} Attendance Report</h2>
@@ -99,11 +121,12 @@ module.exports = async (req, res) => {
             <th style="${TH_STYLE}">Trainer</th>
             <th style="${TH_STYLE}">Course</th>
             <th style="${TH_STYLE};text-align:center;">Enrolled</th>
-            <th style="${TH_STYLE};text-align:center;">Attended ≥1 day</th>
+            <th style="${TH_STYLE};text-align:center;">Present</th>
+            <th style="${TH_STYLE};text-align:center;">Expected</th>
             <th style="${TH_STYLE};text-align:center;">Rate</th>
           </tr></thead><tbody>`;
       rows.forEach((r, i) => {
-        const rate = pct(r.present, r.enrolled);
+        const rate = r.expected > 0 ? Math.min(100, pct(r.present, r.expected)) : 100;
         const rateColor = rate < 80 ? '#dc2626' : rate < 90 ? '#d97706' : '#16a34a';
         const bg = i % 2 ? '#fff' : '#f9fafb';
         html += `<tr style="background:${bg};">
@@ -111,6 +134,7 @@ module.exports = async (req, res) => {
           <td style="${TD_STYLE}">${r.course || '—'}</td>
           <td style="${TD_STYLE};text-align:center;">${r.enrolled}</td>
           <td style="${TD_STYLE};text-align:center;">${r.present}</td>
+          <td style="${TD_STYLE};text-align:center;">${r.expected}</td>
           <td style="${TD_STYLE};text-align:center;font-weight:700;color:${rateColor};">${rate}%</td>
         </tr>`;
       });

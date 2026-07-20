@@ -72,12 +72,13 @@ function buildPublicHolidays(year) {
 // 2027 dates are estimated from the typical QLD pattern — verify before year starts.
 const SCHOOL_BREAKS = {
   2026: [
-    ['2026-04-06', '2026-04-17'],
-    ['2026-06-29', '2026-07-10'],
-    ['2026-09-21', '2026-10-02'],
-    ['2026-12-21', '2026-12-31'],
+    ['2026-04-06', '2026-04-19'], // confirmed — 2026 Educare Academic Calendar
+    ['2026-06-29', '2026-07-12'], // confirmed
+    ['2026-09-21', '2026-10-04'], // confirmed
+    ['2026-12-21', '2026-12-31'], // confirmed (continues into 2027, see below)
   ],
   2027: [
+    ['2027-01-01', '2027-01-03'], // confirmed — year-end break continuation, resumes Mon 4 Jan 2027
     ['2027-04-02', '2027-04-16'], // ESTIMATED — confirm with QLD Education
     ['2027-06-28', '2027-07-09'], // ESTIMATED
     ['2027-09-20', '2027-10-01'], // ESTIMATED
