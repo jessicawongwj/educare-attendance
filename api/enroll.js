@@ -70,7 +70,6 @@ module.exports = async (req, res) => {
         } else {
           await pool.request()
             .input('sid',         sql.VarChar(20),  String(s.id))
-            .input('name',        sql.NVarChar(200), s.name || '')
             .input('course',      sql.NVarChar(300), s.course)
             .input('courseCode',  sql.VarChar(20),   s.courseCode || '')
             .input('trainer',     sql.NVarChar(200), s.trainer || '')
@@ -78,8 +77,8 @@ module.exports = async (req, res) => {
             .input('status',      sql.VarChar(20),   s.status || 'active')
             .input('commenced',   sql.Date,           s.commenced ? new Date(s.commenced) : new Date())
             .input('expectedEnd', sql.Date,           s.expectedEnd ? new Date(s.expectedEnd) : null)
-            .query(`INSERT INTO enrollments (studentId,studentName,course,courseCode,trainer,commenced,expectedEnd,status,isPrimary)
-                    VALUES (@sid,@name,@course,@courseCode,@trainer,@commenced,@expectedEnd,@status,1)`);
+            .query(`INSERT INTO enrollments (studentId,course,courseCode,trainer,commenced,expectedEnd,status,isPrimary)
+                    VALUES (@sid,@course,@courseCode,@trainer,@commenced,@expectedEnd,@status,1)`);
         }
         updated++;
       }
@@ -118,15 +117,14 @@ module.exports = async (req, res) => {
     } else {
       await pool.request()
         .input('studentId',   sql.VarChar(20),  studentId)
-        .input('name',        sql.NVarChar(200), name)
         .input('course',      sql.NVarChar(300), course)
         .input('courseCode',  sql.VarChar(20),   courseCode || '')
         .input('trainer',     sql.NVarChar(200), trainer || '')
         .input('commenced',   sql.Date,           commenced || new Date())
         .input('expectedEnd', sql.Date,           expectedEnd || null)
         .input('status',      sql.VarChar(20),    status || 'active')
-        .query(`INSERT INTO enrollments (studentId,studentName,course,courseCode,trainer,commenced,expectedEnd,status,isPrimary)
-                VALUES (@studentId,@name,@course,@courseCode,@trainer,@commenced,@expectedEnd,@status,1)`);
+        .query(`INSERT INTO enrollments (studentId,course,courseCode,trainer,commenced,expectedEnd,status,isPrimary)
+                VALUES (@studentId,@course,@courseCode,@trainer,@commenced,@expectedEnd,@status,1)`);
     }
 
     res.status(200).json({ ok: true });
