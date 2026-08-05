@@ -231,9 +231,9 @@
 
         /* Header */
         header {
-            background: var(--hero-gradient);
-            color: white;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.22);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border);
         }
 
         .header-top {
@@ -252,7 +252,7 @@
         }
 
         .header-nav {
-            border-top: 1px solid rgba(255,255,255,0.12);
+            border-top: 1px solid var(--border);
             padding: 0 2rem;
             max-width: 1600px;
             margin: 0 auto;
@@ -288,21 +288,21 @@
             cursor: pointer;
             border: none;
             background: transparent;
-            color: rgba(255,255,255,0.7);
+            color: var(--text-secondary);
             transition: all var(--transition);
             white-space: nowrap;
             border-bottom: 3px solid transparent;
         }
 
         .nav-tab:hover {
-            background: rgba(255,255,255,0.1);
-            color: white;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
         }
 
         .nav-tab.active {
-            background: rgba(255,255,255,0.12);
-            color: white;
-            border-bottom-color: white;
+            background: rgba(30,132,196,0.08);
+            color: var(--brand);
+            border-bottom-color: var(--brand);
         }
 
         /* Header right-side controls */
@@ -310,19 +310,19 @@
             display: flex;
             align-items: center;
             gap: 0.45rem;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.15);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
             border-radius: 20px;
             padding: 0.25rem 0.75rem 0.25rem 0.3rem;
             font-size: 0.78rem;
-            color: rgba(255,255,255,0.9);
+            color: var(--text-primary);
             font-weight: 500;
         }
         .header-avatar {
             width: 22px;
             height: 22px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.25);
+            background: var(--brand);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -342,15 +342,15 @@
             font-weight: 600;
             cursor: pointer;
             white-space: nowrap;
-            background: rgba(255,255,255,0.1);
-            border: 1.5px solid rgba(255,255,255,0.2);
-            color: rgba(255,255,255,0.92);
+            background: var(--bg-secondary);
+            border: 1.5px solid var(--border);
+            color: var(--text-secondary);
             transition: all var(--transition);
         }
         .header-action-btn:hover {
-            background: rgba(255,255,255,0.2);
-            border-color: rgba(255,255,255,0.45);
-            color: white;
+            background: rgba(30,132,196,0.08);
+            border-color: var(--brand);
+            color: var(--brand);
         }
         .header-signout-btn {
             display: inline-flex;
@@ -363,14 +363,14 @@
             font-weight: 600;
             cursor: pointer;
             background: transparent;
-            border: 1.5px solid rgba(255,255,255,0.12);
-            color: rgba(255,255,255,0.45);
+            border: 1.5px solid var(--border);
+            color: var(--text-secondary);
             transition: all var(--transition);
         }
         .header-signout-btn:hover {
-            background: rgba(239,68,68,0.18);
-            border-color: rgba(239,68,68,0.5);
-            color: #fca5a5;
+            background: rgba(239,68,68,0.1);
+            border-color: rgba(239,68,68,0.4);
+            color: #dc2626;
         }
 
         /* Campus tabs */
@@ -1112,7 +1112,9 @@
             --border: #2d3148;
             --shadow-card: 0 2px 8px rgba(0,0,0,0.3);
         }
-        body.dark-mode header { background: #0d0f1a; }
+        body.dark-mode header { background: var(--bg-primary); border-bottom-color: var(--border); }
+        /* Logo PNG has dark text baked in — give it a light chip only where the header itself is dark */
+        body.dark-mode .header-logo-img { background: #fff; border-radius: 8px; padding: 4px 8px; }
         body.dark-mode .login-box { background: #1e2130; color: #e8eaf0; }
         body.dark-mode table thead { background: #1a1d27; }
         body.dark-mode tbody tr:nth-child(even) { background: #1a1d27; }
@@ -1168,11 +1170,8 @@
             box-shadow: 0 2px 10px rgba(10,17,69,0.28);
         }
 
-        /* Nav tab active underline — soft warm white */
-        .nav-tab.active { border-bottom-color: rgba(255,255,255,0.9); }
-
-        /* Dark mode header keeps gradient */
-        body.dark-mode header { background: linear-gradient(to right, #04061A 0%, #070C33 30%, #3D1544 62%, #BB3A38 100%); }
+        /* Nav tab active underline — brand accent */
+        .nav-tab.active { border-bottom-color: var(--brand); }
 
         /* ── Card Polish ─────────────────────────────────────────────────────── */
 
@@ -1278,7 +1277,7 @@
         .campus-tab.active { box-shadow: 0 2px 8px rgba(26,26,75,0.25); }
 
         /* Nav tab active underline — brighter */
-        .nav-tab.active { background: rgba(255,255,255,0.15); }
+        .nav-tab.active { background: rgba(30,132,196,0.1); }
 
         /* Table row hover — subtle blue tint */
         tbody tr:hover { background: #f0f4ff !important; }
@@ -1315,8 +1314,8 @@
             font-weight: 700;
         }
 
-        /* Header — subtle bottom gradient fade */
-        header { box-shadow: 0 4px 20px rgba(0,0,0,0.18); }
+        /* Header — subtle lift instead of heavy shadow */
+        header { box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
 
         /* Rate bar — rounder, smoother */
         .period-rate-bar, .rate-bar-bg { border-radius: 99px; }
@@ -1388,13 +1387,11 @@
         <!-- Row 1: Logo + user controls -->
         <div class="header-top">
             <div style="display:flex;align-items:center;gap:0.75rem;">
-                <div style="display:flex;align-items:center;gap:0.75rem;">
-                    <div style="background:white;border-radius:8px;padding:5px 8px;display:flex;align-items:center;">
-                        <img src="logo.png" alt="Educare College" style="height:44px;width:auto;display:block;">
-                    </div>
+                <div style="display:flex;align-items:center;gap:0.7rem;">
+                    <img src="logo.png" alt="Educare College" class="header-logo-img" style="height:40px;width:auto;display:block;">
                     <div>
-                        <div style="font-size:1.15rem;font-weight:800;color:white;letter-spacing:-0.3px;">Educare College</div>
-                        <div style="font-size:0.72rem;color:rgba(255,255,255,0.72);font-weight:600;">Attendance Monitoring Portal</div>
+                        <div style="font-size:1.15rem;font-weight:800;color:var(--text-primary);letter-spacing:-0.3px;">Educare College</div>
+                        <div style="font-size:0.72rem;color:var(--text-secondary);font-weight:600;">Attendance Monitoring Portal</div>
                     </div>
                 </div>
             </div>
@@ -1402,7 +1399,7 @@
                 <div class="header-user-badge">
                     <div class="header-avatar" id="headerAvatar"></div>
                     <span id="headerUserName"></span>
-                    <span id="currentViewBadge" style="display:none;font-size:0.65rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(255,255,255,0.18);color:#fff;margin-left:5px;vertical-align:middle;letter-spacing:0.3px;"></span>
+                    <span id="currentViewBadge" style="display:none;font-size:0.65rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(30,132,196,0.12);color:var(--brand);margin-left:5px;vertical-align:middle;letter-spacing:0.3px;"></span>
                 </div>
                 <button id="switchViewBtn" onclick="switchRole()" class="header-action-btn" style="display:none;">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
