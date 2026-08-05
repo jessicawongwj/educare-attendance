@@ -8,7 +8,6 @@ const _map = {
   'toriqul.mozumder@educare.edu.au':  ['Toriqul Mozumder'],
   'vijeta@educare.edu.au':            ['Vijeta Srivastava'],
   'alessandro.tavian@educare.edu.au': ['Alessandro Tavian'],
-  'benjamin.akari@educare.edu.au':    ['Benjamin Akari'],
 };
 
 function trainersFromEmail(email) {

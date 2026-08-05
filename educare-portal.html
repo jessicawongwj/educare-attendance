@@ -3466,17 +3466,14 @@
             "Nati Belen||Southport GC":        {"t":"Nati Belen","c":"Southport GC","courses":{"CHC30121 Certificate III in Early Childhood Education and Care":[0,3],"CHC50121 Diploma of Early Childhood Education and Care":[0,3],"CHC50125 Diploma of Early Childhood Education and Care":[0,3]}},
             "Vijeta Srivastava||Southport GC": {"t":"Vijeta Srivastava","c":"Southport GC","courses":{"CHC43015 Certificate IV in Ageing Support":[0,1,2,3],"CHC43121 Certificate IV in Disability Support":[0,1,2,3],"CHC52025 Diploma of Community Services":[0,1,2,3]}},
             "Toriqul Mozumder||Southport GC":  {"t":"Toriqul Mozumder","c":"Southport GC","courses":{"CHC33021 Certificate III in Individual Support":[0,2]}},
-            "Alessandro Tavian||Woolloongabba":{"t":"Alessandro Tavian","c":"Woolloongabba","courses":{"CPC30220 Certificate III in Carpentry":[0,1,2,3,4],"CPC31320 Certificate III in Wall and Floor Tiling":[0,1,2,3,4],"CPC40120 Certificate IV in Building and Construction":[0,1,2,3,4]}},
-            "Benjamin Akari||Woolloongabba":   {"t":"Benjamin Akari","c":"Woolloongabba","courses":{"CPC30220 Certificate III in Carpentry":[0,1,2,3,4]}}
+            "Alessandro Tavian||Woolloongabba":{"t":"Alessandro Tavian","c":"Woolloongabba","courses":{"CPC30220 Certificate III in Carpentry":[0,1,2,3,4],"CPC31320 Certificate III in Wall and Floor Tiling":[0,1,2,3,4],"CPC40120 Certificate IV in Building and Construction":[0,1,2,3,4]}}
         };
 
         const TRAINER_SCHEDULE_DEFAULT = JSON.parse(JSON.stringify(TRAINER_SCHEDULE));
 
         // Co-trainer groups — trainers in the same array share the same student cohort.
         // Each trainer sees all students assigned to any member of their group.
-        const TRAINER_GROUPS = [
-            ['Alessandro Tavian', 'Benjamin Akari']  // Woolloongabba CPC co-trainers
-        ];
+        const TRAINER_GROUPS = [];
 
         function getTrainerGroup(trainerName) {
             return TRAINER_GROUPS.find(g => g.includes(trainerName)) || [trainerName];
@@ -3487,12 +3484,10 @@
             "Troy Scott":         "troy.scott@educare.edu.au",
             "Maggie Yu Huang":    "maggie@educare.edu.au",
             "Zeyun Ma":           "kylie.ma@niet.edu.au",
-            "Zeyun MA":           "kylie.ma@niet.edu.au",
             "Nati Belen":         "nati.belen@educare.edu.au",
             "Toriqul Mozumder":   "toriqul.mozumder@educare.edu.au",
             "Vijeta Srivastava":  "vijeta@educare.edu.au",
-            "Alessandro Tavian":  "alessandro.tavian@educare.edu.au",
-            "Benjamin Akari":     "benjamin.akari@educare.edu.au"
+            "Alessandro Tavian":  "alessandro.tavian@educare.edu.au"
         };
         const STUDENT_ROSTER = [];
 
