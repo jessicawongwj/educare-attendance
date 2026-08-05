@@ -5324,10 +5324,14 @@
                     });
                     delete trainerCourseMap[t];
                 });
-                // Deduplicate courses that share the same course code (e.g. "CPC30220 Carpentry" vs "CPC30220 Certificate III in Carpentry")
+                // Deduplicate courses that share the same course code (e.g. "CPC30220 Carpentry" vs "CPC30220 Certificate III in Carpentry").
+                // Use each student's actual courseCode field — NOT the first word of the course
+                // name, which previously collided (e.g. "Certificate III in Carpentry" and
+                // "Certificate IV in Building and Construction" both start with "Certificate",
+                // merging two different qualifications under one row).
                 const byCode = {};
                 Object.entries(raw).forEach(([name, studs]) => {
-                    const code = name.split(' ')[0];
+                    const code = studs[0]?.courseCode || name.split(' ')[0];
                     if (!byCode[code]) byCode[code] = { name, studs: [] };
                     else if (name.length > byCode[code].name.length) byCode[code].name = name; // keep longer/fuller name
                     studs.forEach(s => {
