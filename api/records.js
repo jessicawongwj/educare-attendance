@@ -99,10 +99,13 @@ module.exports = async (req, res) => {
     const request = pool.request();
     const studentId = req.query.student || req.query.studentId;
 
-    // When fetching a single student, return full history (no date cap)
+    // When fetching a single student, return full history (no date cap, no pagination —
+    // a student's own history is already bounded, ~30 rows for the largest student today)
+    const days = Math.min(365, Math.max(1, parseInt(req.query.days, 10) || 90));
     let where = studentId
       ? 'WHERE 1=1'
-      : 'WHERE attendanceDate >= DATEADD(day, -90, CAST(GETDATE() AS DATE))';
+      : 'WHERE attendanceDate >= DATEADD(day, -@days, CAST(GETDATE() AS DATE))';
+    if (!studentId) request.input('days', sql.Int, days);
 
     // Non-admin trainers: scope to own records only
     if (!adminUser && trainerNames.length > 0) {
@@ -118,12 +121,46 @@ module.exports = async (req, res) => {
       where += ' AND studentId = @sid';
     }
 
+    // Optional server-side filters — narrow in SQL instead of fetching everything
+    // and filtering in the browser. Admin-only for trainer (non-admins are already
+    // trainer-scoped above); campus/course/search are open to any caller.
+    if (adminUser && req.query.trainer) {
+      request.input('fTrainer', sql.NVarChar(200), req.query.trainer);
+      where += ' AND trainer = @fTrainer';
+    }
+    if (req.query.campus) {
+      request.input('fCampus', sql.NVarChar(100), req.query.campus);
+      where += ' AND campus = @fCampus';
+    }
+    if (req.query.course) {
+      request.input('fCourse', sql.NVarChar(300), req.query.course);
+      where += ' AND course = @fCourse';
+    }
+    if (req.query.q) {
+      request.input('fq', sql.NVarChar(200), `%${req.query.q}%`);
+      where += ' AND studentName LIKE @fq';
+    }
+
+    // Optional pagination — strictly opt-in. Omitting page/pageSize reproduces
+    // the exact previous (unpaginated, up-to-`days`-window) response, so existing
+    // callers that expect the full window are unaffected.
+    let pageClause = '';
+    if (req.query.page || req.query.pageSize) {
+      const pageSize = Math.min(500, Math.max(1, parseInt(req.query.pageSize, 10) || 100));
+      const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+      request.input('offset', sql.Int, (page - 1) * pageSize);
+      request.input('pageSize', sql.Int, pageSize);
+      pageClause = 'OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY';
+    }
+
     const result = await request.query(`
       SELECT id, studentId, studentName, course, courseCode, trainer, campus,
              checkinTime, checkoutTime, attendanceDate, notes
+             ${pageClause ? ', COUNT(*) OVER() AS totalCount' : ''}
       FROM attendance
       ${where}
       ORDER BY attendanceDate DESC, checkinTime DESC
+      ${pageClause}
     `);
     res.status(200).json(result.recordset);
   } catch (err) {

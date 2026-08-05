@@ -21,8 +21,9 @@ module.exports = async (req, res) => {
 
   const email = (user.mail || user.userPrincipalName || '').toLowerCase();
 
-  // Serve from cache if fresh (keyed per user so trainer scope is preserved)
-  const cacheKey = email;
+  // Serve from cache if fresh (keyed per user + filters so a filtered call
+  // can never be served stale unfiltered data, or vice versa)
+  const cacheKey = `${email}|${req.query.trainer || ''}|${req.query.campus || ''}|${req.query.course || ''}`;
   const cached = cacheGet(cacheKey);
   if (cached) return res.status(200).json(cached);
 
@@ -45,6 +46,21 @@ module.exports = async (req, res) => {
       return res.status(200).json([]);
     }
 
+    // Optional server-side narrowing (admin tooling / future paginated views).
+    // Additive only — omitting these params reproduces the exact previous response.
+    let extraWhere = '';
+    if (adminUser && req.query.trainer) {
+      request.input('fTrainer', sql.NVarChar(200), req.query.trainer);
+      extraWhere += ' AND COALESCE(e.trainer, s.trainer) = @fTrainer';
+    }
+    if (req.query.campus) {
+      request.input('fCampus', sql.NVarChar(100), req.query.campus);
+      extraWhere += ' AND s.campus = @fCampus';
+    }
+    if (req.query.course) {
+      request.input('fCourse', sql.NVarChar(300), req.query.course);
+      extraWhere += ' AND COALESCE(e.course, s.course) = @fCourse';
+    }
 
     const result = await request.query(`
       SELECT
@@ -64,7 +80,10 @@ module.exports = async (req, res) => {
         MAX(a.checkinTime)                     AS lastCheckin,
         MIN(a.attendanceDate)                  AS firstAttendanceDate
       FROM students s
-      LEFT JOIN enrollments e ON e.studentId = s.id
+      -- isPrimary = 1 keeps this a one-row-per-student join. Without it, a student
+      -- with two active enrollments (dual-enrolled) produced two summary rows —
+      -- confirmed live: 248 rows for 239 students before this fix.
+      LEFT JOIN enrollments e ON e.studentId = s.id AND e.isPrimary = 1
       LEFT JOIN (
         SELECT studentId, COUNT(*) AS enrollmentCount FROM enrollments GROUP BY studentId
       ) ec ON ec.studentId = s.id
@@ -72,7 +91,7 @@ module.exports = async (req, res) => {
         ON  a.studentId      = s.id
         AND a.course         = COALESCE(e.course, s.course)
         AND a.attendanceDate >= ISNULL(CAST(COALESCE(e.commenced, s.commenced) AS DATE), DATEADD(day, -365, CAST(GETDATE() AS DATE)))
-      WHERE s.withdrawn = 0 ${trainerWhere}
+      WHERE s.withdrawn = 0 ${trainerWhere} ${extraWhere}
       GROUP BY
         s.id, s.name,
         COALESCE(e.course,      s.course),
