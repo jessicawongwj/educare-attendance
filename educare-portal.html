@@ -7344,10 +7344,19 @@
             const campusColors = { 'Brisbane CBD': '#1E84C4', 'Southport GC': '#187C46', 'Woolloongabba': '#d97706' };
             const campus = _trainerCampusTab || 'Brisbane CBD';
             const color = campusColors[campus] || '#3b82f6';
-            // Build course code lookup from roster
+            // Course code lookup: TRAINER_SCHEDULE course keys embed the code as a
+            // prefix ("CHC33021 Certificate III in Individual Support"). Parse it
+            // directly rather than matching against roster.course, which is stored
+            // WITHOUT the code prefix (courseCode is a separate roster field) —
+            // that mismatch was why Code always rendered blank.
             const roster = window._dynamicRoster || [];
             const codeMap = {};
             roster.forEach(function(s) { if (s.course && s.courseCode) codeMap[s.course] = s.courseCode; });
+            function splitCourseKey(course) {
+                const m = course.match(/^([A-Z]{2,4}\d{4,6})\s+(.+)$/);
+                if (m) return { code: m[1], name: m[2] };
+                return { code: codeMap[course] || '', name: course };
+            }
             const parts = [];
             const entries = Object.values(TRAINER_SCHEDULE).filter(function(e) { return e.c === campus; });
             entries.sort(function(a, b) { return a.t.localeCompare(b.t); });
@@ -7371,8 +7380,8 @@
                 const rowBg = ei % 2 === 0 ? '' : 'background:#fafafa;';
                 courseKeys.forEach(function(course, ci) {
                     const days = courses[course];
-                    const code = codeMap[course] || '';
-                    const short = course.replace(/^(Certificate III in|Certificate IV in|Diploma of|Graduate Diploma of)\s+/i, '').substring(0, 40);
+                    const { code, name: courseName } = splitCourseKey(course);
+                    const short = courseName.replace(/^(Certificate III in|Certificate IV in|Diploma of|Graduate Diploma of)\s+/i, '').substring(0, 40);
                     const isFirst = ci === 0;
                     const isLast = ci === courseKeys.length - 1;
                     const borderStyle = isLast ? 'border-bottom:2px solid var(--border);' : 'border-bottom:1px solid #f3f4f6;';
@@ -7381,7 +7390,7 @@
                     if (isFirst) parts.push('<span style="font-weight:600;color:' + color + ';font-size:0.82rem;">' + entry.t + '</span>');
                     parts.push('</td>');
                     parts.push('<td style="padding:0.4rem 0.5rem;vertical-align:middle;font-size:0.75rem;white-space:nowrap;"><span style="background:#f3f4f6;color:var(--text-secondary);padding:0.1rem 0.4rem;border-radius:4px;font-weight:600;">' + code + '</span></td>');
-                    parts.push('<td style="padding:0.4rem 0.5rem;color:var(--text-secondary);vertical-align:middle;font-size:0.8rem;" title="' + course + '">' + short + '</td>');
+                    parts.push('<td style="padding:0.4rem 0.5rem;color:var(--text-secondary);vertical-align:middle;font-size:0.8rem;" title="' + courseName + '">' + short + '</td>');
                     DAY_ORDER.forEach(function(d) {
                         const checked = days.includes(d) ? ' checked' : '';
                         const disabled = _schedLocked ? ' disabled' : '';
