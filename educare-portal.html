@@ -3185,7 +3185,14 @@
             if (switchBtn && currentUser.dualRole) {
                 switchBtn.style.display = '';
                 switchLabel.textContent = isTrainer ? 'Switch to Admin' : 'Switch to My Class';
-                if (viewBadge) { viewBadge.style.display = ''; viewBadge.textContent = isTrainer ? 'Trainer View' : 'Admin View'; }
+                if (viewBadge) {
+                    viewBadge.style.display = '';
+                    viewBadge.style.cursor = 'help';
+                    viewBadge.textContent = isTrainer ? 'Trainer View' : 'Admin View';
+                    viewBadge.title = isTrainer
+                        ? "You have both admin and trainer access. You're currently viewing your own class only, the same as a regular trainer would. Click \"Switch to Admin\" to see all trainers' data and management functions again."
+                        : "You have both admin and trainer access. You're currently viewing everything — all trainers' data and management functions. Click \"Switch to My Class\" to preview the portal as your own trainer profile.";
+                }
             } else if (switchBtn) {
                 switchBtn.style.display = 'none';
                 if (viewBadge) viewBadge.style.display = 'none';
