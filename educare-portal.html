@@ -3515,7 +3515,7 @@
                 '2025-04-25','2025-05-05','2025-08-13','2025-10-27',
                 '2025-12-25','2025-12-26',
                 '2026-01-01','2026-01-26','2026-04-03','2026-04-04','2026-04-06',
-                '2026-04-25','2026-05-04','2026-08-12','2026-10-26',
+                '2026-04-25','2026-05-04','2026-08-12','2026-10-05',
                 '2026-12-25','2026-12-28'
             ])
         };
@@ -4228,7 +4228,17 @@
         function renderHolidays() {
             const container = document.getElementById('holidaysContent');
             if (!container) return;
+            try {
+                renderHolidaysInner(container);
+            } catch (e) {
+                console.error('renderHolidays failed:', e);
+                container.innerHTML = `<div style="padding:1.5rem;color:var(--danger);font-size:0.85rem;">
+                    Couldn't load holidays — please refresh. (${e.message})
+                </div>`;
+            }
+        }
 
+        function renderHolidaysInner(container) {
             const today = todayAEST();
 
             // Format date: "2026-04-03" → "Friday 3 April 2026"
@@ -4270,7 +4280,7 @@
                 '08-13': 'Royal Queensland Show',
                 '10-22': 'Royal Hobart Show',
                 '10-23': 'Royal Hobart Show',
-                '10-26': 'Labour Day (QLD)',
+                '10-05': "King's Birthday (QLD)",
                 '10-27': 'Labour Day (QLD)',
                 '12-25': 'Christmas Day',
                 '12-26': 'Boxing Day',
@@ -4312,13 +4322,13 @@
                 [...pastDates].reverse().forEach(iso => { phHtml += buildRow(iso); });
             }
 
-            // School breaks — Educare does not publish scheduled term breaks
+            // School breaks — per the 2026 Educare Academic Calendar (SCHOOL_BREAKS above)
             const breakTypes = [
-                { key: 'none', label: 'All Courses', desc: 'Educare operates year-round — no scheduled school breaks. Only QLD public holidays are excluded from attendance calculations.', colour: '#f0f4ff', text: '#1e40af' },
+                { key: 'standard', label: 'All Courses', desc: 'Scheduled breaks from the 2026 Educare Academic Calendar. Students are not expected and these are excluded from attendance calculations.', colour: '#f0f4ff', text: '#1e40af' },
             ];
 
             let breaksHtml = breakTypes.map(bt => {
-                const breaks = SCHOOL_BREAKS[bt.key];
+                const breaks = SCHOOL_BREAKS[bt.key] || [];
                 const breakRows = breaks.length === 0
                     ? `<div style="font-size:0.82rem;color:var(--text-secondary);padding:0.4rem 0;">Year-round — no scheduled school breaks</div>`
                     : breaks.map(b => {
@@ -4377,7 +4387,7 @@
                             <div style="font-size:0.92rem;font-weight:700;color:var(--text-primary);margin-bottom:0.1rem;">School Breaks</div>
                             <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:1rem;">Scheduled breaks by course type. Students are not expected during these periods and they are excluded from attendance rate calculations.</div>
                             ${breaksHtml}
-                            <div style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.5rem;">Based on the CB 2026 Academic Calendar. Update the <code style="font-size:0.72rem;background:#f3f4f6;padding:1px 4px;border-radius:3px;">SCHOOL_BREAKS</code> constant in the portal code for 2027.</div>
+                            <div style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.5rem;">Based on the 2026 Educare Academic Calendar. Update the <code style="font-size:0.72rem;background:#f3f4f6;padding:1px 4px;border-radius:3px;">SCHOOL_BREAKS</code> constant in the portal code for 2027.</div>
                         </div>
                     </div>
                 </div>`;

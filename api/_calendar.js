@@ -51,6 +51,10 @@ function buildPublicHolidays(year) {
 
   h.add(nthWeekday(year, 5, 1, 1));  // Labour Day QLD: 1st Monday in May
   h.add(nthWeekday(year, 8, 3, 2));  // Ekka: 2nd Wednesday in August (Brisbane)
+  h.add(nthWeekday(year, 10, 1, 1)); // King's Birthday QLD: 1st Monday in October
+
+  // Anzac Day — fixed 25 April, no QLD substitute when it falls on a weekend
+  h.add(`${year}-04-25`);
 
   // Christmas + Boxing Day with substitution
   const dow25 = new Date(Date.UTC(year, 11, 25)).getUTCDay();
