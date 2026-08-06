@@ -1,5 +1,21 @@
 const { getPool, sql } = require('./_db');
 const { validateToken, isAdminUser, ensureAdminCache } = require('./_auth');
+const { ensureAuditTable, writeAudit } = require('./_audit');
+
+// One student can only be enrolled once per course — verified against production
+// (zero duplicate studentId+course pairs) before adding this, Aug 2026.
+let enrollmentsUniqueEnsured = false;
+async function ensureEnrollmentsUnique(pool) {
+  if (enrollmentsUniqueEnsured) return;
+  await pool.request().query(`
+    IF NOT EXISTS (
+      SELECT 1 FROM sys.indexes
+      WHERE name = 'UQ_enrollments_student_course' AND object_id = OBJECT_ID('enrollments')
+    )
+    CREATE UNIQUE INDEX UQ_enrollments_student_course ON enrollments(studentId, course)
+  `);
+  enrollmentsUniqueEnsured = true;
+}
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).end();
@@ -8,6 +24,8 @@ module.exports = async (req, res) => {
   const email = (user.mail || user.userPrincipalName || '').toLowerCase();
   const pool = await getPool();
   await ensureAdminCache(pool);
+  await ensureAuditTable(pool);
+  await ensureEnrollmentsUnique(pool);
   if (!isAdminUser(email)) return res.status(403).json({ error: 'Admin only' });
 
   try {
@@ -89,46 +107,89 @@ module.exports = async (req, res) => {
     const { studentId, name, course, courseCode, trainer, campus, commenced, expectedEnd, status } = req.body;
     if (!studentId || !name || !course) return res.status(400).json({ error: 'Missing required fields' });
 
-    const studentCheck = await pool.request()
-      .input('id', sql.VarChar(20), studentId)
-      .query('SELECT id FROM students WHERE id = @id');
-    if (studentCheck.recordset.length === 0) {
-      await pool.request()
-        .input('id',      sql.VarChar(20),  studentId)
-        .input('name',    sql.NVarChar(200), name)
-        .input('campus',  sql.NVarChar(100), campus || '')
-        .query(`INSERT INTO students (id, name, campus, withdrawn) VALUES (@id, @name, @campus, 0)`);
-    }
+    const tx = new sql.Transaction(pool);
+    await tx.begin();
+    try {
+      const studentCheck = await tx.request()
+        .input('id', sql.VarChar(20), studentId)
+        .query('SELECT * FROM students WHERE id = @id');
 
-    const enrollCheck = await pool.request()
-      .input('studentId', sql.VarChar(20),  studentId)
-      .input('course',    sql.NVarChar(300), course)
-      .query('SELECT id FROM enrollments WHERE studentId = @studentId AND course = @course');
-    if (enrollCheck.recordset.length > 0) {
-      await pool.request()
-        .input('studentId',   sql.VarChar(20),  studentId)
-        .input('course',      sql.NVarChar(300), course)
-        .input('trainer',     sql.NVarChar(200), trainer || '')
-        .input('commenced',   sql.Date,           commenced || new Date())
-        .input('expectedEnd', sql.Date,           expectedEnd || null)
-        .input('status',      sql.VarChar(20),    status || 'active')
-        .query(`UPDATE enrollments SET trainer=@trainer, commenced=@commenced, expectedEnd=@expectedEnd, status=@status
-                WHERE studentId=@studentId AND course=@course`);
-    } else {
-      await pool.request()
-        .input('studentId',   sql.VarChar(20),  studentId)
-        .input('course',      sql.NVarChar(300), course)
-        .input('courseCode',  sql.VarChar(20),   courseCode || '')
-        .input('trainer',     sql.NVarChar(200), trainer || '')
-        .input('commenced',   sql.Date,           commenced || new Date())
-        .input('expectedEnd', sql.Date,           expectedEnd || null)
-        .input('status',      sql.VarChar(20),    status || 'active')
-        .query(`INSERT INTO enrollments (studentId,course,courseCode,trainer,commenced,expectedEnd,status,isPrimary)
-                VALUES (@studentId,@course,@courseCode,@trainer,@commenced,@expectedEnd,@status,1)`);
+      if (studentCheck.recordset.length === 0) {
+        const ins = await tx.request()
+          .input('id',      sql.VarChar(20),  studentId)
+          .input('name',    sql.NVarChar(200), name)
+          .input('campus',  sql.NVarChar(100), campus || '')
+          .query(`INSERT INTO students (id, name, campus, withdrawn) OUTPUT INSERTED.* VALUES (@id, @name, @campus, 0)`);
+        await writeAudit(tx, {
+          entityType: 'student', entityId: studentId, action: 'insert',
+          changedBy: email, before: null, after: ins.recordset[0],
+        });
+      } else {
+        // Student already exists — keep name/campus in sync (previously only
+        // enrollments were updated here; students.name/campus were frozen at
+        // first-sight forever, silently dropping any later edits).
+        const before = studentCheck.recordset[0];
+        const upd = await tx.request()
+          .input('id',     sql.VarChar(20),  studentId)
+          .input('name',   sql.NVarChar(200), name)
+          .input('campus', sql.NVarChar(100), campus || before.campus || '')
+          .query(`UPDATE students SET name=@name, campus=@campus OUTPUT INSERTED.* WHERE id=@id`);
+        await writeAudit(tx, {
+          entityType: 'student', entityId: studentId, action: 'update',
+          changedBy: email, before, after: upd.recordset[0],
+        });
+      }
+
+      const enrollCheck = await tx.request()
+        .input('studentId', sql.VarChar(20),  studentId)
+        .input('course',    sql.NVarChar(300), course)
+        .query('SELECT * FROM enrollments WHERE studentId = @studentId AND course = @course');
+
+      if (enrollCheck.recordset.length > 0) {
+        const before = enrollCheck.recordset[0];
+        const upd = await tx.request()
+          .input('studentId',   sql.VarChar(20),  studentId)
+          .input('course',      sql.NVarChar(300), course)
+          .input('trainer',     sql.NVarChar(200), trainer || '')
+          .input('commenced',   sql.Date,           commenced || new Date())
+          .input('expectedEnd', sql.Date,           expectedEnd || null)
+          .input('status',      sql.VarChar(20),    status || 'active')
+          .query(`UPDATE enrollments SET trainer=@trainer, commenced=@commenced, expectedEnd=@expectedEnd, status=@status
+                  OUTPUT INSERTED.* WHERE studentId=@studentId AND course=@course`);
+        await writeAudit(tx, {
+          entityType: 'enrollment', entityId: before.id, action: 'update',
+          changedBy: email, before, after: upd.recordset[0],
+        });
+      } else {
+        const ins = await tx.request()
+          .input('studentId',   sql.VarChar(20),  studentId)
+          .input('course',      sql.NVarChar(300), course)
+          .input('courseCode',  sql.VarChar(20),   courseCode || '')
+          .input('trainer',     sql.NVarChar(200), trainer || '')
+          .input('commenced',   sql.Date,           commenced || new Date())
+          .input('expectedEnd', sql.Date,           expectedEnd || null)
+          .input('status',      sql.VarChar(20),    status || 'active')
+          .query(`INSERT INTO enrollments (studentId,course,courseCode,trainer,commenced,expectedEnd,status,isPrimary)
+                  OUTPUT INSERTED.* VALUES (@studentId,@course,@courseCode,@trainer,@commenced,@expectedEnd,@status,1)`);
+        await writeAudit(tx, {
+          entityType: 'enrollment', entityId: ins.recordset[0].id, action: 'insert',
+          changedBy: email, before: null, after: ins.recordset[0],
+        });
+      }
+
+      await tx.commit();
+    } catch (txErr) {
+      try { await tx.rollback(); } catch (_) {}
+      throw txErr;
     }
 
     res.status(200).json({ ok: true });
   } catch (err) {
+    // Unique constraint violation on enrollments(studentId, course) — a concurrent
+    // request won the existence-check race. Not a server error; tell the caller to retry.
+    if (err.number === 2627 || err.number === 2601) {
+      return res.status(409).json({ error: 'Enrollment already exists — please retry' });
+    }
     console.error(err);
     res.status(500).json({ error: err.message || 'Server error' });
   }

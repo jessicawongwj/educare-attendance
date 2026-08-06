@@ -1,5 +1,6 @@
 const { getPool, sql } = require('./_db');
 const { validateToken, isAdminUser, ensureAdminCache } = require('./_auth');
+const { ensureAuditTable, writeAudit } = require('./_audit');
 
 module.exports = async (req, res) => {
   const user = await validateToken(req);
@@ -8,6 +9,7 @@ module.exports = async (req, res) => {
   try {
     const pool = await getPool();
     await ensureAdminCache(pool);
+    await ensureAuditTable(pool);
 
     if (req.method === 'GET') {
       const request = pool.request();
@@ -63,13 +65,42 @@ module.exports = async (req, res) => {
       if (!isAdminUser(email)) return res.status(403).json({ error: 'Admin only' });
       const { id, status } = req.body || {};
       if (!id || !status) return res.status(400).json({ error: 'Missing id or status' });
-      await pool.request()
-        .input('id',     sql.VarChar(20), id)
-        .input('status', sql.VarChar(20), status)
-        .query(`
-          UPDATE students SET status = @status WHERE id = @id;
-          UPDATE enrollments SET status = @status WHERE studentId = @id AND status = 'not-started';
-        `);
+
+      const tx = new sql.Transaction(pool);
+      await tx.begin();
+      try {
+        const beforeStudent = await tx.request()
+          .input('id', sql.VarChar(20), id).query('SELECT * FROM students WHERE id = @id');
+        const beforeEnr = await tx.request()
+          .input('id', sql.VarChar(20), id)
+          .query(`SELECT * FROM enrollments WHERE studentId = @id AND status = 'not-started'`);
+
+        const updStudent = await tx.request()
+          .input('id',     sql.VarChar(20), id)
+          .input('status', sql.VarChar(20), status)
+          .query('UPDATE students SET status = @status OUTPUT INSERTED.* WHERE id = @id');
+        const updEnr = await tx.request()
+          .input('id',     sql.VarChar(20), id)
+          .input('status', sql.VarChar(20), status)
+          .query(`UPDATE enrollments SET status = @status OUTPUT INSERTED.* WHERE studentId = @id AND status = 'not-started'`);
+
+        if (beforeStudent.recordset[0]) {
+          await writeAudit(tx, {
+            entityType: 'student', entityId: id, action: 'update',
+            changedBy: email, before: beforeStudent.recordset[0], after: updStudent.recordset[0],
+          });
+        }
+        for (let i = 0; i < beforeEnr.recordset.length; i++) {
+          await writeAudit(tx, {
+            entityType: 'enrollment', entityId: beforeEnr.recordset[i].id, action: 'update',
+            changedBy: email, before: beforeEnr.recordset[i], after: updEnr.recordset[i],
+          });
+        }
+        await tx.commit();
+      } catch (txErr) {
+        try { await tx.rollback(); } catch (_) {}
+        throw txErr;
+      }
       return res.status(200).json({ ok: true });
     }
 
