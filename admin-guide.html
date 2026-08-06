@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Educare — Admin Guide</title>
+<style>
+:root{
+  --brand:#1E84C4; --brand-dark:#0a3352; --brand-bg:#e8f4fd;
+  --success:#16a34a; --danger:#dc2626; --warning:#d97706;
+  --text:#111827; --text-2:#6b7280; --text-3:#9ca3af;
+  --border:#e5e7eb; --bg:#f3f4f6; --surface:#ffffff;
+  --radius:10px; --shadow:0 2px 10px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;}
+a{color:var(--brand);}
+
+.page-header{
+  background:linear-gradient(to right,#0d3d5e 0%,#1464a0 40%,#198c6c 72%,#3ab84a 100%);
+  color:#fff;padding:2.5rem 2rem 2rem;display:flex;align-items:center;gap:1.5rem;
+}
+.page-header-logo{background:#fff;border-radius:8px;padding:6px 10px;display:flex;align-items:center;}
+.page-header-logo img{height:48px;width:auto;display:block;}
+.page-header-text h1{font-size:1.8rem;font-weight:800;margin-bottom:.2rem;}
+.page-header-text p{opacity:.72;font-size:.9rem;}
+
+.doc-nav{
+  background:#fff;border-bottom:1px solid var(--border);
+  padding:.75rem 2rem;display:flex;gap:1.5rem;flex-wrap:wrap;
+  position:sticky;top:0;z-index:10;box-shadow:0 1px 4px rgba(0,0,0,.06);
+}
+.doc-nav a{font-size:.82rem;font-weight:600;color:var(--text-2);text-decoration:none;white-space:nowrap;}
+.doc-nav a:hover{color:var(--brand);}
+
+.page-body{max-width:900px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+
+.section{margin-bottom:3rem;}
+.section-title{
+  font-size:1.2rem;font-weight:800;color:var(--brand-dark);
+  padding-bottom:.5rem;border-bottom:2px solid var(--brand-bg);
+  margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem;
+}
+h3{font-size:.95rem;font-weight:700;color:var(--brand-dark);margin:1.25rem 0 .5rem;}
+p{margin-bottom:.75rem;font-size:.9rem;}
+ul,ol{padding-left:1.4rem;margin-bottom:.75rem;font-size:.9rem;}
+li{margin-bottom:.35rem;}
+
+.steps{counter-reset:step;list-style:none;padding:0;}
+.steps li{
+  counter-increment:step;display:flex;gap:.75rem;align-items:flex-start;
+  margin-bottom:.75rem;font-size:.9rem;
+}
+.steps li::before{
+  content:counter(step);min-width:26px;height:26px;border-radius:50%;
+  background:var(--brand);color:#fff;font-size:.75rem;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:.05rem;
+}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.4rem;margin-bottom:.85rem;box-shadow:var(--shadow);}
+.card-title{font-size:.88rem;font-weight:700;margin-bottom:.35rem;color:var(--brand-dark);}
+.card p{margin-bottom:0;font-size:.87rem;}
+
+.tip,.warn,.info,.danger{
+  border-radius:8px;padding:.75rem 1rem;margin-bottom:.75rem;font-size:.85rem;
+}
+.tip{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;}
+.warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e;}
+.info{background:var(--brand-bg);border:1px solid #bae6fd;color:#0c4a6e;}
+.danger{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;}
+.tip::before{content:"Tip: ";font-weight:700;}
+.warn::before{content:"Caution: ";font-weight:700;}
+.info::before{content:"Note: ";font-weight:700;}
+.danger::before{content:"Important: ";font-weight:700;}
+
+.tab-pill{
+  display:inline-block;background:var(--brand);color:#fff;
+  font-size:.72rem;font-weight:700;padding:.15rem .5rem;border-radius:4px;
+  vertical-align:middle;letter-spacing:.2px;
+}
+.tab-pill.grey{background:#6b7280;}
+.tab-pill.green{background:#16a34a;}
+.tab-pill.orange{background:#d97706;}
+.tab-pill.red{background:var(--danger);}
+
+table{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:.75rem;}
+th{background:var(--brand-dark);color:#fff;padding:.5rem .75rem;text-align:left;font-weight:600;}
+td{padding:.5rem .75rem;border-bottom:1px solid var(--border);vertical-align:top;}
+tr:hover td{background:#f9fafb;}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.75rem;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.85rem;margin-bottom:.75rem;}
+@media(max-width:640px){.two-col,.three-col{grid-template-columns:1fr;}.page-header{flex-direction:column;gap:1rem;}}
+
+footer{text-align:center;color:var(--text-3);font-size:.78rem;padding:2rem;border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-header-logo"><img src="logo.png" alt="Educare College"></div>
+  <div class="page-header-text">
+    <h1>Admin Guide</h1>
+    <p>Educare Attendance Governance Portal — Administrator Reference</p>
+  </div>
+</div>
+
+<nav class="doc-nav">
+  <a href="#access">Admin Access</a>
+  <a href="#dashboard">Dashboard</a>
+  <a href="#daily">Daily Roll</a>
+  <a href="#rate">Rate Check</a>
+  <a href="#myclass">My Class</a>
+  <a href="#notstarted">Not Started</a>
+  <a href="#students">Managing Students</a>
+  <a href="#withdraw">Withdraw</a>
+  <a href="#settings">Settings</a>
+  <a href="#emails">Email Reports</a>
+  <a href="#qr">QR Check-In</a>
+  <a href="#holidays">Holidays</a>
+  <a href="#export">Export &amp; Print</a>
+  <a href="#ref">Reference</a>
+</nav>
+
+<div class="page-body">
+
+  <!-- ADMIN ACCESS -->
+  <div class="section" id="access">
+    <div class="section-title">Admin Access</div>
+    <p>Admin accounts have access to all tabs, all trainers' data, and all management functions. Trainer accounts see only their own class. Access is controlled by Microsoft 365 login email.</p>
+
+    <h3>Adding a new admin</h3>
+    <ol class="steps">
+      <li>Go to <span class="tab-pill">Settings</span> → <span class="tab-pill grey">Admin Access</span> sub-tab.</li>
+      <li>Type the person's Microsoft 365 work email in the input field.</li>
+      <li>Click <strong>Add Admin</strong>. The email is written to the database immediately.</li>
+      <li>The person gains admin access on their next login — they don't need to log out and back in if already in the portal.</li>
+    </ol>
+
+    <h3>Removing an admin</h3>
+    <p>In the Admin Access sub-tab, find the email in the list and click <strong>Remove</strong>. The change takes effect on their next login.</p>
+
+    <div class="danger">Do not remove your own email from the admin list — you will lose access and will need a developer to restore it directly in the database.</div>
+    <div class="info">Trainer access is configured separately in the <a href="#settings-schedule">Trainer Schedule</a> — admins are a different list from trainers.</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="section" id="dashboard">
+    <div class="section-title">Dashboard</div>
+    <p>The <span class="tab-pill">Dashboard</span> tab is the top-level overview. Only admins can see it. It shows live attendance statistics grouped by campus and trainer.</p>
+
+    <h3>Campus tabs</h3>
+    <p>Tabs at the top of the dashboard filter by campus: <strong>316 Adelaide St (Brisbane CBD)</strong>, <strong>Gold Coast (Southport)</strong>, and <strong>Woolloongabba Studio</strong>. The default view shows all campuses.</p>
+
+    <h3>Trainer breakdown cards</h3>
+    <p>Each trainer with enrolled students gets a card showing their name, course(s), attendance rate, and student count. Cards are grouped per campus.</p>
+    <ul>
+      <li>A <span style="background:#dbeafe;color:#1e40af;font-size:.78rem;font-weight:700;padding:1px 6px;border-radius:4px;">TODAY</span> badge shows trainers who have a scheduled class today</li>
+      <li>Cards that are faded / greyed out indicate the trainer has no class scheduled for the selected day</li>
+      <li>Click the student count on a trainer card to open that trainer's student list</li>
+    </ul>
+
+    <h3>Dashboard periods</h3>
+    <p>Toggle between <strong>Today</strong>, <strong>This Week</strong>, and <strong>This Month</strong> to change the attendance figures shown across all cards.</p>
+
+    <h3>At-Risk students</h3>
+    <p>Students with an overall attendance rate below 80% are flagged <span style="background:#fef2f2;color:#dc2626;font-weight:700;padding:.15rem .45rem;border-radius:4px;font-size:.8rem;">At Risk</span>. The count is shown on each trainer card and in the campus summary bar.</p>
+
+    <div class="info">The Dashboard only shows <strong>active</strong> students. Withdrawn, completed, and not-started students are excluded from all counts.</div>
+  </div>
+
+  <!-- DAILY ATTENDANCE -->
+  <div class="section" id="daily">
+    <div class="section-title">Daily Attendance</div>
+    <p>The <span class="tab-pill">Daily Attendance</span> tab shows all QR check-ins across all trainers for a selected date.</p>
+
+    <h3>Filtering the roll</h3>
+    <ul>
+      <li><strong>Date picker</strong> — view any past date</li>
+      <li><strong>Campus tabs</strong> — filter by campus</li>
+      <li><strong>Trainer dropdown</strong> — narrow to one trainer's students</li>
+      <li><strong>Search box</strong> — find a student by name or ID</li>
+      <li><strong>Status filter</strong> — show Present, Absent, or All</li>
+    </ul>
+
+    <h3>Manually marking attendance</h3>
+    <p>Admins can mark any student present or absent for any date. See <a href="#students">Managing Students</a> for full steps.</p>
+
+    <h3>Bulk select</h3>
+    <p>Click <strong>Bulk Select</strong> to tick multiple students and mark them all present or absent at once — useful for days where most of a class attended but didn't scan.</p>
+  </div>
+
+  <!-- RATE CHECK -->
+  <div class="section" id="rate">
+    <div class="section-title">Rate Check</div>
+    <p>The <span class="tab-pill">Rate Check</span> tab shows attendance percentages for every student across all trainers. Admins can filter by campus, trainer, and status.</p>
+
+    <h3>Columns</h3>
+    <table>
+      <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Trainer</strong></td><td>Assigned trainer from the enrollment record</td></tr>
+        <tr><td><strong>Rate</strong></td><td>Overall attendance % from commencement date to today (academic calendar applied)</td></tr>
+        <tr><td><strong>Monthly</strong></td><td>Attendance % for the current calendar month</td></tr>
+        <tr><td><strong>Last Check-In</strong></td><td>Most recent attendance date on record</td></tr>
+        <tr><td><strong>Commenced</strong></td><td>Course start date used as the denominator baseline</td></tr>
+        <tr><td><strong>Expected End</strong></td><td>Course end date from enrollment</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Filtering</h3>
+    <ul>
+      <li><strong>Campus filter</strong> — view one campus at a time</li>
+      <li><strong>Trainer filter</strong> — narrow to a specific trainer</li>
+      <li><strong>Status filter</strong> — At Risk only (&lt;80%), Good Standing, or All</li>
+    </ul>
+
+    <h3>Print Class List</h3>
+    <p>Click <strong>Print Class List</strong> at the top of Rate Check to generate a printable register grouped by trainer  course, with columns: #, Name, Student ID, Campus, Commenced, Signature. Use the trainer dropdown first to scope the printout to one trainer if needed.</p>
+
+    <div class="tip">Click any student's name to open their full attendance history — all check-in dates from commencement are shown.</div>
+  </div>
+
+  <!-- MY CLASS -->
+  <div class="section" id="myclass">
+    <div class="section-title">My Class</div>
+    <p>The <span class="tab-pill">My Class</span> tab shows enrolled students grouped by course. Admins see all students and can use the trainer filter to view one trainer at a time.</p>
+
+    <h3>Course filter pills</h3>
+    <p>Pills at the top represent each course (showing the course code). Click a pill to filter to that course only. Useful when a trainer runs multiple courses with the same short name.</p>
+
+    <h3>Sub-tabs</h3>
+    <ul>
+      <li><strong>Not Checked In</strong> — active students who haven't scanned today</li>
+      <li><strong>Tentative</strong> — newly enrolled students who have never attended</li>
+    </ul>
+
+    <h3>+ Attendance button (inline attendance entry)</h3>
+    <p>Every student row has a green <strong>+ Attendance</strong> button below the Remove button. Trainers and admins can use this to record attendance without opening any modal:</p>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Single date</div>
+        <p>Pick any date (defaults to today), set status to Present or Absent, add an optional note, and click Save. The record writes to the database immediately.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Date range</div>
+        <p>Fill both the <strong>Date</strong> and <strong>To</strong> fields to mark a whole range in one save. Weekends are automatically excluded — only weekday records are created.</p>
+      </div>
+    </div>
+    <p><strong>Quick-note chips</strong> appear below the note field for common reasons: <em>Placement, Medical Certificate, Personal, Absent — No Contact, Late Arrival</em>. Click a chip to pre-fill the note field.</p>
+    <div class="tip">Placement weeks are best recorded with the date range + "Placement" note — one click marks the full week with a clear audit trail.</div>
+    <div class="info">All records saved via + Attendance appear in the student's attendance history, Rate Check, and all exports exactly as if the student had scanned the QR code.</div>
+  </div>
+
+  <!-- NOT STARTED -->
+  <div class="section" id="notstarted">
+    <div class="section-title">Not Started Tab</div>
+    <p>The <span class="tab-pill">Not Started</span> tab is admin-only. It shows students whose enrollment status is <code>not-started</code> — enrolled but not yet commenced.</p>
+
+    <h3>Tentative students</h3>
+    <p>Students who have been added to the roster but have never attended appear in the Tentative sub-tab. Once they scan the QR code for the first time, they automatically become <code>active</code> and move into the daily roll.</p>
+
+    <h3>Manually activating a student</h3>
+    <ol class="steps">
+      <li>Go to <span class="tab-pill">Not Started</span> → <strong>Tentative</strong> sub-tab.</li>
+      <li>Find the student and click <strong>Mark Active</strong>.</li>
+      <li>Their status changes to <code>active</code> and they immediately appear in the daily roll.</li>
+    </ol>
+
+    <div class="tip">Use Mark Active when a student has physically commenced but hasn't had a chance to scan the QR code yet — for example, students in a first session where the QR wasn't available.</div>
+  </div>
+
+  <!-- MANAGING STUDENTS -->
+  <div class="section" id="students">
+    <div class="section-title">Managing Students</div>
+
+    <h3>Enroll a single student</h3>
+    <ol class="steps">
+      <li>Click the <strong>+ Enroll Student</strong> button (top of any student list view).</li>
+      <li>Fill in: Student ID, Full Name, Course, Course Code, Trainer, Campus, Commencement Date, Expected End Date.</li>
+      <li>Click <strong>Save</strong>. The student appears in the roster immediately.</li>
+    </ol>
+    <div class="warn">The Student ID must match exactly what's in your TMS (e.g. Axcelerate). If the ID already exists in the system with the same course, the enrollment is updated rather than duplicated.</div>
+
+    <h3>Bulk enroll from CSV (Roster Upload)</h3>
+    <ol class="steps">
+      <li>Go to <span class="tab-pill">Settings</span> → <span class="tab-pill grey">Roster</span> sub-tab.</li>
+      <li>Prepare a CSV with columns: <code>id, name, course, courseCode, trainer, campus, commenced, expectedEnd, status</code>.</li>
+      <li>Click <strong>Choose File</strong>, select your CSV, then click <strong>Upload Roster</strong>.</li>
+      <li>A preview shows the records to be imported. Click <strong>Confirm Import</strong>.</li>
+      <li>All students are upserted — existing enrollments are updated, new ones are inserted.</li>
+    </ol>
+
+    <h3>Update a student's start date</h3>
+    <ol class="steps">
+      <li>Click the student's name to open their history modal.</li>
+      <li>Click <strong>Edit Start Date</strong>.</li>
+      <li>Enter the correct commencement date and save. The attendance rate recalculates immediately.</li>
+    </ol>
+
+    <h3>Reassign a student to a different trainer</h3>
+    <p>Go to <span class="tab-pill">Settings</span> → <span class="tab-pill grey">Trainer Schedule</span> → use the <strong>Reassign Trainer</strong> section. Select the current trainer, the new trainer, and optionally a specific course code. All matching enrollments and attendance records are updated.</p>
+
+    <h3>Enrollment status values</h3>
+    <table>
+      <thead><tr><th>Status</th><th>Meaning</th><th>Visible in roll?</th></tr></thead>
+      <tbody>
+        <tr><td><code>active</code></td><td>Currently attending</td><td>Yes — daily roll, Rate Check, My Class</td></tr>
+        <tr><td><code>not-started</code></td><td>Enrolled but not yet commenced</td><td>Not Started tab only</td></tr>
+        <tr><td><code>inactive</code></td><td>Removed (not my student / transferred)</td><td>No</td></tr>
+        <tr><td><code>completed</code></td><td>Course successfully completed</td><td>No</td></tr>
+        <tr><td><code>withdrawn</code></td><td>Formally withdrawn from the course</td><td>No</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- WITHDRAW -->
+  <div class="section" id="withdraw">
+    <div class="section-title">Withdrawing a Student</div>
+    <p>Withdrawing removes a student from the active roll. All attendance history is preserved — no records are deleted.</p>
+
+    <h3>How to withdraw a student</h3>
+    <ol class="steps">
+      <li>Click the student's name anywhere in the portal to open their history modal.</li>
+      <li>Click <strong>Withdraw Student</strong> or <strong>Change Status</strong>.</li>
+      <li>Select a reason from the dropdown:</li>
+    </ol>
+
+    <table>
+      <thead><tr><th>Reason</th><th>Resulting status</th><th>When to use</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Withdrawn</strong></td><td><code>inactive</code> + withdrawn flag</td><td>Student formally withdrew from the course</td></tr>
+        <tr><td><strong>Completed</strong></td><td><code>completed</code></td><td>Student successfully finished the course</td></tr>
+        <tr><td><strong>Not My Student</strong></td><td><code>inactive</code></td><td>Student was added to the wrong trainer / course</td></tr>
+        <tr><td><strong>Not Started</strong></td><td><code>not-started</code></td><td>Move back to Tentative (e.g. deferred start)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="danger">Withdrawal is reversible only by a developer. If you need to reactivate a withdrawn student, contact IT.</div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="section" id="settings">
+    <div class="section-title">Settings Tab</div>
+    <p>The <span class="tab-pill">Settings</span> tab is admin-only and contains five sub-tabs. All changes write to the database immediately.</p>
+
+    <div class="three-col">
+      <div class="card">
+        <div class="card-title">Trainer Schedule</div>
+        <p>View and edit the trainer-to-campus-to-course-to-day mapping. Used to determine which trainers have class on which days and to power the Dashboard cards.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Email Reports</div>
+        <p>Configure report recipients and manually trigger fortnightly, monthly, or absence alert emails.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">QR Code</div>
+        <p>View, download, and print the QR code for each campus check-in page.</p>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Roster</div>
+        <p>Upload a CSV to bulk-enroll or update students. Also use this to view and manage the current enrollment list.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Admin Access</div>
+        <p>Add or remove admin email addresses. Changes take effect on the user's next login.</p>
+      </div>
+    </div>
+
+    <h3 id="settings-schedule">Trainer Schedule sub-tab</h3>
+    <p>The Trainer Schedule maps each trainer to their campus, their courses, and which days of the week they run each course (Mon=0 through Fri=4). This is what the Dashboard uses to show the TODAY badge and grey out cards when a trainer has no class.</p>
+    <p>To modify the schedule, edit the table in the Settings  Trainer Schedule view and click <strong>Save Schedule</strong>. Changes are written to the database and take effect immediately for all users.</p>
+    <div class="warn">If a trainer's name in the Trainer Schedule doesn't exactly match their name in the student enrollment records, their students won't be linked to their dashboard card. Names must match exactly (including capitalisation).</div>
+  </div>
+
+  <!-- EMAIL REPORTS -->
+  <div class="section" id="emails">
+    <div class="section-title">Email Reports</div>
+    <p>Three automated reports are sent from the Educare shared mailbox to configured recipients.</p>
+
+    <table>
+      <thead><tr><th>Report type</th><th>Content</th><th>Auto-sends</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Fortnightly</strong></td>
+          <td>Attendance % per trainer for the last 14 days, with at-risk student list</td>
+          <td>1st and 15th of each month at 8 am AEST</td>
+        </tr>
+        <tr>
+          <td><strong>Monthly</strong></td>
+          <td>Attendance % per trainer for the current calendar month</td>
+          <td>1st of each month at 8 am AEST</td>
+        </tr>
+        <tr>
+          <td><strong>Absence Alert</strong></td>
+          <td>Students with no attendance recorded in the last 14 days</td>
+          <td>1st and 15th of each month at 8 am AEST</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Manually trigger a report</h3>
+    <ol class="steps">
+      <li>Go to <span class="tab-pill">Settings</span> → <span class="tab-pill grey">Email Reports</span>.</li>
+      <li>Click the button for the report type you need (<strong>Send Fortnightly</strong>, <strong>Send Monthly</strong>, or <strong>Send Absence Alert</strong>).</li>
+      <li>The report generates and emails all configured recipients within a minute.</li>
+    </ol>
+
+    <h3>Update report recipients</h3>
+    <ol class="steps">
+      <li>Go to <span class="tab-pill">Settings</span> → <span class="tab-pill grey">Email Reports</span>.</li>
+      <li>Edit the recipient email list (one per line or comma-separated).</li>
+      <li>Click <strong>Save Recipients</strong>.</li>
+    </ol>
+
+    <div class="info">Colour coding in email reports: <span style="color:#16a34a;font-weight:700;">green ≥ 90%</span>, <span style="color:#d97706;font-weight:700;">amber 80–89%</span>, <span style="color:#dc2626;font-weight:700;">red &lt; 80%</span>.</div>
+  </div>
+
+  <!-- QR CHECK-IN -->
+  <div class="section" id="qr">
+    <div class="section-title">QR Code Check-In</div>
+    <p>Students check in by scanning the QR code poster displayed at each campus entrance. No app download is required — the QR code opens a browser page.</p>
+
+    <h3>How students check in</h3>
+    <ol class="steps">
+      <li>Student scans the QR code with their phone camera.</li>
+      <li>A browser page opens (the Educare check-in page). No login needed.</li>
+      <li>Student enters their Student ID, selects their trainer and course from the dropdowns.</li>
+      <li>Ticks the attendance declaration and taps <strong>Check In</strong>.</li>
+      <li>Their GPS location is verified to confirm they are at the campus.</li>
+      <li>A confirmation screen is shown. The record appears in the admin portal immediately.</li>
+    </ol>
+
+    <h3>Printing and displaying the QR code</h3>
+    <ol class="steps">
+      <li>Go to <span class="tab-pill">Settings</span> → <span class="tab-pill grey">QR Code</span>.</li>
+      <li>Click <strong>Download</strong> to save as a PNG image, or <strong>Print</strong> to send directly to a printer.</li>
+      <li>Print A4 or larger, laminate, and display at each campus entrance.</li>
+    </ol>
+
+    <div class="tip">The same QR code works for all campuses — campus is determined by the student's GPS location at check-in time.</div>
+    <div class="warn">If a student scans from outside the campus geofence (e.g. from home or a car park), check-in is blocked. They must be manually marked present by their trainer or admin.</div>
+  </div>
+
+  <!-- HOLIDAYS -->
+  <div class="section" id="holidays">
+    <div class="section-title">Holidays</div>
+    <p>The <span class="tab-pill">Holidays</span> tab shows Queensland public holidays and Educare's scheduled school breaks for the year, visible to both trainers and admins. It's read-only reference — there's no edit UI on this tab.</p>
+
+    <h3>What's shown</h3>
+    <ul>
+      <li><strong>Public Holidays</strong> — every Queensland public holiday, split into Upcoming and Past, with the next one highlighted at the top of the tab</li>
+      <li><strong>School Breaks</strong> — the term-break periods from the Educare Academic Calendar (Easter, mid-year, spring, year-end), with the current break flagged NOW if one is in progress</li>
+    </ul>
+    <p>Both lists feed directly into attendance rate calculations — public holidays and school-break days are excluded from every student's expected-sessions denominator, in the portal and in the automated email reports.</p>
+
+    <h3>Updating for a new year</h3>
+    <p>These dates are not editable from Settings — they're defined in the portal's code (<code>PUBLIC_HOLIDAYS</code> and <code>SCHOOL_BREAKS</code> in <code>educare-portal.html</code>, and the equivalent calendar logic in <code>api/_calendar.js</code> used by the dashboard and email reports). A developer needs to update both places and redeploy at the start of each academic year, once the next year's Educare Academic Calendar and the QLD public holiday list are confirmed.</p>
+
+    <div class="warn">If the Holidays tab and a student's attendance rate ever disagree about whether a date counts as a holiday, it means the two data sources have drifted — flag it to a developer rather than adjusting either by hand.</div>
+  </div>
+
+  <!-- EXPORT & PRINT -->
+  <div class="section" id="export">
+    <div class="section-title">Export &amp; Print</div>
+
+    <table>
+      <thead><tr><th>Button</th><th>Where to find it</th><th>What it exports</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Export CSV</strong></td><td>Daily Attendance tab</td><td>All check-ins for the selected date and trainer filter</td></tr>
+        <tr><td><strong>Export Dashboard CSV</strong></td><td>Dashboard</td><td>Attendance rates for all trainers and campuses</td></tr>
+        <tr><td><strong>Export All Classes CSV</strong></td><td>Rate Check tab</td><td>Rates for all students across all trainers</td></tr>
+        <tr><td><strong>Export My Class CSV</strong></td><td>My Class tab</td><td>Full enrolled student list with commencement dates</td></tr>
+        <tr><td><strong>Export Campus List CSV</strong></td><td>Dashboard campus view</td><td>Student list for the selected campus</td></tr>
+        <tr><td><strong>Export History CSV</strong></td><td>Student history modal</td><td>One student's complete check-in history</td></tr>
+        <tr><td><strong>Print Class List</strong></td><td>Rate Check tab</td><td>Printable register with signature column, grouped by trainer  course</td></tr>
+        <tr><td><strong>Print Check-In Poster</strong></td><td>QR Code settings</td><td>Full-page QR code poster for printing</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info">All CSV files use UTF-8 encoding and open correctly in Microsoft Excel and Google Sheets.</div>
+  </div>
+
+  <!-- REFERENCE -->
+  <div class="section" id="ref">
+    <div class="section-title">Quick Reference</div>
+
+    <h3>Tab visibility by role</h3>
+    <table>
+      <thead><tr><th>Tab</th><th>Trainer</th><th>Admin</th></tr></thead>
+      <tbody>
+        <tr><td>Daily Attendance</td><td>Yes — own class only</td><td>Yes — all trainers</td></tr>
+        <tr><td>Dashboard</td><td>—</td><td>Yes</td></tr>
+        <tr><td>Rate Check</td><td>Yes — own class only</td><td>Yes — all trainers, all campuses</td></tr>
+        <tr><td>My Class</td><td>Yes</td><td>Yes — with trainer filter</td></tr>
+        <tr><td>Not Started</td><td>—</td><td>Yes</td></tr>
+        <tr><td>Settings</td><td>—</td><td>Yes</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Attendance rate formula</h3>
+    <p><strong>Rate = sessions attended ÷ expected sessions × 100</strong></p>
+    <p>Expected sessions are calculated from the student's commencement date to today. The academic calendar excludes weekends, Queensland public holidays, and school-term breaks. All calculation is from commencement date — there is no rolling window cap.</p>
+
+    <h3>Campuses</h3>
+    <table>
+      <thead><tr><th>Campus name in system</th><th>Display label</th></tr></thead>
+      <tbody>
+        <tr><td>Brisbane CBD</td><td>316 Adelaide St</td></tr>
+        <tr><td>Southport GC</td><td>Gold Coast</td></tr>
+        <tr><td>Woolloongabba</td><td>Woolloongabba Studio</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Common issues</h3>
+    <table>
+      <thead><tr><th>Issue</th><th>Likely cause &amp; fix</th></tr></thead>
+      <tbody>
+        <tr><td>Trainer can't log in — Access Denied</td><td>Their email isn't mapped to a trainer account. Add it in Settings  Trainer Schedule, or check the trainer email list in the code.</td></tr>
+        <tr><td>Student missing from portal</td><td>Not enrolled. Add via the Enroll Student button or CSV upload.</td></tr>
+        <tr><td>Attendance rate looks wrong</td><td>Check the student's commencement date. An incorrect start date will throw off the denominator. Edit via the history modal  Edit Start Date.</td></tr>
+        <tr><td>Trainer's students showing under wrong campus</td><td>Students were imported with the wrong campus field. Update via CSV roster upload or contact IT to update the database directly.</td></tr>
+        <tr><td>Email reports not arriving</td><td>Check spam folder. Confirm recipient email in Settings  Email Reports. Verify the sending mailbox is active in Microsoft 365.</td></tr>
+        <tr><td>QR check-in blocked at campus</td><td>Student is outside the GPS geofence. They need to be physically at the campus building. GPS must be enabled on their phone. Manually mark them if needed.</td></tr>
+        <tr><td>Changes to trainer list or campus</td><td>Requires a developer — trainer-to-campus-to-course mapping is in the code configuration (TRAINER_SCHEDULE). Contact IT.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<footer>Educare Attendance Portal — Admin Guide &nbsp;·&nbsp; Last updated August 2026</footer>
+
+</body>
+</html>

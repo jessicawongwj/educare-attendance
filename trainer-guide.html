@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Educare — Trainer Guide</title>
+<style>
+:root{
+  --brand:#1E84C4; --brand-dark:#0a3352; --brand-bg:#e8f4fd;
+  --success:#16a34a; --danger:#dc2626; --warning:#d97706;
+  --text:#111827; --text-2:#6b7280; --text-3:#9ca3af;
+  --border:#e5e7eb; --bg:#f3f4f6; --surface:#ffffff;
+  --radius:10px; --shadow:0 2px 10px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;}
+a{color:var(--brand);}
+
+.page-header{
+  background:linear-gradient(to right,#0d3d5e 0%,#1464a0 40%,#198c6c 72%,#3ab84a 100%);
+  color:#fff;padding:2.5rem 2rem 2rem;display:flex;align-items:center;gap:1.5rem;
+}
+.page-header-logo{background:#fff;border-radius:8px;padding:6px 10px;display:flex;align-items:center;}
+.page-header-logo img{height:48px;width:auto;display:block;}
+.page-header-text h1{font-size:1.8rem;font-weight:800;margin-bottom:.2rem;}
+.page-header-text p{opacity:.72;font-size:.9rem;}
+
+.doc-nav{
+  background:#fff;border-bottom:1px solid var(--border);
+  padding:.75rem 2rem;display:flex;gap:1.5rem;flex-wrap:wrap;
+  position:sticky;top:0;z-index:10;box-shadow:0 1px 4px rgba(0,0,0,.06);
+}
+.doc-nav a{font-size:.82rem;font-weight:600;color:var(--text-2);text-decoration:none;white-space:nowrap;}
+.doc-nav a:hover{color:var(--brand);}
+
+.page-body{max-width:860px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+
+.section{margin-bottom:3rem;}
+.section-title{
+  font-size:1.2rem;font-weight:800;color:var(--brand-dark);
+  padding-bottom:.5rem;border-bottom:2px solid var(--brand-bg);
+  margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem;
+}
+h3{font-size:.95rem;font-weight:700;color:var(--brand-dark);margin:1.25rem 0 .5rem;}
+p{margin-bottom:.75rem;font-size:.9rem;}
+ul,ol{padding-left:1.4rem;margin-bottom:.75rem;font-size:.9rem;}
+li{margin-bottom:.35rem;}
+
+.steps{counter-reset:step;list-style:none;padding:0;}
+.steps li{
+  counter-increment:step;display:flex;gap:.75rem;align-items:flex-start;
+  margin-bottom:.75rem;font-size:.9rem;
+}
+.steps li::before{
+  content:counter(step);min-width:26px;height:26px;border-radius:50%;
+  background:var(--brand);color:#fff;font-size:.75rem;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:.05rem;
+}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.4rem;margin-bottom:.85rem;box-shadow:var(--shadow);}
+.card-title{font-size:.88rem;font-weight:700;margin-bottom:.35rem;color:var(--brand-dark);}
+.card p{margin-bottom:0;font-size:.87rem;}
+
+.tip,.warn,.info,.danger{
+  border-radius:8px;padding:.75rem 1rem;margin-bottom:.75rem;font-size:.85rem;
+}
+.tip{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;}
+.warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e;}
+.info{background:var(--brand-bg);border:1px solid #bae6fd;color:#0c4a6e;}
+.danger{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;}
+.tip::before{content:"Tip: ";font-weight:700;}
+.warn::before{content:"Caution: ";font-weight:700;}
+.info::before{content:"Note: ";font-weight:700;}
+.danger::before{content:"Important: ";font-weight:700;}
+
+.tab-pill{
+  display:inline-block;background:var(--brand);color:#fff;
+  font-size:.72rem;font-weight:700;padding:.15rem .5rem;border-radius:4px;
+  vertical-align:middle;letter-spacing:.2px;
+}
+.tab-pill.grey{background:#6b7280;}
+.tab-pill.green{background:#16a34a;}
+.tab-pill.orange{background:#d97706;}
+.tab-pill.red{background:var(--danger);}
+
+table{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:.75rem;}
+th{background:var(--brand-dark);color:#fff;padding:.5rem .75rem;text-align:left;font-weight:600;}
+td{padding:.5rem .75rem;border-bottom:1px solid var(--border);vertical-align:top;}
+tr:hover td{background:#f9fafb;}
+
+kbd{display:inline-block;background:#f4f4f5;border:1px solid #d1d5db;border-radius:4px;padding:.1rem .4rem;font-size:.8rem;font-family:monospace;}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.75rem;}
+@media(max-width:600px){.two-col{grid-template-columns:1fr;}.page-header{flex-direction:column;gap:1rem;}}
+
+footer{text-align:center;color:var(--text-3);font-size:.78rem;padding:2rem;border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-header-logo"><img src="logo.png" alt="Educare College"></div>
+  <div class="page-header-text">
+    <h1>Trainer Guide</h1>
+    <p>Educare Attendance Governance Portal — Quick Reference for Trainers</p>
+  </div>
+</div>
+
+<nav class="doc-nav">
+  <a href="#login">Logging In</a>
+  <a href="#daily">Daily Roll</a>
+  <a href="#myclass">My Class</a>
+  <a href="#mark">Marking Attendance</a>
+  <a href="#rate">Rate Check</a>
+  <a href="#history">Student History</a>
+  <a href="#holidays">Holidays</a>
+  <a href="#export">Export &amp; Print</a>
+  <a href="#email">Email Roll</a>
+  <a href="#tips">Tips &amp; FAQ</a>
+</nav>
+
+<div class="page-body">
+
+  <!-- LOGIN -->
+  <div class="section" id="login">
+    <div class="section-title">Logging In</div>
+    <ol class="steps">
+      <li>Open your browser and go to <strong>attendance.educare.edu.au</strong>.</li>
+      <li>Click <strong>Sign in with Microsoft</strong>.</li>
+      <li>Enter your Educare work email (e.g. <code>name@educare.edu.au</code>) and Microsoft password.</li>
+      <li>The portal automatically loads your class based on your login email.</li>
+    </ol>
+    <div class="tip">You stay logged in while you're using the portal. After a period of inactivity you'll be signed out — just sign in again.</div>
+    <div class="info">If you see <strong>Access Denied</strong> after signing in, your email hasn't been linked to a trainer account yet. Contact your admin.</div>
+    <div class="warn">Always use your <strong>Educare work email</strong> (@educare.edu.au), not a personal address. Personal emails will be denied access.</div>
+  </div>
+
+  <!-- DAILY ATTENDANCE -->
+  <div class="section" id="daily">
+    <div class="section-title">Daily Attendance Tab</div>
+    <p>The <span class="tab-pill">Daily Attendance</span> tab shows every student who has checked in via the QR code for the selected date. This is your real-time roll.</p>
+
+    <h3>What you'll see</h3>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Checked In list</div>
+        <p>Students who scanned the QR code today, with their check-in time, check-out time (if scanned), course, and campus.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Not Checked In list</div>
+        <p>Your enrolled active students who haven't scanned yet today. Use this to quickly spot who's missing and manually mark them.</p>
+      </div>
+    </div>
+
+    <h3>Changing the date</h3>
+    <p>Use the date picker at the top of the tab to view any past date's roll. The portal defaults to today (Brisbane time).</p>
+
+    <h3>Searching &amp; filtering</h3>
+    <ul>
+      <li><strong>Search box</strong> — type a name or Student ID to filter instantly</li>
+      <li><strong>Status filter</strong> — show only Present, Absent, or All</li>
+    </ul>
+
+    <div class="warn">The daily roll only shows QR check-ins. Students who attended but didn't scan must be manually marked — see <a href="#mark">Marking Attendance</a>.</div>
+  </div>
+
+  <!-- MY CLASS -->
+  <div class="section" id="myclass">
+    <div class="section-title">My Class Tab</div>
+    <p>The <span class="tab-pill">My Class</span> tab shows all students enrolled in your class, organised by course. It is automatically filtered to your trainer name.</p>
+
+    <h3>Course filter pills</h3>
+    <p>If you teach more than one course, coloured pills appear at the top — one per course (showing the course code and short name). Click a pill to view only that course's students. Click <strong>All Courses</strong> to see everyone.</p>
+
+    <h3>Sub-tabs</h3>
+    <table>
+      <thead><tr><th>Sub-tab</th><th>Who appears here</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Not Checked In</strong></td>
+          <td>Active students who haven't scanned today, including students who have attended before but not yet today</td>
+        </tr>
+        <tr>
+          <td><strong>Tentative</strong></td>
+          <td>Newly enrolled students who have <em>never</em> attended. They move to Not Checked In automatically once they scan for the first time.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Actions from My Class</h3>
+    <ul>
+      <li>Click a student's name to open their full <a href="#history">attendance history</a></li>
+      <li>Click <strong>Mark</strong> next to a student to quickly record their attendance for today</li>
+      <li>Use <strong>Export CSV</strong> to download your full class list</li>
+    </ul>
+
+    <div class="tip">My Class is the best place to take roll if students haven't scanned — you can mark everyone present or absent quickly without switching views.</div>
+  </div>
+
+  <!-- MARKING ATTENDANCE -->
+  <div class="section" id="mark">
+    <div class="section-title">Marking Attendance Manually</div>
+    <p>Manual marking is used when a student attended but forgot to scan, or when you need to correct an error.</p>
+
+    <h3>Mark a student present (single day)</h3>
+    <ol class="steps">
+      <li>Go to <span class="tab-pill">My Class</span> or <span class="tab-pill">Daily Attendance</span> and find the student in the <strong>Not Checked In</strong> list.</li>
+      <li>Click <strong>Mark</strong> next to their name.</li>
+      <li>Select <strong>Present</strong>, optionally adjust the check-in time, add a note if needed.</li>
+      <li>Click <strong>Save</strong>. The student moves to the Checked In list immediately.</li>
+    </ol>
+
+    <h3>Mark a student absent (remove an incorrect check-in)</h3>
+    <ol class="steps">
+      <li>Find the student in the <strong>Checked In</strong> list.</li>
+      <li>Click their name or the <strong>Mark Absent</strong> button.</li>
+      <li>Confirm, then click <strong>Save</strong>. The record is removed.</li>
+    </ol>
+
+    <h3>Mark attendance for multiple past dates</h3>
+    <ol class="steps">
+      <li>Click the student's name anywhere in the portal to open their history modal.</li>
+      <li>Click <strong>Mark Attendance</strong> inside the modal.</li>
+      <li>Select one or more dates, choose <strong>Present</strong> or <strong>Absent</strong>, add a note.</li>
+      <li>Click <strong>Save</strong>.</li>
+    </ol>
+
+    <h3>Add attendance directly from My Class (+ Attendance button)</h3>
+    <p>Each student row in <span class="tab-pill">My Class</span> has a green <strong>+ Attendance</strong> button below the Remove button. This opens an inline form without leaving the page:</p>
+    <ul>
+      <li><strong>Date</strong> — single date (defaults to today)</li>
+      <li><strong>To (range, optional)</strong> — fill a second date to mark a whole range at once; weekends are automatically skipped</li>
+      <li><strong>Status</strong> — Present or Absent</li>
+      <li><strong>Note</strong> — free text, or click a quick-note chip: <em>Placement, Medical Certificate, Personal, Absent — No Contact, Late Arrival</em></li>
+    </ul>
+    <p>Click <strong>Save</strong> to write directly to the database. A confirmation toast appears and the form closes. Click <strong>Cancel</strong> to dismiss without saving.</p>
+
+    <div class="tip">Use the date range + note for batch entries — e.g. mark a student present for an entire week's placement in one step.</div>
+    <div class="info">Manual present records include a note showing who marked them and when, so the audit trail is always clear.</div>
+    <div class="warn">Marking <strong>Absent</strong> permanently removes the attendance record for that date. This cannot be undone from the portal — contact your admin if you need to restore a record.</div>
+  </div>
+
+  <!-- RATE CHECK -->
+  <div class="section" id="rate">
+    <div class="section-title">Rate Check Tab</div>
+    <p>The <span class="tab-pill">Rate Check</span> tab shows each student's attendance percentage, calculated from their course commencement date using the academic calendar (weekends, public holidays, and school breaks excluded).</p>
+
+    <h3>Columns explained</h3>
+    <table>
+      <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Rate</strong></td><td>Overall attendance % from commencement date to today</td></tr>
+        <tr><td><strong>Monthly</strong></td><td>Attendance % for the current calendar month only</td></tr>
+        <tr><td><strong>Last Check-In</strong></td><td>Most recent date the student scanned or was marked present</td></tr>
+        <tr><td><strong>Commenced</strong></td><td>Course start date — rate is calculated from here</td></tr>
+        <tr><td><strong>Expected End</strong></td><td>Course end date from their enrollment record</td></tr>
+      </tbody>
+    </table>
+
+    <h3>At-Risk students</h3>
+    <p>Students with a rate below <strong>80%</strong> are flagged <span style="background:#fef2f2;color:#dc2626;font-weight:700;padding:.15rem .45rem;border-radius:4px;font-size:.8rem;">At Risk</span>. These students should be contacted and supported to improve attendance.</p>
+
+    <h3>Filtering</h3>
+    <ul>
+      <li><strong>Status filter</strong> — show All, At Risk only, or Good Standing only</li>
+      <li><strong>Search box</strong> — search by name or student ID</li>
+    </ul>
+
+    <h3>Print Class List</h3>
+    <p>Click <strong>Print Class List</strong> at the top of the Rate Check tab to generate a printable sign-in sheet grouped by course, including columns for Student ID, Campus, Commenced date, and a Signature field. Use this for paper roll-calls or compliance audits.</p>
+
+    <div class="tip">Click any student's name in Rate Check to open their full attendance history and see exactly which days they attended.</div>
+  </div>
+
+  <!-- STUDENT HISTORY -->
+  <div class="section" id="history">
+    <div class="section-title">Student Attendance History</div>
+    <p>Click any student's name from any tab to open their history modal.</p>
+
+    <h3>What the history modal shows</h3>
+    <ul>
+      <li>Course name, commencement date, and expected end date</li>
+      <li>Overall attendance rate</li>
+      <li>All check-in dates shown as date pills — scroll to see the full history</li>
+      <li>Most recent dates appear at the top</li>
+    </ul>
+
+    <h3>Actions from the history modal</h3>
+    <ul>
+      <li><strong>Mark Attendance</strong> — add or remove records for specific dates</li>
+      <li><strong>Export CSV</strong> — download this student's full attendance history as a spreadsheet</li>
+      <li><strong>Add Note</strong> — attach a note to the student's record (visible to admins and trainers)</li>
+    </ul>
+
+    <div class="tip">The history shows records from the student's commencement date with no time limit — all historical check-ins are visible.</div>
+  </div>
+
+  <!-- HOLIDAYS -->
+  <div class="section" id="holidays">
+    <div class="section-title">Holidays Tab</div>
+    <p>The <span class="tab-pill">Holidays</span> tab is a read-only reference showing every date students aren't expected to attend — Queensland public holidays and Educare's scheduled school breaks.</p>
+
+    <h3>Public Holidays</h3>
+    <p>Lists every Queensland public holiday for the year, split into <strong>Upcoming</strong> and <strong>Past</strong>. The next holiday is also highlighted at the top of the tab. These dates are excluded automatically from every attendance rate calculation — you don't need to do anything for them.</p>
+
+    <h3>School Breaks</h3>
+    <p>Lists the scheduled term-break periods from the Educare Academic Calendar (Easter, mid-year, spring, and year-end breaks). A break that's currently in progress is marked <strong>NOW</strong>. Students aren't expected during these periods and the days are excluded from attendance rate calculations, the same as public holidays.</p>
+
+    <div class="info">This tab is informational only — there's nothing to mark or edit here. If a date looks wrong, contact your admin.</div>
+  </div>
+
+  <!-- EXPORT & PRINT -->
+  <div class="section" id="export">
+    <div class="section-title">Export &amp; Print</div>
+
+    <h3>Export options</h3>
+    <table>
+      <thead><tr><th>Button</th><th>Where to find it</th><th>What it exports</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Export CSV</strong></td><td>Daily Attendance tab</td><td>Today's check-ins for your class</td></tr>
+        <tr><td><strong>Export My Class CSV</strong></td><td>My Class tab</td><td>Your full enrolled student list</td></tr>
+        <tr><td><strong>Export History CSV</strong></td><td>Student history modal</td><td>One student's complete check-in history</td></tr>
+        <tr><td><strong>Print Class List</strong></td><td>Rate Check tab</td><td>Printable sign-in sheet with signature column</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info">All CSV exports open in Excel or Google Sheets. Dates are in YYYY-MM-DD format.</div>
+  </div>
+
+  <!-- EMAIL ROLL -->
+  <div class="section" id="email">
+    <div class="section-title">Emailing Today's Roll</div>
+    <p>You can email yourself a copy of today's attendance roll at any time.</p>
+    <ol class="steps">
+      <li>Go to the <span class="tab-pill">Daily Attendance</span> tab.</li>
+      <li>Make sure the date and trainer filter are set to your class.</li>
+      <li>Click the <strong>Email Roll</strong> button (envelope icon in the toolbar).</li>
+      <li>The roll is sent to your Educare email address.</li>
+    </ol>
+    <div class="info">The email arrives from the Educare shared mailbox within a minute. Check your spam folder if it doesn't appear.</div>
+  </div>
+
+  <!-- TIPS & FAQ -->
+  <div class="section" id="tips">
+    <div class="section-title">Tips &amp; Common Questions</div>
+
+    <h3>A student says they scanned but isn't showing up</h3>
+    <p>Ask them to check that they entered their Student ID exactly as it appears in their enrolment letter (no spaces, correct capitalisation). The system only records check-ins for IDs that exist in the roster. If the ID is correct, manually mark them present and notify your admin so the ID can be verified.</p>
+
+    <h3>The portal is showing the wrong class</h3>
+    <p>The portal matches your class by your login email. If you're seeing another trainer's class, contact your admin — your email may be mapped to the wrong trainer account.</p>
+
+    <h3>A student is enrolled but not appearing in My Class</h3>
+    <p>The student may have a different campus assigned in their enrollment record. Contact your admin to verify their campus and trainer assignment.</p>
+
+    <h3>I can see students from another trainer</h3>
+    <p>If you have admin access you'll see all trainers. Use the trainer filter dropdown to narrow to your class, or ask your admin to remove your admin access if it's not needed.</p>
+
+    <h3>The attendance rate looks wrong for a student</h3>
+    <p>The rate is calculated from the student's commencement date using the academic calendar. If their commenced date is wrong in the system, the rate will be incorrect — contact your admin to fix the enrollment record.</p>
+
+    <h3>Keyboard shortcuts</h3>
+    <table>
+      <thead><tr><th>Key</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td><kbd>Esc</kbd></td><td>Close any open modal or popup</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Need help?</h3>
+    <p>Use the <strong>Can't log in? Notify IT</strong> link on the login page, or contact your admin directly.</p>
+  </div>
+
+</div>
+
+<footer>Educare Attendance Portal — Trainer Guide &nbsp;·&nbsp; Last updated August 2026</footer>
+
+</body>
+</html>
