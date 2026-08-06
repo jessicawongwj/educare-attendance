@@ -12,11 +12,6 @@ const CREATE_TABLE = `
 `;
 
 module.exports = async (req, res) => {
-  // TEMPORARY — secret-gated read-only diagnostic, removed after this check.
-  if (req.headers['x-migration-secret'] && req.headers['x-migration-secret'] === process.env.MIGRATION_SECRET) {
-    return require('./_migrate_tmp')(req, res);
-  }
-
   const key = req.query.key;
   if (!key) return res.status(400).json({ error: 'Missing key' });
 
