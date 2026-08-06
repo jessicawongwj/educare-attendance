@@ -47,6 +47,33 @@ module.exports = async (req, res) => {
       return res.status(200).json(out);
     }
 
+    if (step === 'apply') {
+      const { ensureAuditTable } = require('./_audit');
+      await ensureAuditTable(pool);
+      await pool.request().query(`
+        IF EXISTS (
+          SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_NAME = 'attendance' AND COLUMN_NAME = 'notes' AND CHARACTER_MAXIMUM_LENGTH = 500
+        )
+        ALTER TABLE attendance ALTER COLUMN notes NVARCHAR(MAX) NULL
+      `);
+      await pool.request().query(`
+        IF NOT EXISTS (
+          SELECT 1 FROM sys.indexes
+          WHERE name = 'UQ_enrollments_student_course' AND object_id = OBJECT_ID('enrollments')
+        )
+        CREATE UNIQUE INDEX UQ_enrollments_student_course ON enrollments(studentId, course)
+      `);
+      const check = await pool.request().query(`
+        SELECT
+          (SELECT CHARACTER_MAXIMUM_LENGTH FROM INFORMATION_SCHEMA.COLUMNS
+           WHERE TABLE_NAME='attendance' AND COLUMN_NAME='notes') AS notesLen,
+          (SELECT COUNT(*) FROM sys.indexes WHERE name='UQ_enrollments_student_course') AS hasUniqueIdx,
+          (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='audit_log') AS hasAuditTable
+      `);
+      return res.status(200).json({ ok: true, verify: check.recordset[0] });
+    }
+
     return res.status(400).json({ error: 'Unknown step: ' + step });
   } catch (err) {
     return res.status(500).json({ error: err.message, stack: err.stack });
