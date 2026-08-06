@@ -4400,6 +4400,11 @@
             const search = (document.getElementById('myClassSearch')?.value || '').toLowerCase();
             const today = todayAEST();
             const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }) : '—';
+            const pendingBadge = s => s._pending
+                ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:0.68rem;font-weight:600;color:var(--text-secondary);margin-left:6px;vertical-align:middle;">
+                     <span class="login-spinner" style="display:inline-block;width:9px;height:9px;border-width:1.5px;"></span>Saving…
+                   </span>`
+                : '';
             const rateSource = liveRatesCache || {};
 
             // Trainer's full roster (active + upcoming)
@@ -4596,7 +4601,7 @@
                 display.sort((a, b) => (a.commenced || '').localeCompare(b.commenced || ''));
                 tbody.innerHTML = display.map(s => `<tr style="opacity:0.85;">
                     <td><span class="student-id">${s.id}</span></td>
-                    <td><span class="student-name" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})'>${s.name}</span></td>
+                    <td><span class="student-name" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})'>${s.name}</span>${pendingBadge(s)}</td>
                     <td><span style="font-size:0.7rem;font-weight:700;color:var(--text-secondary);display:block;">${s.courseCode||''}</span>${s.course}</td>
                     <td style="font-size:0.8rem;color:#d97706;font-weight:600;">${fmtDate(s.commenced)}</td>
                     <td style="font-size:0.8rem;color:var(--text-secondary);">${s.expectedEnd ? fmtDate(s.expectedEnd) : '—'}</td>
@@ -4613,7 +4618,7 @@
                 tbody.innerHTML = display.map(s => `<tr>
                     <td><span class="student-id">${s.id}</span></td>
                     <td>
-                        <span class="student-name" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})'>${s.name}</span>
+                        <span class="student-name" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})'>${s.name}</span>${pendingBadge(s)}
                     </td>
                     <td><span style="font-size:0.7rem;font-weight:700;color:var(--text-secondary);display:block;">${s.courseCode||''}</span>${s.course}</td>
                     <td style="font-size:0.8rem;">${fmtDate(s.commenced)}</td>
@@ -5016,7 +5021,9 @@
             }
             const trainerStudents = roster.filter(s => s.trainer === trainerName);
             const campus = trainerStudents[0]?.campus || '';
-            const newStudent = { id, name, course, courseCode: '', trainer: trainerName, campus, commenced: start, expectedEnd: expectedEnd || null };
+            // _pending marks the row as not-yet-confirmed-saved — cleared (or the row
+            // rolled back) once the actual /api/enroll write below resolves.
+            const newStudent = { id, name, course, courseCode: '', trainer: trainerName, campus, commenced: start, expectedEnd: expectedEnd || null, _pending: true };
             const prevRoster = [...roster];
             const updatedRoster = [...roster, newStudent];
             window._dynamicRoster = updatedRoster;
@@ -5030,7 +5037,10 @@
             closeAddClassStudentModal();
             renderMyClass();
             const ok = await saveSingleStudent(newStudent);
-            if (!ok) {
+            if (ok) {
+                delete newStudent._pending;
+                renderMyClass();
+            } else {
                 window._dynamicRoster = prevRoster;
                 allStudents      = allStudents.filter(s => String(s.id) !== String(id));
                 upcomingStudents = upcomingStudents.filter(s => String(s.id) !== String(id));
