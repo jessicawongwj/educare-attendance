@@ -32,7 +32,7 @@ module.exports = async (req, res) => {
     const result = await request.query(`
       SELECT
         a.id, a.studentId, a.studentName, a.course, a.courseCode, a.trainer, a.campus,
-        a.checkinTime, a.checkoutTime, a.attendanceDate
+        a.checkinTime, a.checkoutTime, a.attendanceDate, a.checkinLat, a.checkinLng
       FROM attendance a
       WHERE a.attendanceDate = @date ${trainerWhere}
       ORDER BY a.checkinTime DESC

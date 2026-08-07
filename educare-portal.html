@@ -3514,6 +3514,51 @@
         }
         const PLACEMENT_BADGE_HTML = `<span style="display:inline-block;margin-left:4px;font-size:0.65rem;font-weight:700;color:var(--brand);background:rgba(30,132,196,0.12);border:1px solid rgba(30,132,196,0.35);border-radius:4px;padding:1px 5px;vertical-align:middle;">Placement</span>`;
 
+        // ── SUSPICIOUS CHECK-IN DETECTION ───────────────────────
+        // Mirrors checkin.html's own geofence definitions — a real QR check-in
+        // is client-blocked outside these radii, so a stored record with GPS
+        // that doesn't match any of them got there some other way.
+        const CAMPUS_GEOFENCES = [
+            { name: "Brisbane CBD — 316 Adelaide St", lat: -27.46509, lng: 153.02871, radius: 0.15 },
+            { name: "Brisbane CBD — 102 Adelaide St", lat: -27.46835, lng: 153.02490, radius: 0.15 },
+            { name: "Southport GC",                   lat: -27.97258, lng: 153.41584, radius: 0.15 },
+            { name: "Woolloongabba Studio",           lat: -27.49135, lng: 153.04249, radius: 0.15 },
+        ];
+        function haversineKm(lat1, lon1, lat2, lon2) {
+            const R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+        const SUSPICIOUS_HOUR_START = 6;  // before 6am Brisbane time
+        const SUSPICIOUS_HOUR_END   = 20; // after 8pm Brisbane time
+        // Returns an array of human-readable reasons, or [] if nothing looks off.
+        // checkInISO/lat/lng come from the attendance record; manual marks with no
+        // GPS (checkinLat/Lng null) are only checked for the time-based rules,
+        // never flagged for "no GPS" — that's the expected shape of a manual mark.
+        function getCheckinFlags(checkInISO, lat, lng) {
+            if (!checkInISO) return [];
+            const t = new Date(checkInISO);
+            if (isNaN(t.getTime())) return [];
+            const flags = [];
+
+            if (t.getTime() > Date.now() + 60000) { // 1-min grace for clock skew
+                flags.push('Check-in time is in the future');
+            }
+
+            const hour = parseInt(t.toLocaleString('en-AU', { timeZone: 'Australia/Brisbane', hour: 'numeric', hour12: false }), 10);
+            if (hour < SUSPICIOUS_HOUR_START || hour >= SUSPICIOUS_HOUR_END) {
+                const timeStr = t.toLocaleTimeString('en-AU', { timeZone: 'Australia/Brisbane', hour: '2-digit', minute: '2-digit' });
+                flags.push(`Checked in at an unusual hour (${timeStr})`);
+            }
+
+            if (lat != null && lng != null) {
+                const onCampus = CAMPUS_GEOFENCES.some(c => haversineKm(lat, lng, c.lat, c.lng) <= c.radius);
+                if (!onCampus) flags.push('GPS location does not match any campus');
+            }
+            return flags;
+        }
+        const SUSPICIOUS_BADGE_HTML = reasons => `<span style="display:inline-block;margin-left:4px;font-size:0.65rem;font-weight:700;color:var(--danger);background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.4);border-radius:4px;padding:1px 5px;vertical-align:middle;cursor:help;" title="${reasons.join(' · ').replace(/"/g,'&quot;')}">Suspicious</span>`;
+
         let _schedLocked = true;
         let TRAINER_SCHEDULE = {
             "Troy Scott||Brisbane CBD":        {"t":"Troy Scott","c":"Brisbane CBD","courses":{"CHC33021 Certificate III in Individual Support":[0,1,2,3],"CHC52021 Diploma of Community Services":[0,1,2,3],"CHC52025 Diploma of Community Services":[0,1,2,3]}},
@@ -3816,7 +3861,8 @@
                         CheckIn: r.checkinTime || r.CheckIn || null,
                         CheckOut: r.checkoutTime || r.CheckOut || null,
                         Status: 'present',
-                        ID: r.id || 0
+                        ID: r.id || 0,
+                        Lat: r.checkinLat, Lng: r.checkinLng
                     }));
                     _rawRates = {};
                 } else {
@@ -3836,12 +3882,14 @@
                     if (!latestByStudent.has(id) || spId > latestByStudent.get(id).spId)
                         latestByStudent.set(id, { status, spId,
                             checkIn: r.CheckIn || r.CheckInDateTime || r['Check In'] || null,
-                            checkOut: r.CheckOut || r['Check Out'] || null });
+                            checkOut: r.CheckOut || r['Check Out'] || null,
+                            lat: r.Lat ?? r.checkinLat ?? null,
+                            lng: r.Lng ?? r.checkinLng ?? null });
                 });
                 attendance = [];
-                latestByStudent.forEach(({ status, checkIn, checkOut }, id) => {
+                latestByStudent.forEach(({ status, checkIn, checkOut, lat, lng }, id) => {
                     if (status !== 'absent')
-                        attendance.push({ studentId: id, checkIn: extractTime(checkIn), checkOut: extractTime(checkOut) });
+                        attendance.push({ studentId: id, checkIn: extractTime(checkIn), checkOut: extractTime(checkOut), checkInISO: checkIn, lat, lng });
                 });
                 // Re-apply in-session marks so Refresh doesn't revert them
                 const currentDate = date;
@@ -4139,6 +4187,7 @@
                 const att = attendance.find(a => String(a.studentId) === String(s.id));
                 const isPresent = !!att;
                 const onPlacement = isPresent && isPlacementForDate(s.id, viewedDate);
+                const checkinFlags = isPresent ? getCheckinFlags(att.checkInISO, att.lat, att.lng) : [];
                 const markLabel = isPresent ? 'Mark Absent' : 'Mark Present';
                 const markBg = isPresent ? 'var(--danger)' : 'var(--success)';
                 const rData = liveRatesCache ? liveRatesCache[rateKey(s.id, s.course)] : null;
@@ -4162,6 +4211,7 @@
                         <td>
                             <span class="status-badge status-${isPresent ? 'present' : 'absent'}">${isPresent ? 'Present' : 'Absent'}</span>
                             ${onPlacement ? PLACEMENT_BADGE_HTML : ''}
+                            ${checkinFlags.length ? SUSPICIOUS_BADGE_HTML(checkinFlags) : ''}
                             ${savedThisSession.has(String(s.id)) ? `<span style="display:inline-block;margin-left:4px;font-size:0.65rem;font-weight:700;color:#16a34a;background:#dcfce7;border:1px solid #86efac;border-radius:4px;padding:1px 5px;vertical-align:middle;">Saved ✓</span>` : ''}
                         </td>
                         <td>${f14Cell}</td>
