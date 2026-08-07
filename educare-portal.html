@@ -3662,6 +3662,17 @@
             return 'standard';
         }
 
+        // Superseded training-package code -> current code. Students legitimately
+        // carry either value depending on when they commenced (confirmed against
+        // training.gov.au and the live enrolment export, Aug 2026) — this only
+        // affects how the UI GROUPS them for course-pill filters, never the
+        // student's own stored courseCode.
+        const CANONICAL_COURSE_CODE = {
+            'CHC50121': 'CHC50125', // Diploma of Early Childhood Education and Care
+            'CHC52021': 'CHC52025', // Diploma of Community Services
+        };
+        function canonicalCourseCode(code) { return CANONICAL_COURSE_CODE[code] || code; }
+
         function isSchoolBreakWeek(weekMonday, calendarType) {
             const breaks = SCHOOL_BREAKS[calendarType] || [];
             for (let d = 0; d < 5; d++) {
@@ -4527,11 +4538,15 @@
             const roster = window._dynamicRoster || STUDENT_ROSTER;
             const allMyStudents = filterTrainerStudents(roster.filter(s => !s.withdrawn), trainerName);
 
-            // Course filter tabs — keyed by courseCode, shown when trainer teaches multiple courses
+            // Course filter tabs — keyed by canonical courseCode, so a superseded
+            // code (e.g. CHC50121) and its current replacement (CHC50125) share
+            // one pill instead of fragmenting the same real course into two.
             const _courseMap = new Map();
             allMyStudents.forEach(s => {
-                const key = s.courseCode || s.course || '';
-                if (key && !_courseMap.has(key)) _courseMap.set(key, { courseCode: s.courseCode || '', course: s.course || '' });
+                const rawCode = s.courseCode || '';
+                const key = canonicalCourseCode(rawCode) || s.course || '';
+                if (!key) return;
+                if (!_courseMap.has(key)) _courseMap.set(key, { courseCode: canonicalCourseCode(rawCode), course: s.course || '' });
             });
             const courseEntries = [..._courseMap.entries()]
                 .sort((a, b) => a[0].localeCompare(b[0]))
@@ -4560,10 +4575,10 @@
                 }
             }
 
-            // Apply course filter (by courseCode, falling back to course name if no code)
+            // Apply course filter (by canonical courseCode, falling back to course name if no code)
             const myStudents = myClassCourse === 'all'
                 ? allMyStudents
-                : allMyStudents.filter(s => (s.courseCode || s.course) === myClassCourse);
+                : allMyStudents.filter(s => (canonicalCourseCode(s.courseCode) || s.course) === myClassCourse);
 
             // Ghost cutoff: 3 months ago
             const threeMonthsAgo = (() => {
