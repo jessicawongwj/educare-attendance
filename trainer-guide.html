@@ -162,6 +162,7 @@ footer{text-align:center;color:var(--text-3);font-size:.78rem;padding:2rem;borde
     </ul>
 
     <div class="warn">The daily roll only shows QR check-ins. Students who attended but didn't scan must be manually marked — see <a href="#mark">Marking Attendance</a>.</div>
+    <div class="info">A red <strong>Suspicious</strong> badge may appear next to a Present record — hover it to see why (a check-in time in the future, an unusual hour, or GPS that doesn't match any campus). It's a flag to double-check, not an automatic rejection; the record still counts as present.</div>
   </div>
 
   <!-- MY CLASS -->
@@ -171,6 +172,7 @@ footer{text-align:center;color:var(--text-3);font-size:.78rem;padding:2rem;borde
 
     <h3>Course filter pills</h3>
     <p>If you teach more than one course, coloured pills appear at the top — one per course (showing the course code and short name). Click a pill to view only that course's students. Click <strong>All Courses</strong> to see everyone.</p>
+    <div class="info">A superseded training-package code and its current replacement (e.g. CHC50121 → CHC50125) share one pill rather than splitting into two — students on either code for the same real course show up together.</div>
 
     <h3>Sub-tabs</h3>
     <table>
@@ -206,7 +208,7 @@ footer{text-align:center;color:var(--text-3);font-size:.78rem;padding:2rem;borde
     <ol class="steps">
       <li>Go to <span class="tab-pill">My Class</span> or <span class="tab-pill">Daily Attendance</span> and find the student in the <strong>Not Checked In</strong> list.</li>
       <li>Click <strong>Mark</strong> next to their name.</li>
-      <li>Select <strong>Present</strong>, optionally adjust the check-in time, add a note if needed.</li>
+      <li>Select <strong>Present</strong> (or <strong>On Placement</strong> — see below), optionally adjust the check-in time, add a note if needed.</li>
       <li>Click <strong>Save</strong>. The student moves to the Checked In list immediately.</li>
     </ol>
 
@@ -221,21 +223,24 @@ footer{text-align:center;color:var(--text-3);font-size:.78rem;padding:2rem;borde
     <ol class="steps">
       <li>Click the student's name anywhere in the portal to open their history modal.</li>
       <li>Click <strong>Mark Attendance</strong> inside the modal.</li>
-      <li>Select one or more dates, choose <strong>Present</strong> or <strong>Absent</strong>, add a note.</li>
+      <li>Choose <strong>Mark Absent</strong>, <strong>Mark Present</strong>, or <strong>On Placement</strong>, select one or more dates, add a note.</li>
       <li>Click <strong>Save</strong>.</li>
     </ol>
+
+    <h3>On Placement</h3>
+    <p><strong>On Placement</strong> is a proper status option, not just a note — it appears in the Mark Attendance modal and the inline <strong>+ Attendance</strong> form's Status dropdown. It writes a normal Present record (counts toward attendance rate exactly the same as a regular Present day) but shows a distinct blue <strong>Placement</strong> badge everywhere attendance is displayed — Daily Attendance, Student History, and the history CSV export — so it's easy to tell placement days apart from a scanned check-in or manual correction at a glance.</p>
 
     <h3>Add attendance directly from My Class (+ Attendance button)</h3>
     <p>Each student row in <span class="tab-pill">My Class</span> has a green <strong>+ Attendance</strong> button below the Remove button. This opens an inline form without leaving the page:</p>
     <ul>
       <li><strong>Date</strong> — single date (defaults to today)</li>
       <li><strong>To (range, optional)</strong> — fill a second date to mark a whole range at once; weekends are automatically skipped</li>
-      <li><strong>Status</strong> — Present or Absent</li>
+      <li><strong>Status</strong> — Present, On Placement, or Absent</li>
       <li><strong>Note</strong> — free text, or click a quick-note chip: <em>Placement, Medical Certificate, Personal, Absent — No Contact, Late Arrival</em></li>
     </ul>
     <p>Click <strong>Save</strong> to write directly to the database. A confirmation toast appears and the form closes. Click <strong>Cancel</strong> to dismiss without saving.</p>
 
-    <div class="tip">Use the date range + note for batch entries — e.g. mark a student present for an entire week's placement in one step.</div>
+    <div class="tip">For a placement block, use the <strong>On Placement</strong> status with a date range — one save marks the whole week and shows the badge on every day, rather than typing "Placement" as a free-text note on a regular Present.</div>
     <div class="info">Manual present records include a note showing who marked them and when, so the audit trail is always clear.</div>
     <div class="warn">Marking <strong>Absent</strong> permanently removes the attendance record for that date. This cannot be undone from the portal — contact your admin if you need to restore a record.</div>
   </div>
@@ -244,6 +249,7 @@ footer{text-align:center;color:var(--text-3);font-size:.78rem;padding:2rem;borde
   <div class="section" id="rate">
     <div class="section-title">Rate Check Tab</div>
     <p>The <span class="tab-pill">Rate Check</span> tab shows each student's attendance percentage, calculated from their course commencement date using the academic calendar (weekends, public holidays, and school breaks excluded).</p>
+    <div class="warn">The calculation currently assumes 2 sessions per week for every course, rather than each course's actual scheduled days. If your class runs on a different number of days per week, treat the displayed rate as indicative rather than exact for now — this is a known limitation being reviewed.</div>
 
     <h3>Columns explained</h3>
     <table>

@@ -188,6 +188,15 @@ footer{text-align:center;color:var(--text-3);font-size:.78rem;padding:2rem;borde
 
     <h3>Bulk select</h3>
     <p>Click <strong>Bulk Select</strong> to tick multiple students and mark them all present or absent at once — useful for days where most of a class attended but didn't scan.</p>
+
+    <h3>Suspicious check-in flag</h3>
+    <p>A red <strong>Suspicious</strong> badge next to a Present record flags a check-in worth double-checking. Hover it for the specific reason:</p>
+    <ul>
+      <li>Check-in time is in the future (impossible for a real scan — usually a device clock issue)</li>
+      <li>Checked in at an unusual hour (before 6am or after 8pm Brisbane time)</li>
+      <li>GPS was captured but doesn't match any campus geofence</li>
+    </ul>
+    <div class="info">Manual entries with no GPS captured are never flagged for that reason alone — only checked against the time rules. The flag is informational; the record still counts as present.</div>
   </div>
 
   <!-- RATE CHECK -->
@@ -216,7 +225,7 @@ footer{text-align:center;color:var(--text-3);font-size:.78rem;padding:2rem;borde
     </ul>
 
     <h3>Print Class List</h3>
-    <p>Click <strong>Print Class List</strong> at the top of Rate Check to generate a printable register grouped by trainer  course, with columns: #, Name, Student ID, Campus, Commenced, Signature. Use the trainer dropdown first to scope the printout to one trainer if needed.</p>
+    <p>Click <strong>Print Class List</strong> at the top of Rate Check to generate a printable register grouped by trainer → course, with columns: #, Name, Student ID, Campus, Commenced, Signature. Use the trainer dropdown first to scope the printout to one trainer if needed.</p>
 
     <div class="tip">Click any student's name to open their full attendance history — all check-in dates from commencement are shown.</div>
   </div>
@@ -228,6 +237,7 @@ footer{text-align:center;color:var(--text-3);font-size:.78rem;padding:2rem;borde
 
     <h3>Course filter pills</h3>
     <p>Pills at the top represent each course (showing the course code). Click a pill to filter to that course only. Useful when a trainer runs multiple courses with the same short name.</p>
+    <div class="info">A superseded training-package code and its current replacement (e.g. CHC50121 → CHC50125, CHC52021 → CHC52025) share one pill rather than splitting into two — see <a href="#ref">Reference → Course codes</a>.</div>
 
     <h3>Sub-tabs</h3>
     <ul>
@@ -240,15 +250,16 @@ footer{text-align:center;color:var(--text-3);font-size:.78rem;padding:2rem;borde
     <div class="two-col">
       <div class="card">
         <div class="card-title">Single date</div>
-        <p>Pick any date (defaults to today), set status to Present or Absent, add an optional note, and click Save. The record writes to the database immediately.</p>
+        <p>Pick any date (defaults to today), set status to Present, On Placement, or Absent, add an optional note, and click Save. The record writes to the database immediately.</p>
       </div>
       <div class="card">
         <div class="card-title">Date range</div>
         <p>Fill both the <strong>Date</strong> and <strong>To</strong> fields to mark a whole range in one save. Weekends are automatically excluded — only weekday records are created.</p>
       </div>
     </div>
-    <p><strong>Quick-note chips</strong> appear below the note field for common reasons: <em>Placement, Medical Certificate, Personal, Absent — No Contact, Late Arrival</em>. Click a chip to pre-fill the note field.</p>
-    <div class="tip">Placement weeks are best recorded with the date range + "Placement" note — one click marks the full week with a clear audit trail.</div>
+    <p><strong>On Placement</strong> writes a normal Present record (counts toward the rate the same as any other Present day) but is tagged so a blue <strong>Placement</strong> badge shows on that record everywhere attendance is displayed — Daily Attendance, Student History, and the history CSV export.</p>
+    <p><strong>Quick-note chips</strong> appear below the note field for common reasons: <em>Placement, Medical Certificate, Personal, Absent — No Contact, Late Arrival</em>. Click a chip to pre-fill the note field. Note this is separate from the <strong>On Placement</strong> status — the chip just fills free text on a regular Present/Absent record and doesn't produce the badge.</p>
+    <div class="tip">For a placement week, use the <strong>On Placement</strong> status with a date range rather than the note chip — one save marks the whole week and shows the badge on every day, with a clear audit trail either way.</div>
     <div class="info">All records saved via + Attendance appear in the student's attendance history, Rate Check, and all exports exactly as if the student had scanned the QR code.</div>
   </div>
 
@@ -371,7 +382,7 @@ footer{text-align:center;color:var(--text-3);font-size:.78rem;padding:2rem;borde
 
     <h3 id="settings-schedule">Trainer Schedule sub-tab</h3>
     <p>The Trainer Schedule maps each trainer to their campus, their courses, and which days of the week they run each course (Mon=0 through Fri=4). This is what the Dashboard uses to show the TODAY badge and grey out cards when a trainer has no class.</p>
-    <p>To modify the schedule, edit the table in the Settings  Trainer Schedule view and click <strong>Save Schedule</strong>. Changes are written to the database and take effect immediately for all users.</p>
+    <p>To modify the schedule, edit the table in the Settings → Trainer Schedule view and click <strong>Save Schedule</strong>. Changes are written to the database and take effect immediately for all users.</p>
     <div class="warn">If a trainer's name in the Trainer Schedule doesn't exactly match their name in the student enrollment records, their students won't be linked to their dashboard card. Names must match exactly (including capitalisation).</div>
   </div>
 
@@ -475,7 +486,7 @@ footer{text-align:center;color:var(--text-3);font-size:.78rem;padding:2rem;borde
         <tr><td><strong>Export My Class CSV</strong></td><td>My Class tab</td><td>Full enrolled student list with commencement dates</td></tr>
         <tr><td><strong>Export Campus List CSV</strong></td><td>Dashboard campus view</td><td>Student list for the selected campus</td></tr>
         <tr><td><strong>Export History CSV</strong></td><td>Student history modal</td><td>One student's complete check-in history</td></tr>
-        <tr><td><strong>Print Class List</strong></td><td>Rate Check tab</td><td>Printable register with signature column, grouped by trainer  course</td></tr>
+        <tr><td><strong>Print Class List</strong></td><td>Rate Check tab</td><td>Printable register with signature column, grouped by trainer → course</td></tr>
         <tr><td><strong>Print Check-In Poster</strong></td><td>QR Code settings</td><td>Full-page QR code poster for printing</td></tr>
       </tbody>
     </table>
@@ -502,7 +513,19 @@ footer{text-align:center;color:var(--text-3);font-size:.78rem;padding:2rem;borde
 
     <h3>Attendance rate formula</h3>
     <p><strong>Rate = sessions attended ÷ expected sessions × 100</strong></p>
-    <p>Expected sessions are calculated from the student's commencement date to today. The academic calendar excludes weekends, Queensland public holidays, and school-term breaks. All calculation is from commencement date — there is no rolling window cap.</p>
+    <p>Expected sessions are calculated from the student's first attendance record to today (not the commencement date directly, in most places the calculation runs — commencement is the fallback when there's no attendance yet). The academic calendar excludes weekends, Queensland public holidays, and school-term breaks.</p>
+    <div class="warn">Currently the calculation assumes <strong>2 sessions per week for every course</strong>, regardless of that course's actual configured days in Settings → Trainer Schedule. For trainers who really run 1 day/week (e.g. Zeyun Ma) or 4-5 days/week (e.g. Troy Scott, Vijeta Srivastava, Alessandro Tavian), this means the displayed rate can be under- or over-stated. This is a known limitation being reviewed — treat rates for those trainers' students as indicative rather than exact until it's addressed.</div>
+
+    <h3>Course codes</h3>
+    <p>Training packages get superseded periodically — the same real course keeps running, just under a new code. Students may legitimately be on either code depending on when they commenced. Confirmed pairs as of Aug 2026 (verified against training.gov.au and the live enrolment export):</p>
+    <table>
+      <thead><tr><th>Superseded code</th><th>Current code</th><th>Course</th></tr></thead>
+      <tbody>
+        <tr><td>CHC50121</td><td>CHC50125</td><td>Diploma of Early Childhood Education and Care</td></tr>
+        <tr><td>CHC52021</td><td>CHC52025</td><td>Diploma of Community Services</td></tr>
+      </tbody>
+    </table>
+    <p>The portal's My Class course-filter pills already merge these pairs into one pill. checkin.html's trainer/course dropdowns include both codes wherever a trainer currently has active students on either. If a new supersession happens, both need updating — see Holidays → Updating for a new year for where the equivalent code-level constants live.</p>
 
     <h3>Campuses</h3>
     <table>
@@ -518,11 +541,11 @@ footer{text-align:center;color:var(--text-3);font-size:.78rem;padding:2rem;borde
     <table>
       <thead><tr><th>Issue</th><th>Likely cause &amp; fix</th></tr></thead>
       <tbody>
-        <tr><td>Trainer can't log in — Access Denied</td><td>Their email isn't mapped to a trainer account. Add it in Settings  Trainer Schedule, or check the trainer email list in the code.</td></tr>
+        <tr><td>Trainer can't log in — Access Denied</td><td>Their email isn't mapped to a trainer account. Add it in Settings → Trainer Schedule, or check the trainer email list in the code.</td></tr>
         <tr><td>Student missing from portal</td><td>Not enrolled. Add via the Enroll Student button or CSV upload.</td></tr>
-        <tr><td>Attendance rate looks wrong</td><td>Check the student's commencement date. An incorrect start date will throw off the denominator. Edit via the history modal  Edit Start Date.</td></tr>
+        <tr><td>Attendance rate looks wrong</td><td>Check the student's commencement date. An incorrect start date will throw off the denominator. Edit via the history modal → Edit Start Date.</td></tr>
         <tr><td>Trainer's students showing under wrong campus</td><td>Students were imported with the wrong campus field. Update via CSV roster upload or contact IT to update the database directly.</td></tr>
-        <tr><td>Email reports not arriving</td><td>Check spam folder. Confirm recipient email in Settings  Email Reports. Verify the sending mailbox is active in Microsoft 365.</td></tr>
+        <tr><td>Email reports not arriving</td><td>Check spam folder. Confirm recipient email in Settings → Email Reports. Verify the sending mailbox is active in Microsoft 365.</td></tr>
         <tr><td>QR check-in blocked at campus</td><td>Student is outside the GPS geofence. They need to be physically at the campus building. GPS must be enabled on their phone. Manually mark them if needed.</td></tr>
         <tr><td>Changes to trainer list or campus</td><td>Requires a developer — trainer-to-campus-to-course mapping is in the code configuration (TRAINER_SCHEDULE). Contact IT.</td></tr>
       </tbody>
