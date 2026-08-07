@@ -30,27 +30,59 @@ module.exports = async (req, res) => {
 
   try {
 
-    // ── Migrate trainer across enrollments + attendance ────────────────────────
+    // ── Migrate trainer across students + enrollments + attendance ─────────────
     if (req.query.type === 'migrate') {
       const { from, to, courseCode } = req.body || {};
       if (!from || !to) return res.status(400).json({ error: 'Missing from/to' });
       const hasCode = !!courseCode;
-      const enrReq = pool.request()
-        .input('from', sql.NVarChar(200), from)
-        .input('to',   sql.NVarChar(200), to);
-      if (hasCode) enrReq.input('code', sql.VarChar(20), courseCode);
-      const r = await enrReq.query(
-        `UPDATE enrollments SET trainer=@to WHERE trainer=@from${hasCode ? ' AND courseCode=@code' : ''};
-         SELECT @@ROWCOUNT AS cnt`
-      );
-      const attReq = pool.request()
-        .input('from', sql.NVarChar(200), from)
-        .input('to',   sql.NVarChar(200), to);
-      if (hasCode) attReq.input('code', sql.VarChar(20), courseCode);
-      await attReq.query(
-        `UPDATE attendance SET trainer=@to WHERE trainer=@from${hasCode ? ' AND courseCode=@code' : ''}`
-      );
-      return res.status(200).json({ ok: true, count: r.recordset[0]?.cnt || 0 });
+      const codeFilter = hasCode ? ' AND courseCode=@code' : '';
+
+      const tx = new sql.Transaction(pool);
+      await tx.begin();
+      try {
+        // students.trainer is what the roster/daily-attendance UI actually reads —
+        // previously only enrollments+attendance were migrated here, leaving
+        // students.trainer stale (roster kept showing the old trainer). Apply the
+        // same courseCode filter as enrollments/attendance when scoping students.
+        const stuFilterReq = tx.request().input('from', sql.NVarChar(200), from).input('to', sql.NVarChar(200), to);
+        if (hasCode) stuFilterReq.input('code', sql.VarChar(20), courseCode);
+        const stuBefore = await stuFilterReq
+          .query(`SELECT id, trainer, course, courseCode FROM students WHERE trainer=@from${codeFilter}`);
+
+        const enrReq = tx.request()
+          .input('from', sql.NVarChar(200), from)
+          .input('to',   sql.NVarChar(200), to);
+        if (hasCode) enrReq.input('code', sql.VarChar(20), courseCode);
+        const r = await enrReq.query(
+          `UPDATE enrollments SET trainer=@to WHERE trainer=@from${codeFilter};
+           SELECT @@ROWCOUNT AS cnt`
+        );
+
+        const attReq = tx.request()
+          .input('from', sql.NVarChar(200), from)
+          .input('to',   sql.NVarChar(200), to);
+        if (hasCode) attReq.input('code', sql.VarChar(20), courseCode);
+        await attReq.query(
+          `UPDATE attendance SET trainer=@to WHERE trainer=@from${codeFilter}`
+        );
+
+        const stuUpdReq = tx.request().input('from', sql.NVarChar(200), from).input('to', sql.NVarChar(200), to);
+        if (hasCode) stuUpdReq.input('code', sql.VarChar(20), courseCode);
+        await stuUpdReq.query(`UPDATE students SET trainer=@to WHERE trainer=@from${codeFilter}`);
+
+        for (const row of stuBefore.recordset) {
+          await writeAudit(tx, {
+            entityType: 'student', entityId: row.id, action: 'update', changedBy: email,
+            before: row, after: { ...row, trainer: to },
+          });
+        }
+
+        await tx.commit();
+        return res.status(200).json({ ok: true, count: r.recordset[0]?.cnt || 0, studentsUpdated: stuBefore.recordset.length });
+      } catch (txErr) {
+        try { await tx.rollback(); } catch (_) {}
+        throw txErr;
+      }
     }
 
     // ── Bulk roster upsert ─────────────────────────────────────────────────────
