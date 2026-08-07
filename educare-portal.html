@@ -3674,6 +3674,23 @@
         };
         function canonicalCourseCode(code) { return CANONICAL_COURSE_CODE[code] || code; }
 
+        // Shortens a course name for tight display WITHOUT dropping the
+        // qualification level. Fully stripping "Certificate III in" / "Diploma
+        // of" (the old behaviour) made a Cert III and a Diploma of the same
+        // subject render as identical text (e.g. Maggie's CHC30121 Certificate
+        // III in ECEC vs CHC50125 Diploma of ECEC both showed just "Early
+        // Childhood Education and Care") — indistinguishable at a glance from
+        // two rows/pills of the exact same course. Abbreviate instead.
+        function abbrevQualification(name) {
+            if (!name) return name;
+            return name
+                .replace(/^Certificate III in\s+/i, 'Cert III: ')
+                .replace(/^Certificate IV in\s+/i,  'Cert IV: ')
+                .replace(/^Graduate Diploma of\s+/i, 'Grad Dip: ')
+                .replace(/^Advanced Diploma of\s+/i, 'Adv Dip: ')
+                .replace(/^Diploma of\s+/i,          'Dip: ');
+        }
+
         // A Date built and mutated via local methods (new Date(x), .setDate()) still
         // reports its LOCAL calendar date via getFullYear/getMonth/getDate —
         // .toISOString() forces a UTC reinterpretation, which silently shifts the
@@ -4570,8 +4587,7 @@
                 if (courseEntries.length > 1) {
                     const tabs = [{ key: 'all', courseCode: '', course: 'All Courses' }, ...courseEntries].map(entry => {
                         const isNiet = entry.course.includes('(NIET)');
-                        const shortName = entry.key === 'all' ? 'All Courses'
-                            : (entry.course.replace(/^(Certificate (III|IV) in |Diploma of |Advanced Diploma of |Graduate Diploma of )/i, '') || entry.course);
+                        const shortName = entry.key === 'all' ? 'All Courses' : abbrevQualification(entry.course);
                         const codeTag = entry.courseCode ? `<span style="font-size:0.67rem;font-weight:700;opacity:0.75;display:block;line-height:1.2;letter-spacing:0.02em;">${entry.courseCode}</span>` : '';
                         const label = entry.key === 'all' ? 'All Courses' : `${codeTag}${shortName}`;
                         const active = myClassCourse === entry.key;
@@ -5538,7 +5554,7 @@
                         const rate    = scheduled.length ? Math.round(present / scheduled.length * 100) : 0;
                         const color   = scheduled.length === 0 ? '#94a3b8' : rate < 60 ? 'var(--danger)' : rate < 80 ? 'var(--warning)' : '#16a34a';
                         const courseCode = cs[0]?.courseCode || '';
-                        const shortCourse = course.replace(/^(Certificate III in |Certificate IV in |Diploma of |Advanced Diploma of |Graduate Diploma of )/i,'');
+                        const shortCourse = abbrevQualification(course);
                         const noClass = isDaily && schedDay2 < 5 && scheduled.length === 0;
                         const rowClickable = breakdownPeriod === 'today' && allTStudents.length > 0;
                         const rowData = rowClickable ? `data-tdm-trainer="${trainer.replace(/"/g,'&quot;')}" data-tdm-course="${course.replace(/"/g,'&quot;')}"` : '';
@@ -5712,7 +5728,7 @@
                 } else {
                     entries.sort((a,b) => a.trainer.localeCompare(b.trainer));
                     entries.forEach(e => {
-                        const shortCourses = e.courses.map(c => c.replace(/^(Certificate III|Certificate IV|Diploma of|Graduate Diploma of)\s+/i,'').substring(0,30)).join(', ');
+                        const shortCourses = e.courses.map(c => abbrevQualification(c).substring(0,30)).join(', ');
                         html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:0.45rem 0.75rem;border-top:1px solid var(--border);gap:0.5rem;">
                             <div style="min-width:0;">
                                 <div style="font-size:0.8rem;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.trainer}</div>
@@ -7525,7 +7541,7 @@
                 courseKeys.forEach(function(course, ci) {
                     const days = courses[course];
                     const { code, name: courseName } = splitCourseKey(course);
-                    const short = courseName.replace(/^(Certificate III in|Certificate IV in|Diploma of|Graduate Diploma of)\s+/i, '').substring(0, 40);
+                    const short = abbrevQualification(courseName).substring(0, 48);
                     const isFirst = ci === 0;
                     const isLast = ci === courseKeys.length - 1;
                     const borderStyle = isLast ? 'border-bottom:2px solid var(--border);' : 'border-bottom:1px solid #f3f4f6;';
@@ -8259,9 +8275,7 @@
             _trainerDailyModalCourse = course || null;
             // If manual marks haven't been loaded yet, fetch them now so the modal shows correct state
             if (!liveRatesCache) refreshAttendanceRates();
-            const shortCourse = course
-                ? course.replace(/^(Certificate (III|IV) in |Diploma of |Advanced Diploma of )/i,'')
-                : null;
+            const shortCourse = course ? abbrevQualification(course) : null;
             // Find course code from allStudents (handle combined co-trainer keys)
             const _tGroup = trainer.includes(' / ') ? trainer.split(' / ') : getTrainerGroup(trainer);
             const courseCode = course
