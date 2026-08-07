@@ -2129,6 +2129,7 @@
                 <div style="display:flex;gap:0.75rem;margin-bottom:1rem;">
                     <button id="btnTypeAbsent" class="btn btn-mark" style="flex:1;" onclick="setMarkType('absent')">Mark Absent</button>
                     <button id="btnTypePresent" class="btn" style="flex:1;background:var(--success);color:white;" onclick="setMarkType('present')">Mark Present</button>
+                    <button id="btnTypePlacement" class="btn" style="flex:1;background:var(--brand);color:white;" onclick="setMarkType('placement')">On Placement</button>
                 </div>
 
                 <!-- Date picker — combined toggle + input -->
@@ -3484,6 +3485,35 @@
         const RECORDS_URL = '/api/records';
         const USE_MOCK = false;
 
+        // ── PLACEMENT STATUS ────────────────────────────────────
+        // The attendance table has no status column — presence is just a row
+        // existing. "On Placement" is a Present record whose stored notes are
+        // always prefixed with this tag, so the UI can badge it distinctly
+        // without a schema/backend change. Placement days count toward the
+        // attendance rate exactly like any other Present day.
+        const PLACEMENT_TAG = '[Placement]';
+        function isPlacementNote(notes) { return !!notes && notes.includes(PLACEMENT_TAG); }
+        // uiStatus is what the marking UI shows ('Present'/'Placement'/'Absent').
+        // Returns the { apiStatus, reason } to actually send to /api/save.
+        function resolvePlacementStatus(uiStatus, reason) {
+            if (uiStatus !== 'Placement') return { apiStatus: uiStatus, reason };
+            const rest = reason && reason !== 'Manually marked present' ? ` ${reason}` : '';
+            return { apiStatus: 'Present', reason: `${PLACEMENT_TAG}${rest}` };
+        }
+        // Looks up window._allAttendanceRecords (populated by refreshAttendanceRates)
+        // for a specific student+date and reports whether it's tagged as placement.
+        function isPlacementForDate(studentId, dateISO) {
+            const recs = window._allAttendanceRecords;
+            if (!recs || !dateISO) return false;
+            const sid = String(studentId);
+            const rec = recs.find(r =>
+                String(r.studentId) === sid &&
+                (r.attendanceDate || '').slice(0, 10) === dateISO
+            );
+            return rec ? isPlacementNote(rec.notes) : false;
+        }
+        const PLACEMENT_BADGE_HTML = `<span style="display:inline-block;margin-left:4px;font-size:0.65rem;font-weight:700;color:var(--brand);background:rgba(30,132,196,0.12);border:1px solid rgba(30,132,196,0.35);border-radius:4px;padding:1px 5px;vertical-align:middle;">Placement</span>`;
+
         let _schedLocked = true;
         let TRAINER_SCHEDULE = {
             "Troy Scott||Brisbane CBD":        {"t":"Troy Scott","c":"Brisbane CBD","courses":{"CHC33021 Certificate III in Individual Support":[0,1,2,3],"CHC52021 Diploma of Community Services":[0,1,2,3],"CHC52025 Diploma of Community Services":[0,1,2,3]}},
@@ -4104,9 +4134,11 @@
             }
 
             const isTrainerView = currentUser?.role === 'trainer';
+            const viewedDate = document.getElementById('dateFilter')?.value || todayAEST();
             dailyTableRows = students.map(s => {
                 const att = attendance.find(a => String(a.studentId) === String(s.id));
                 const isPresent = !!att;
+                const onPlacement = isPresent && isPlacementForDate(s.id, viewedDate);
                 const markLabel = isPresent ? 'Mark Absent' : 'Mark Present';
                 const markBg = isPresent ? 'var(--danger)' : 'var(--success)';
                 const rData = liveRatesCache ? liveRatesCache[rateKey(s.id, s.course)] : null;
@@ -4129,6 +4161,7 @@
                         <td>${att?.checkOut || '--:--'}</td>
                         <td>
                             <span class="status-badge status-${isPresent ? 'present' : 'absent'}">${isPresent ? 'Present' : 'Absent'}</span>
+                            ${onPlacement ? PLACEMENT_BADGE_HTML : ''}
                             ${savedThisSession.has(String(s.id)) ? `<span style="display:inline-block;margin-left:4px;font-size:0.65rem;font-weight:700;color:#16a34a;background:#dcfce7;border:1px solid #86efac;border-radius:4px;padding:1px 5px;vertical-align:middle;">Saved ✓</span>` : ''}
                         </td>
                         <td>${f14Cell}</td>
@@ -4609,6 +4642,7 @@
                                 <label style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.2rem;">Status</label>
                                 <select id="addatt-status-${sid}" style="padding:0.3rem 0.5rem;border:1.5px solid var(--border);border-radius:5px;font-size:0.82rem;font-family:inherit;">
                                     <option value="Present">Present</option>
+                                    <option value="Placement">On Placement</option>
                                     <option value="Absent">Absent</option>
                                 </select>
                             </div>
@@ -6314,13 +6348,18 @@
         function setMarkType(type) {
             currentMarkType = type;
             const isAbsent = type === 'absent';
+            const isPlacement = type === 'placement';
             document.getElementById('absentReasonWrap').style.display = isAbsent ? '' : 'none';
             document.getElementById('presentNoteWrap').style.display = isAbsent ? 'none' : '';
-            document.getElementById('absentModalTitle').textContent = isAbsent ? 'Confirm Absence' : 'Mark Present';
-            document.getElementById('absentModalSubmit').textContent = isAbsent ? 'Confirm Absence' : 'Mark Present';
-            document.getElementById('absentModalSubmit').style.background = isAbsent ? 'var(--warning)' : 'var(--success)';
+            document.getElementById('absentModalTitle').textContent =
+                isAbsent ? 'Confirm Absence' : isPlacement ? 'Mark On Placement' : 'Mark Present';
+            document.getElementById('absentModalSubmit').textContent =
+                isAbsent ? 'Confirm Absence' : isPlacement ? 'Mark On Placement' : 'Mark Present';
+            document.getElementById('absentModalSubmit').style.background =
+                isAbsent ? 'var(--warning)' : isPlacement ? 'var(--brand)' : 'var(--success)';
             document.getElementById('btnTypeAbsent').style.opacity = isAbsent ? '1' : '0.5';
-            document.getElementById('btnTypePresent').style.opacity = isAbsent ? '0.5' : '1';
+            document.getElementById('btnTypePresent').style.opacity = type === 'present' ? '1' : '0.5';
+            document.getElementById('btnTypePlacement').style.opacity = isPlacement ? '1' : '0.5';
         }
 
         let modalDateMode = 'single';
@@ -6444,6 +6483,9 @@
             const btn = document.querySelector(`#addatt-${sid} button`);
             if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
 
+            const rawReason = note || (status === 'Absent' ? 'Manually marked absent' : 'Manually marked present');
+            const { apiStatus, reason } = resolvePlacementStatus(status, rawReason);
+
             try {
                 await apiFetch(SAVE_ABSENT_URL, {
                     method: 'POST',
@@ -6451,11 +6493,12 @@
                     body: JSON.stringify({
                         studentId: s.id, studentName: s.name, course: s.course,
                         courseCode: s.courseCode || '', trainer: s.trainer, campus: s.campus,
-                        dates, reason: note || (status === 'Present' ? 'Manually marked present' : 'Manually marked absent'),
-                        markedBy: getMarkedBy(), status, note
+                        dates, reason,
+                        markedBy: getMarkedBy(), status: apiStatus, note
                     })
                 });
-                showToast(`${s.name.split(' ')[0]}: ${dates.length} day${dates.length > 1 ? 's' : ''} marked ${status.toLowerCase()}`);
+                const statusLabel = status === 'Placement' ? 'on placement' : status.toLowerCase();
+                showToast(`${s.name.split(' ')[0]}: ${dates.length} day${dates.length > 1 ? 's' : ''} marked ${statusLabel}`);
                 toggleInlineAttendance(sid);
                 // Reset form
                 if (document.getElementById('addatt-note-' + sid)) document.getElementById('addatt-note-' + sid).value = '';
@@ -6463,7 +6506,7 @@
                 // Sync local state for today
                 const today = todayAEST();
                 if (dates.includes(today)) {
-                    syncNormalizedCheckin(s.id, s.campus, today, status);
+                    syncNormalizedCheckin(s.id, s.campus, today, apiStatus);
                     filterData();
                 }
                 absenceLogCache = null;
@@ -6565,7 +6608,12 @@
                     filterData();
                 } catch { showToast('Failed to save — check your connection', true); }
             } else {
+                const isPlacement = currentMarkType === 'placement';
                 const note = document.getElementById('presentNote').value.trim();
+                const { apiStatus, reason } = resolvePlacementStatus(
+                    isPlacement ? 'Placement' : 'Present',
+                    note || 'Manually marked present'
+                );
                 const timeStr = new Date().toTimeString().slice(0, 5);
                 if (dates.includes(viewDate)) {
                     const existingIdx = attendance.findIndex(a => a.studentId === String(student.id));
@@ -6573,12 +6621,13 @@
                     else attendance.push({ studentId: String(student.id), checkIn: timeStr, checkOut: null });
                     filterData();
                 }
-                const msg = isRange ? `${currentStudent.name.split(' ')[0]} marked present for ${dates.length} day${dates.length > 1 ? 's' : ''}` :
-                                      `${currentStudent.name.split(' ')[0]} marked present on ${fmtDate(dates[0])}`;
+                const label = isPlacement ? 'on placement' : 'present';
+                const msg = isRange ? `${currentStudent.name.split(' ')[0]} marked ${label} for ${dates.length} day${dates.length > 1 ? 's' : ''}` :
+                                      `${currentStudent.name.split(' ')[0]} marked ${label} on ${fmtDate(dates[0])}`;
                 showToast(msg);
                 closeAbsentModal();
                 if (USE_MOCK) return;
-                absenceLog.push({ id: student.id, name: student.name, course: student.course, courseCode: student.courseCode || '', trainer: student.trainer, campus: student.campus, dates, reason: note || 'Manually marked present', markedBy, status: 'Present', savedAt: new Date() });
+                absenceLog.push({ id: student.id, name: student.name, course: student.course, courseCode: student.courseCode || '', trainer: student.trainer, campus: student.campus, dates, reason, markedBy, status: apiStatus, savedAt: new Date() });
                 try {
                     await apiFetch(SAVE_ABSENT_URL, {
                         method: 'POST',
@@ -6586,10 +6635,10 @@
                         body: JSON.stringify({ studentId: student.id, studentName: student.name,
                             course: student.course, courseCode: student.courseCode || '', trainer: student.trainer,
                             campus: student.campus, dates,
-                            reason: note || 'Manually marked present', markedBy, status: 'Present' })
+                            reason, markedBy, status: apiStatus })
                     });
-                    savedThisSession.set(String(student.id), 'Present');
-                    dates.forEach(d => { savedKeys.add(`${student.id}|${d}`); syncNormalizedCheckin(student.id, student.campus, d, 'Present'); });
+                    savedThisSession.set(String(student.id), apiStatus);
+                    dates.forEach(d => { savedKeys.add(`${student.id}|${d}`); syncNormalizedCheckin(student.id, student.campus, d, apiStatus); });
                     absenceLogCache = null;
                     updateAbsenceBadge();
                     filterData();
@@ -7637,7 +7686,8 @@
                         const pills = dates.map(d => {
                             const day = new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'long' });
                             const isToday = d === todayStr;
-                            return `<span style="display:inline-block;background:${isToday ? '#dcfce7' : 'var(--bg-secondary)'};border:1px solid ${isToday ? '#86efac' : 'var(--border)'};border-radius:6px;padding:0.25rem 0.6rem;font-size:0.75rem;font-weight:600;margin:0.2rem;">${day}${isToday ? ' ✓' : ''}</span>`;
+                            const onPlacement = isPlacementForDate(s.id, d);
+                            return `<span style="display:inline-block;background:${isToday ? '#dcfce7' : 'var(--bg-secondary)'};border:1px solid ${isToday ? '#86efac' : 'var(--border)'};border-radius:6px;padding:0.25rem 0.6rem;font-size:0.75rem;font-weight:600;margin:0.2rem;">${day}${isToday ? ' ✓' : ''}${onPlacement ? ' · Placement' : ''}</span>`;
                         }).join('');
                         return `<div style="margin-bottom:1rem;">
                             <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-secondary);margin-bottom:0.4rem;">${label}</div>
@@ -7695,7 +7745,7 @@
                 ...sortedDates.map(d => [
                     fmtDate(d),
                     new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long' }),
-                    'Present'
+                    isPlacementForDate(s.id, d) ? 'Present (Placement)' : 'Present'
                 ])
             ];
 
