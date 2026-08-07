@@ -3391,8 +3391,9 @@
                 const attended = r?.attended || 0;
                 const rate = (() => {
                     if (!liveRatesCache || !r || attended === 0) return null;
-                    const spw = getSessionsPerWeek(s.trainer, s.campus, s.course);
-                    const sessions = calcExpectedSessionsBetween(r.firstCheckin, today, s.campus, spw, getCourseCalendarType(s.course), null);
+                    const classDays = getClassDays(s.trainer, s.campus, s.course, s.courseCode);
+                    const spw = getSessionsPerWeek(s.trainer, s.campus, s.course, s.courseCode);
+                    const sessions = calcExpectedSessionsBetween(r.firstCheckin, today, s.campus, spw, getCourseCalendarType(s.course), classDays);
                     return sessions > 0 ? Math.min(100, Math.round(attended / sessions * 100)) : null;
                 })();
                 return { ...s, attended, rate, isFuture, lastCheckin: r?.lastCheckin || '' };
@@ -3673,12 +3674,25 @@
         };
         function canonicalCourseCode(code) { return CANONICAL_COURSE_CODE[code] || code; }
 
+        // A Date built and mutated via local methods (new Date(x), .setDate()) still
+        // reports its LOCAL calendar date via getFullYear/getMonth/getDate —
+        // .toISOString() forces a UTC reinterpretation, which silently shifts the
+        // date back a day in any positive-offset timezone (e.g. Brisbane, UTC+10:
+        // local midnight is 2pm UTC the previous day). That bug was live here —
+        // it made isSchoolBreakWeek/calcExpectedSessionsBetween mis-check the
+        // first weekday of every school break against the wrong date, so that
+        // week's break wasn't detected and its class days got counted as normal
+        // expected sessions. Found & fixed Aug 2026.
+        function localDateKey(d) {
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
         function isSchoolBreakWeek(weekMonday, calendarType) {
             const breaks = SCHOOL_BREAKS[calendarType] || [];
             for (let d = 0; d < 5; d++) {
                 const day = new Date(weekMonday);
                 day.setDate(day.getDate() + d);
-                const key = day.toISOString().slice(0, 10);
+                const key = localDateKey(day);
                 const inBreak = breaks.some(b => key >= b.from && key <= b.to);
                 if (!inBreak) return false;
             }
@@ -4594,8 +4608,9 @@
                 if (isFuture) return { ...s, rate: null, attended: 0, isFuture: true };
                 if (!liveRatesCache) return { ...s, rate: null, attended: 0, isFuture: false };
                 if (!r || r.attended === 0) return { ...s, rate: 0, attended: 0, isFuture: false };
-                const spw = getSessionsPerWeek(s.trainer, s.campus, s.course);
-                const sessions = calcExpectedSessionsBetween(r.firstCheckin, today, s.campus, spw, getCourseCalendarType(s.course), null);
+                const classDays = getClassDays(s.trainer, s.campus, s.course, s.courseCode);
+                const spw = getSessionsPerWeek(s.trainer, s.campus, s.course, s.courseCode);
+                const sessions = calcExpectedSessionsBetween(r.firstCheckin, today, s.campus, spw, getCourseCalendarType(s.course), classDays);
                 const rate = sessions > 0 ? Math.min(100, Math.round(r.attended / sessions * 100)) : null;
                 return { ...s, rate, attended: r.attended, isFuture: false };
             });
@@ -5216,7 +5231,7 @@
         function getStudentsScheduledOnDay(students, schedDay) {
             if (schedDay >= 5) return [];
             return students.filter(s => {
-                const days = getClassDays(s.trainer, s.campus, s.course);
+                const days = getClassDays(s.trainer, s.campus, s.course, s.courseCode);
                 if (!days || !days.length) return true; // no schedule info → assume they may attend
                 return days.includes(schedDay);
             });
@@ -5399,8 +5414,9 @@
             const atRisk = campusStudents.filter(s => {
                 const r = rateSource[rateKey(s.id, s.course)];
                 if (!r || r.attended === 0) return false;
-                const spwRisk = getSessionsPerWeek(s.trainer, s.campus, s.course);
-                const sessions = calcExpectedSessionsBetween(r.firstCheckin, today, s.campus, spwRisk, getCourseCalendarType(s.course), null);
+                const classDaysRisk = getClassDays(s.trainer, s.campus, s.course, s.courseCode);
+                const spwRisk = getSessionsPerWeek(s.trainer, s.campus, s.course, s.courseCode);
+                const sessions = calcExpectedSessionsBetween(r.firstCheckin, today, s.campus, spwRisk, getCourseCalendarType(s.course), classDaysRisk);
                 const rate = sessions > 0 ? Math.min(100, Math.round(r.attended / sessions * 100)) : 100;
                 return rate < 80;
             }).length;
@@ -5820,16 +5836,18 @@
                 const attended = data.presentDates.size;
                 const student = data.student;
                 const course = student ? student.course : '';
+                const courseCode = student ? student.courseCode : '';
                 const trainer = student ? student.trainer : '';
                 const campus = data.campus || (student ? student.campus : '');
                 const calType = getCourseCalendarType(course);
-                const spw = getSessionsPerWeek(trainer, campus, course);
+                const classDays = getClassDays(trainer, campus, course, courseCode);
+                const spw = getSessionsPerWeek(trainer, campus, course, courseCode);
                 const commenced = student ? parseCommenced(student.commenced) : null;
                 const startDate = firstCheckin || commenced;
-                const expected = calcExpectedSessionsBetween(startDate, today, campus, spw, calType, null);
+                const expected = calcExpectedSessionsBetween(startDate, today, campus, spw, calType, classDays);
                 const fn = getEffectiveMonthlyWindow(calType);
                 const monthly28 = [...data.presentDates].filter(d => d >= fn.from && d <= fn.to).length;
-                const monthly28Expected = calcExpectedSessionsBetween(fn.from, fn.to, campus, spw, calType, null);
+                const monthly28Expected = calcExpectedSessionsBetween(fn.from, fn.to, campus, spw, calType, classDays);
                 rates[k] = {
                     attended,
                     sessions: expected,
@@ -5848,19 +5866,24 @@
                 const commenced = parseCommenced(s.commenced);
                 if (!commenced || commenced > today) return; // not yet started
                 const calType = getCourseCalendarType(s.course);
-                const spw = getSessionsPerWeek(s.trainer, s.campus, s.course);
-                const expected = calcExpectedSessionsBetween(commenced, today, s.campus, spw, calType, null);
+                const classDays = getClassDays(s.trainer, s.campus, s.course, s.courseCode);
+                const spw = getSessionsPerWeek(s.trainer, s.campus, s.course, s.courseCode);
+                const expected = calcExpectedSessionsBetween(commenced, today, s.campus, spw, calType, classDays);
                 const fn = getEffectiveMonthlyWindow(calType);
-                const monthly28Expected = calcExpectedSessionsBetween(fn.from, fn.to, s.campus, spw, calType, null);
+                const monthly28Expected = calcExpectedSessionsBetween(fn.from, fn.to, s.campus, spw, calType, classDays);
                 rates[k] = { attended: 0, sessions: expected, rate: expected > 0 ? 0 : 100, firstCheckin: null, lastCheckin: null, monthly28: 0, monthly28Expected };
             });
 
             return rates;
         }
 
-        // Returns sessions per week from TRAINER_SCHEDULE; falls back to 1 (weekly trainers) or 2
-        function getSessionsPerWeek(trainer, campus, course) {
-            return 2;
+        // Real class days (Monday-indexed 0=Mon..6=Sun offsets) for a trainer's
+        // course. getClassDays() itself is defined further below (campus-scoped,
+        // with courseCode-aware exact matching + name-fuzzy fallback) — kept as a
+        // single definition so there's no duplicate-declaration shadowing bug.
+        function getSessionsPerWeek(trainer, campus, course, courseCode) {
+            const days = getClassDays(trainer, campus, course, courseCode);
+            return days && days.length ? days.length : 2; // 2/week fallback when no schedule is configured
         }
 
         function calcExpectedSessionsBetween(startStr, endStr, campus, sessionsPerWeek = 2, calendarType = null, classDays = null) {
@@ -5882,7 +5905,7 @@
                     for (const d of classDays) {
                         const day = new Date(cur);
                         day.setDate(cur.getDate() + d);
-                        if (day >= start && day <= end && !holidays.has(day.toISOString().slice(0, 10))) total++;
+                        if (day >= start && day <= end && !holidays.has(localDateKey(day))) total++;
                     }
                 } else {
                     // Fallback: no schedule info — use sessionsPerWeek minus any weekday holidays
@@ -5892,7 +5915,7 @@
                         day.setDate(cur.getDate() + d);
                         if (day >= start && day <= end) {
                             weekActive = true;
-                            if (holidays.has(day.toISOString().slice(0, 10))) phCount++;
+                            if (holidays.has(localDateKey(day))) phCount++;
                         }
                     }
                     if (weekActive) total += Math.max(0, sessionsPerWeek - phCount);
@@ -6014,12 +6037,18 @@
             return `${trainer}||${normCampus(campus)}`;
         }
 
-        function getClassDays(trainer, campus, course) {
+        function getClassDays(trainer, campus, course, courseCode) {
             const key = getTrainerScheduleKey(trainer, campus);
             const entry = TRAINER_SCHEDULE[key];
             if (!entry) return null;
             if (!entry.courses) return entry.d || null;
-            // Exact match first
+            // Exact "CODE Name" match first — most precise, disambiguates course-code
+            // pairs (e.g. CHC50121 vs CHC50125) that share the same course name.
+            if (courseCode) {
+                const codeKey = `${courseCode} ${course || ''}`.trim();
+                if (entry.courses[codeKey]) return entry.courses[codeKey];
+            }
+            // Exact bare-name match
             if (course && entry.courses[course]) return entry.courses[course];
             // Keyword match: find schedule entries whose name contains all meaningful words of the lookup course
             // e.g. "Graduate Diploma of Management (Learning)" matches "Graduate Diploma of Management (Learning)_UniTrack"
@@ -6156,8 +6185,9 @@
                 const lastCheckin = r.lastCheckin || null;
 
                 // Expected sessions from first check-in date to today
-                const spw = getSessionsPerWeek(s.trainer, s.campus, s.course);
-                const sessions = calcExpectedSessionsBetween(firstCheckin, today, s.campus, spw, getCourseCalendarType(s.course), null);
+                const classDays = getClassDays(s.trainer, s.campus, s.course, s.courseCode);
+                const spw = getSessionsPerWeek(s.trainer, s.campus, s.course, s.courseCode);
+                const sessions = calcExpectedSessionsBetween(firstCheckin, today, s.campus, spw, getCourseCalendarType(s.course), classDays);
                 const rate = sessions > 0 ? Math.min(100, Math.round(attended / sessions * 100)) : null;
 
                 return { ...s, sessions, attended, rate, firstCheckin, lastCheckin, future: false };
@@ -6372,7 +6402,7 @@
             const multiCourse = isMultiCourseTrained(s.trainer, s.campus);
 
             // Class days for this specific student's course
-            const classDays = getClassDays(s.trainer, s.campus, s.course);
+            const classDays = getClassDays(s.trainer, s.campus, s.course, s.courseCode);
             const classDaysStr = classDays ? classDays.map(d => DAY_NAMES[d]).join(', ') : 'Unknown';
             const upcoming = getUpcomingClassDates(s.trainer, s.campus, s.course, 5);
             const upcomingHtml = upcoming.length
@@ -7784,10 +7814,11 @@
             const overallRate = r?.rate ?? '';
 
             const calType = getCourseCalendarType(s.course);
-            const spw = getSessionsPerWeek(s.trainer, s.campus, s.course);
+            const classDays = getClassDays(s.trainer, s.campus, s.course, s.courseCode);
+            const spw = getSessionsPerWeek(s.trainer, s.campus, s.course, s.courseCode);
             const fn = getEffectiveMonthlyWindow(calType);
             const monthlyAttended = sortedDates.filter(d => d >= fn.from && d <= fn.to).length;
-            const monthlyExp = calcExpectedSessionsBetween(fn.from, fn.to, s.campus, spw, calType, null);
+            const monthlyExp = calcExpectedSessionsBetween(fn.from, fn.to, s.campus, spw, calType, classDays);
             const monthlyRate = monthlyExp > 0 ? Math.min(100, Math.round(monthlyAttended / monthlyExp * 100)) : null;
 
             const rows = [
@@ -7842,10 +7873,11 @@
             const overallRate = r?.rate ?? '';
 
             const calType = getCourseCalendarType(s.course);
-            const spw = getSessionsPerWeek(s.trainer, s.campus, s.course);
+            const classDays = getClassDays(s.trainer, s.campus, s.course, s.courseCode);
+            const spw = getSessionsPerWeek(s.trainer, s.campus, s.course, s.courseCode);
             const fn = getEffectiveMonthlyWindow(calType);
             const monthlyAttended = sortedDates.filter(d => d >= fn.from && d <= fn.to).length;
-            const monthlyExp = calcExpectedSessionsBetween(fn.from, fn.to, s.campus, spw, calType, null);
+            const monthlyExp = calcExpectedSessionsBetween(fn.from, fn.to, s.campus, spw, calType, classDays);
             const monthlyRate = monthlyExp > 0 ? Math.min(100, Math.round(monthlyAttended / monthlyExp * 100)) : null;
 
             const rateColor = v => (v !== null && v !== '' && Number(v) < 80) ? '#dc2626' : '#059669';

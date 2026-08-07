@@ -1,7 +1,8 @@
 const { getPool, sql } = require('./_db');
 const { validateToken, isAdminUser, ensureAdminCache } = require('./_auth');
 const { trainersFromEmail } = require('./_trainers');
-const { workingDaysInRange } = require('./_calendar');
+const { expectedSessionsBetween } = require('./_calendar');
+const { getClassDays, loadMergedSchedule } = require('./_schedule');
 
 const CACHE_TTL_MS = 90_000; // 90 seconds
 const _cache = new Map(); // key → { ts, data }
@@ -32,6 +33,7 @@ module.exports = async (req, res) => {
     await ensureAdminCache(pool);
     const adminUser = isAdminUser(email);
     const trainerNames = adminUser ? [] : trainersFromEmail(email);
+    const trainerSchedule = await loadMergedSchedule(pool);
 
     const request = pool.request();
 
@@ -113,12 +115,13 @@ module.exports = async (req, res) => {
     fallbackDate.setUTCDate(fallbackDate.getUTCDate() - 365);
     const fallback = fallbackDate.toISOString().slice(0, 10);
 
-    // Memoize workingDaysInRange — many students share the same commenced date
-    const wdCache = {};
-    function wd(start, end) {
-      const k = start + '|' + end;
-      if (wdCache[k] === undefined) wdCache[k] = workingDaysInRange(start, end);
-      return wdCache[k];
+    // Memoize expectedSessionsBetween — many students share the same
+    // trainer/course/date-range combination
+    const esCache = {};
+    function expectedSessions(start, end, classDays, spw) {
+      const k = `${start}|${end}|${classDays ? classDays.join(',') : ''}|${spw}`;
+      if (esCache[k] === undefined) esCache[k] = expectedSessionsBetween(start, end, classDays, spw);
+      return esCache[k];
     }
 
     const rows = result.recordset.map(r => {
@@ -129,15 +132,20 @@ module.exports = async (req, res) => {
       const firstAttendanceStr = r.firstAttendanceDate
         ? new Date(r.firstAttendanceDate).toISOString().slice(0, 10)
         : null;
+      // Real scheduled class days for this student's trainer+course, same lookup
+      // the portal uses — falls back to a flat 2/week assumption when unconfigured.
+      const classDays = getClassDays(r.trainer, r.course, r.courseCode, trainerSchedule);
+      const spw = classDays && classDays.length ? classDays.length : 2;
       // If student has never checked in, expectedDays = 0 → rate shows as Pending
       const periodStart = firstAttendanceStr || null;
-      const expectedDays = periodStart ? Math.round(wd(periodStart, today) * 2 / 5) : 0;
+      const expectedDays = periodStart ? expectedSessions(periodStart, today, classDays, spw) : 0;
       // Monthly: use firstAttendanceDate or monthStart (whichever is later) if student has attended
       const monthlyPeriodStart = firstAttendanceStr
         ? (firstAttendanceStr > monthStart ? firstAttendanceStr : monthStart)
         : monthStart;
-      const monthlyWorkingDays = (firstAttendanceStr && monthlyPeriodStart <= today) ? wd(monthlyPeriodStart, today) : 0;
-      const monthlyExpectedDays = Math.round(monthlyWorkingDays * 2 / 5);
+      const monthlyExpectedDays = (firstAttendanceStr && monthlyPeriodStart <= today)
+        ? expectedSessions(monthlyPeriodStart, today, classDays, spw)
+        : 0;
       return { ...r, expectedDays, monthlyExpectedDays, firstAttendanceDate: firstAttendanceStr };
     });
 

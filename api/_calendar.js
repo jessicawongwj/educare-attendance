@@ -123,4 +123,69 @@ function workingDaysInRange(startIso, endIso) {
 // Backward-compat export (current year snapshot, used by some callers)
 const PUBLIC_HOLIDAYS = getPublicHolidays(new Date().getUTCFullYear());
 
-module.exports = { PUBLIC_HOLIDAYS, SCHOOL_BREAKS, isWorkingDay, workingDaysInRange };
+// ── Schedule-aware expected sessions ────────────────────────────────────────
+// Mirrors calcExpectedSessionsBetween()/isSchoolBreakWeek() in
+// educare-portal.html EXACTLY, so the backend (email reports, dashboard
+// summary) produces the same numbers as the portal for the same student
+// instead of workingDaysInRange()'s flat "every weekday" assumption. Day
+// convention matches the portal's TRAINER_SCHEDULE: 0=Mon..6=Sun, offsets
+// from that week's Monday — NOT JS's native getDay() (0=Sun).
+function isSchoolBreakWeek(weekMondayIso) {
+  for (let d = 0; d < 5; d++) {
+    const day = new Date(weekMondayIso + 'T00:00:00Z');
+    day.setUTCDate(day.getUTCDate() + d);
+    const key = toISO(day);
+    const year = +key.slice(0, 4);
+    const breaks = SCHOOL_BREAKS[year] || [];
+    if (!breaks.some(([s, e]) => key >= s && key <= e)) return false;
+  }
+  return true;
+}
+
+// sessionsPerWeek is only used as the fallback when classDays is unavailable
+// (trainer/course not found in _schedule.js) — mirrors the portal's
+// calcExpectedSessionsBetween() else-branch exactly, so an unconfigured course
+// degrades to the old flat assumption instead of silently reporting 0 expected.
+function expectedSessionsBetween(startIso, endIso, classDays, sessionsPerWeek = 2) {
+  const start = new Date(startIso + 'T00:00:00Z');
+  const end = new Date(endIso + 'T00:00:00Z');
+  if (isNaN(start.getTime()) || start > end) return 0;
+
+  const monday = new Date(start);
+  const dow = monday.getUTCDay(); // 0=Sun..6=Sat (native JS)
+  monday.setUTCDate(monday.getUTCDate() - ((dow + 6) % 7)); // normalise to that week's Monday
+
+  let total = 0;
+  const cur = new Date(monday);
+  while (cur <= end) {
+    if (isSchoolBreakWeek(toISO(cur))) { cur.setUTCDate(cur.getUTCDate() + 7); continue; }
+    if (classDays && classDays.length) {
+      for (const offset of classDays) {
+        const day = new Date(cur);
+        day.setUTCDate(day.getUTCDate() + offset);
+        if (day < start || day > end) continue;
+        const key = toISO(day);
+        const year = +key.slice(0, 4);
+        if (!getPublicHolidays(year).has(key)) total++;
+      }
+    } else {
+      // Fallback: no schedule info — sessionsPerWeek minus any weekday holidays
+      let phCount = 0, weekActive = false;
+      for (let d = 0; d < 5; d++) {
+        const day = new Date(cur);
+        day.setUTCDate(day.getUTCDate() + d);
+        if (day >= start && day <= end) {
+          weekActive = true;
+          const key = toISO(day);
+          const year = +key.slice(0, 4);
+          if (getPublicHolidays(year).has(key)) phCount++;
+        }
+      }
+      if (weekActive) total += Math.max(0, sessionsPerWeek - phCount);
+    }
+    cur.setUTCDate(cur.getUTCDate() + 7);
+  }
+  return total;
+}
+
+module.exports = { PUBLIC_HOLIDAYS, SCHOOL_BREAKS, isWorkingDay, workingDaysInRange, expectedSessionsBetween };

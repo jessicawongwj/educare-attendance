@@ -2,7 +2,8 @@ const { getPool, sql } = require('./_db');
 const { validateToken, isAdminUser, ensureAdminCache } = require('./_auth');
 const { sendMail } = require('./_graph');
 
-const { workingDaysInRange } = require('./_calendar');
+const { workingDaysInRange, expectedSessionsBetween } = require('./_calendar');
+const { getClassDays, loadMergedSchedule } = require('./_schedule');
 
 function todayAEST() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Brisbane' });
@@ -66,13 +67,14 @@ module.exports = async (req, res) => {
       }
       const workDays = workingDaysInRange(startDate, today);
       const label = isMonthly ? 'Monthly' : 'Fortnightly';
+      const trainerSchedule = await loadMergedSchedule(pool);
 
       const result = await pool.request()
         .input('startDate', sql.Date, startDate)
         .input('today',     sql.Date, today)
         .query(`
           SELECT
-            e.studentId, e.trainer, e.course, e.commenced,
+            e.studentId, e.trainer, e.course, e.courseCode, e.commenced,
             COUNT(DISTINCT a.attendanceDate)        AS presentDays
           FROM enrollments e
           LEFT JOIN attendance a
@@ -81,20 +83,23 @@ module.exports = async (req, res) => {
             AND a.attendanceDate >= @startDate
             AND a.attendanceDate <= @today
           WHERE e.status = 'active'
-          GROUP BY e.studentId, e.trainer, e.course, e.commenced
+          GROUP BY e.studentId, e.trainer, e.course, e.courseCode, e.commenced
           ORDER BY e.trainer, e.course
         `);
 
-      // Memoize workingDaysInRange — many students share the same commenced date
-      const wdCache = {};
-      function wd(start, end) {
-        const k = start + '|' + end;
-        if (wdCache[k] === undefined) wdCache[k] = workingDaysInRange(start, end);
-        return wdCache[k];
+      // Memoize expectedSessionsBetween — many students share the same
+      // trainer/course/date-range combination
+      const esCache = {};
+      function expectedSessions(start, end, classDays, spw) {
+        const k = `${start}|${end}|${classDays ? classDays.join(',') : ''}|${spw}`;
+        if (esCache[k] === undefined) esCache[k] = expectedSessionsBetween(start, end, classDays, spw);
+        return esCache[k];
       }
 
-      // Aggregate per (trainer, course), using break/holiday-aware expected sessions
-      // (same flat 2-sessions-per-5-weekdays formula as api/summary.js's expectedDays)
+      // Aggregate per (trainer, course), using break/holiday-aware expected
+      // sessions wired to each course's real scheduled class days (falls back
+      // to a flat 2-sessions-per-week assumption when a course isn't configured
+      // in _schedule.js) — same lookup the portal uses for its own rates.
       const groups = {};
       result.recordset.forEach(r => {
         const key = `${r.trainer || ''}|||${r.course || ''}`;
@@ -104,7 +109,9 @@ module.exports = async (req, res) => {
         g.present += r.presentDays;
         const commencedStr = r.commenced ? new Date(r.commenced).toISOString().slice(0, 10) : null;
         const periodStart = commencedStr && commencedStr > startDate ? commencedStr : startDate;
-        if (periodStart <= today) g.expected += Math.round(wd(periodStart, today) * 2 / 5);
+        const classDays = getClassDays(r.trainer, r.course, r.courseCode, trainerSchedule);
+        const spw = classDays && classDays.length ? classDays.length : 2;
+        if (periodStart <= today) g.expected += expectedSessions(periodStart, today, classDays, spw);
       });
       const rows = Object.values(groups).sort((a, b) =>
         (a.trainer || '').localeCompare(b.trainer || '') || (a.course || '').localeCompare(b.course || ''));
