@@ -3769,6 +3769,12 @@
             return new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Brisbane' });
         }
 
+        // Current wall-clock time in Brisbane as "HH:MM", regardless of the device's own timezone —
+        // used when marking a student present so the saved check-in time is correct.
+        function nowTimeAEST() {
+            return new Date().toLocaleTimeString('en-AU', { timeZone: 'Australia/Brisbane', hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+
         // Normalise date strings to YYYY-MM-DD.
         // Strategy:
         //   - YYYY-MM-DD → pass through
@@ -3981,6 +3987,12 @@
         // Extract HH:MM from a datetime string like "04-02-2026 10:21:40" or ISO
         function extractTime(str) {
             if (!str) return null;
+            // Old bug: manual "Mark Present" saves used to fall back to a hard-coded
+            // T02:00:00.000Z (= 12:00 Brisbane) when no real time was sent — that
+            // placeholder is baked into some historical rows. It's not a real check-in
+            // time, so don't display it as one (a genuine scan landing on this exact
+            // millisecond is effectively impossible).
+            if (/T02:00:00\.000Z$/.test(String(str))) return null;
             // If it looks like an ISO datetime, convert to Brisbane time (UTC+10, no DST)
             if (String(str).includes('T') || String(str).match(/^\d{4}-\d{2}-\d{2}/)) {
                 const d = new Date(str);
@@ -6605,7 +6617,8 @@
                         studentId: s.id, studentName: s.name, course: s.course,
                         courseCode: s.courseCode || '', trainer: s.trainer, campus: s.campus,
                         dates, reason,
-                        markedBy: getMarkedBy(), status: apiStatus, note
+                        markedBy: getMarkedBy(), status: apiStatus, note,
+                        checkinTime: apiStatus === 'Present' ? nowTimeAEST() : undefined
                     })
                 });
                 const statusLabel = status === 'Placement' ? 'on placement' : status.toLowerCase();
@@ -6628,7 +6641,7 @@
         async function quickMark(s, markPresent) {
             const today = todayAEST();
             const sid = String(s.id);
-            const timeStr = new Date().toTimeString().slice(0, 5);
+            const timeStr = nowTimeAEST();
             if (markPresent) {
                 if (!attendance.find(a => String(a.studentId) === sid)) {
                     attendance.push({ studentId: sid, checkIn: timeStr, checkOut: null });
@@ -6652,7 +6665,8 @@
                     body: JSON.stringify({ studentId: s.id, studentName: s.name, course: s.course,
                         courseCode: s.courseCode || '', trainer: s.trainer, campus: s.campus,
                         dates: [today], reason: markPresent ? 'Manually marked present' : 'Manually marked absent',
-                        markedBy: getMarkedBy(), status: markPresent ? 'Present' : 'Absent' })
+                        markedBy: getMarkedBy(), status: markPresent ? 'Present' : 'Absent',
+                        checkinTime: markPresent ? timeStr : undefined })
                 });
                 syncNormalizedCheckin(s.id, s.campus, today, markPresent ? 'Present' : 'Absent');
             } catch { showToast('Failed to save — please try again', true); }
@@ -6725,7 +6739,7 @@
                     isPlacement ? 'Placement' : 'Present',
                     note || 'Manually marked present'
                 );
-                const timeStr = new Date().toTimeString().slice(0, 5);
+                const timeStr = nowTimeAEST();
                 if (dates.includes(viewDate)) {
                     const existingIdx = attendance.findIndex(a => a.studentId === String(student.id));
                     if (existingIdx >= 0) attendance[existingIdx].checkIn = timeStr;
@@ -6746,7 +6760,7 @@
                         body: JSON.stringify({ studentId: student.id, studentName: student.name,
                             course: student.course, courseCode: student.courseCode || '', trainer: student.trainer,
                             campus: student.campus, dates,
-                            reason, markedBy, status: apiStatus })
+                            reason, markedBy, status: apiStatus, checkinTime: timeStr })
                     });
                     savedThisSession.set(String(student.id), apiStatus);
                     dates.forEach(d => { savedKeys.add(`${student.id}|${d}`); syncNormalizedCheckin(student.id, student.campus, d, apiStatus); });
@@ -6888,7 +6902,8 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ studentId, studentName, course, trainer, campus,
-                        dates: [date], reason: reason || 'Manually marked present', markedBy, status: entryStatus })
+                        dates: [date], reason: reason || 'Manually marked present', markedBy, status: entryStatus,
+                        checkinTime: entryStatus === 'Present' ? nowTimeAEST() : undefined })
                 });
                 savedKeys.add(`${studentId}|${date}`);
                 syncNormalizedCheckin(studentId, campus, date, entryStatus);
@@ -7210,7 +7225,8 @@
                             studentId: id, studentName: s.name, course: s.course,
                             trainer: s.trainer, campus: s.campus,
                             dates: [date], reason: `Bulk marked ${status}`,
-                            markedBy, status: status === 'present' ? 'Present' : 'Absent'
+                            markedBy, status: status === 'present' ? 'Present' : 'Absent',
+                            checkinTime: status === 'present' ? nowTimeAEST() : undefined
                         })
                     });
                     const spStatus = status === 'present' ? 'Present' : 'Absent';
@@ -7333,7 +7349,8 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ studentId: id, studentName: name, course, trainer, campus,
-                            dates, reason: 'Manually added student', markedBy, status: addStudentStatus === 'present' ? 'Present' : 'Absent' })
+                            dates, reason: 'Manually added student', markedBy, status: addStudentStatus === 'present' ? 'Present' : 'Absent',
+                            checkinTime: addStudentStatus === 'present' ? nowTimeAEST() : undefined })
                     });
                 } catch { showToast('Roster saved but attendance record failed — check connection', true); }
             }
@@ -8471,8 +8488,9 @@
             if (!allStudents.find(s => String(s.id) === String(id))) allStudents.push(newStudent);
 
             // Mark Present for today
+            const missingStudentTime = nowTimeAEST();
             if (!attendance.find(a => a.studentId === String(id))) {
-                attendance.push({ studentId: String(id), checkIn: new Date().toTimeString().slice(0,5), checkOut: null });
+                attendance.push({ studentId: String(id), checkIn: missingStudentTime, checkOut: null });
             }
 
             // Save attendance record to SQL
@@ -8481,7 +8499,8 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ studentId: id, studentName: name, course, trainer: trainerName,
-                        campus, dates: [today], reason: 'Manually added by trainer — student not in list', markedBy: trainerName, status: 'Present' })
+                        campus, dates: [today], reason: 'Manually added by trainer — student not in list', markedBy: trainerName, status: 'Present',
+                        checkinTime: missingStudentTime })
                 });
             } catch { /* non-critical — local state already updated */ }
 

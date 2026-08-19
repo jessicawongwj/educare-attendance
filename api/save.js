@@ -115,7 +115,7 @@ module.exports = async (req, res) => {
           } else {
             const checkinDT = rawCheckinTime
               ? new Date(date + 'T' + rawCheckinTime + ':00.000+10:00')
-              : new Date(date + 'T02:00:00.000Z');
+              : new Date(); // no time supplied (shouldn't normally happen) — use the actual moment of saving
             const checkoutDT = rawCheckoutTime
               ? new Date(date + 'T' + rawCheckoutTime + ':00.000+10:00')
               : null;
