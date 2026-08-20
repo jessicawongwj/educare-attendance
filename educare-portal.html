@@ -5429,7 +5429,11 @@
           try {
             const presentIds = await getPeriodIds();
             _dashboardPresentIds = presentIds;
-            const campusStudents = allStudents.filter(s => campusMatch(s.campus, activeCampusTab));
+            // Exclude students with no trainer assigned — in practice these are students
+            // who've been withdrawn/cancelled but not yet cleaned up in the roster; they
+            // have no real trainer card to belong to and were showing up as a blank-header
+            // "ghost" card, dragging the campus attendance rate down with them.
+            const campusStudents = allStudents.filter(s => campusMatch(s.campus, activeCampusTab) && s.trainer && s.trainer.trim());
 
             // For "today"/"yesterday" periods, only count students scheduled on that weekday.
             // Students with no class that day aren't expected to scan — excluding them gives an accurate rate.
@@ -5641,7 +5645,11 @@
         function exportAllClassesCSV() {
             const today = todayAEST();
             const schedDay = getScheduleDayForDate(today);
-            const campusStudents = allStudents.filter(s => campusMatch(s.campus, activeCampusTab));
+            // Exclude students with no trainer assigned — in practice these are students
+            // who've been withdrawn/cancelled but not yet cleaned up in the roster; they
+            // have no real trainer card to belong to and were showing up as a blank-header
+            // "ghost" card, dragging the campus attendance rate down with them.
+            const campusStudents = allStudents.filter(s => campusMatch(s.campus, activeCampusTab) && s.trainer && s.trainer.trim());
             const scheduled = schedDay < 5 ? getStudentsScheduledOnDay(campusStudents, schedDay) : campusStudents;
             const attMap = new Map(attendance.map(a => [String(a.studentId), a]));
 
@@ -5661,7 +5669,11 @@
 
         async function exportDashboardCSV() {
             const presentIds = _dashboardPresentIds.size ? _dashboardPresentIds : await getPeriodIds();
-            const campusStudents = allStudents.filter(s => campusMatch(s.campus, activeCampusTab));
+            // Exclude students with no trainer assigned — in practice these are students
+            // who've been withdrawn/cancelled but not yet cleaned up in the roster; they
+            // have no real trainer card to belong to and were showing up as a blank-header
+            // "ghost" card, dragging the campus attendance rate down with them.
+            const campusStudents = allStudents.filter(s => campusMatch(s.campus, activeCampusTab) && s.trainer && s.trainer.trim());
             const today = todayAEST();
             const schedDay = getScheduleDayForDate(today);
             const periodLabels = { today: 'Today', yesterday: 'Yesterday', week: 'Last Week', month: 'This Month', quarter: 'This Quarter', year: 'This Year' };
@@ -8008,7 +8020,11 @@
 
         function openCampusStudentList(trainerPreset) {
             _campusStudentListTrainerPreset = trainerPreset || null;
-            const campusStudents = allStudents.filter(s => campusMatch(s.campus, activeCampusTab));
+            // Exclude students with no trainer assigned — in practice these are students
+            // who've been withdrawn/cancelled but not yet cleaned up in the roster; they
+            // have no real trainer card to belong to and were showing up as a blank-header
+            // "ghost" card, dragging the campus attendance rate down with them.
+            const campusStudents = allStudents.filter(s => campusMatch(s.campus, activeCampusTab) && s.trainer && s.trainer.trim());
             _campusStudentListAll = campusStudents;
             document.getElementById('campusStudentListTitle').textContent = trainerPreset
                 ? `View Students — ${trainerPreset}`
