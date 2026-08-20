@@ -3533,10 +3533,12 @@
         const SUSPICIOUS_HOUR_START = 6;  // before 6am Brisbane time
         const SUSPICIOUS_HOUR_END   = 20; // after 8pm Brisbane time
         // Returns an array of human-readable reasons, or [] if nothing looks off.
-        // checkInISO/lat/lng come from the attendance record; manual marks with no
-        // GPS (checkinLat/Lng null) are only checked for the time-based rules,
-        // never flagged for "no GPS" — that's the expected shape of a manual mark.
-        function getCheckinFlags(checkInISO, lat, lng) {
+        // checkInISO/lat/lng come from the attendance record. isManual means the
+        // record came from a trainer/admin "Mark Present" action (api/save.js),
+        // not a QR scan (api/checkin.js) — those never carry GPS, and can
+        // legitimately be logged outside class hours (e.g. a trainer catching up
+        // on the roll after hours), so neither is treated as suspicious for them.
+        function getCheckinFlags(checkInISO, lat, lng, isManual) {
             if (!checkInISO) return [];
             const t = new Date(checkInISO);
             if (isNaN(t.getTime())) return [];
@@ -3546,19 +3548,24 @@
                 flags.push('Check-in time is in the future');
             }
 
-            const hour = parseInt(t.toLocaleString('en-AU', { timeZone: 'Australia/Brisbane', hour: 'numeric', hour12: false }), 10);
-            if (hour < SUSPICIOUS_HOUR_START || hour >= SUSPICIOUS_HOUR_END) {
-                const timeStr = t.toLocaleTimeString('en-AU', { timeZone: 'Australia/Brisbane', hour: '2-digit', minute: '2-digit' });
-                flags.push(`Checked in at an unusual hour (${timeStr})`);
+            if (!isManual) {
+                const hour = parseInt(t.toLocaleString('en-AU', { timeZone: 'Australia/Brisbane', hour: 'numeric', hour12: false }), 10);
+                if (hour < SUSPICIOUS_HOUR_START || hour >= SUSPICIOUS_HOUR_END) {
+                    const timeStr = t.toLocaleTimeString('en-AU', { timeZone: 'Australia/Brisbane', hour: '2-digit', minute: '2-digit' });
+                    flags.push(`Checked in at an unusual hour (${timeStr})`);
+                }
             }
 
-            if (lat != null && lng != null) {
+            if (!isManual && lat != null && lng != null) {
                 const onCampus = CAMPUS_GEOFENCES.some(c => haversineKm(lat, lng, c.lat, c.lng) <= c.radius);
                 if (!onCampus) flags.push('GPS location does not match any campus');
             }
             return flags;
         }
         const SUSPICIOUS_BADGE_HTML = reasons => `<span style="display:inline-block;margin-left:4px;font-size:0.65rem;font-weight:700;color:var(--danger);background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.4);border-radius:4px;padding:1px 5px;vertical-align:middle;cursor:help;" title="${reasons.join(' · ').replace(/"/g,'&quot;')}">Suspicious</span>`;
+        // Neutral tag for hand-entered attendance (Mark Present etc.) — distinguishes it
+        // from a QR scan without implying anything is wrong, unlike the Suspicious badge.
+        const MANUAL_BADGE_HTML = `<span style="display:inline-block;margin-left:4px;font-size:0.65rem;font-weight:700;color:var(--text-secondary);background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;padding:1px 5px;vertical-align:middle;cursor:help;" title="Marked present manually, not scanned via QR">Manual</span>`;
 
         let _schedLocked = true;
         let TRAINER_SCHEDULE = {
@@ -3910,7 +3917,8 @@
                         CheckOut: r.checkoutTime || r.CheckOut || null,
                         Status: 'present',
                         ID: r.id || 0,
-                        Lat: r.checkinLat, Lng: r.checkinLng
+                        Lat: r.checkinLat, Lng: r.checkinLng,
+                        IsManual: r.isManual
                     }));
                     _rawRates = {};
                 } else {
@@ -3932,12 +3940,13 @@
                             checkIn: r.CheckIn || r.CheckInDateTime || r['Check In'] || null,
                             checkOut: r.CheckOut || r['Check Out'] || null,
                             lat: r.Lat ?? r.checkinLat ?? null,
-                            lng: r.Lng ?? r.checkinLng ?? null });
+                            lng: r.Lng ?? r.checkinLng ?? null,
+                            isManual: !!(r.IsManual ?? r.isManual) });
                 });
                 attendance = [];
-                latestByStudent.forEach(({ status, checkIn, checkOut, lat, lng }, id) => {
+                latestByStudent.forEach(({ status, checkIn, checkOut, lat, lng, isManual }, id) => {
                     if (status !== 'absent')
-                        attendance.push({ studentId: id, checkIn: extractTime(checkIn), checkOut: extractTime(checkOut), checkInISO: checkIn, lat, lng });
+                        attendance.push({ studentId: id, checkIn: extractTime(checkIn), checkOut: extractTime(checkOut), checkInISO: checkIn, lat, lng, isManual });
                 });
                 // Re-apply in-session marks so Refresh doesn't revert them
                 const currentDate = date;
@@ -4241,7 +4250,7 @@
                 const att = attendance.find(a => String(a.studentId) === String(s.id));
                 const isPresent = !!att;
                 const onPlacement = isPresent && isPlacementForDate(s.id, viewedDate);
-                const checkinFlags = isPresent ? getCheckinFlags(att.checkInISO, att.lat, att.lng) : [];
+                const checkinFlags = isPresent ? getCheckinFlags(att.checkInISO, att.lat, att.lng, att.isManual) : [];
                 const markLabel = isPresent ? 'Mark Absent' : 'Mark Present';
                 const markBg = isPresent ? 'var(--danger)' : 'var(--success)';
                 const rData = liveRatesCache ? liveRatesCache[rateKey(s.id, s.course)] : null;
@@ -4266,6 +4275,7 @@
                             <span class="status-badge status-${isPresent ? 'present' : 'absent'}">${isPresent ? 'Present' : 'Absent'}</span>
                             ${onPlacement ? PLACEMENT_BADGE_HTML : ''}
                             ${checkinFlags.length ? SUSPICIOUS_BADGE_HTML(checkinFlags) : ''}
+                            ${isPresent && att.isManual ? MANUAL_BADGE_HTML : ''}
                             ${savedThisSession.has(String(s.id)) ? `<span style="display:inline-block;margin-left:4px;font-size:0.65rem;font-weight:700;color:#16a34a;background:#dcfce7;border:1px solid #86efac;border-radius:4px;padding:1px 5px;vertical-align:middle;">Saved ✓</span>` : ''}
                         </td>
                         <td>${f14Cell}</td>

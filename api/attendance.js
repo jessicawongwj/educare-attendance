@@ -32,7 +32,8 @@ module.exports = async (req, res) => {
     const result = await request.query(`
       SELECT
         a.id, a.studentId, a.studentName, a.course, a.courseCode, a.trainer, a.campus,
-        a.checkinTime, a.checkoutTime, a.attendanceDate, a.checkinLat, a.checkinLng
+        a.checkinTime, a.checkoutTime, a.attendanceDate, a.checkinLat, a.checkinLng,
+        CASE WHEN a.notes IS NOT NULL AND LTRIM(RTRIM(a.notes)) <> '' THEN 1 ELSE 0 END AS isManual
       FROM attendance a
       WHERE a.attendanceDate = @date ${trainerWhere}
       ORDER BY a.checkinTime DESC
