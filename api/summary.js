@@ -76,6 +76,7 @@ module.exports = async (req, res) => {
         COALESCE(e.commenced,   s.commenced)   AS commenced,
         COALESCE(e.expectedEnd, s.expectedEnd) AS expectedEnd,
         COALESCE(e.isPrimary, 1)               AS isPrimary,
+        s.cohortLabel                          AS cohortLabel,
         MAX(ISNULL(ec.enrollmentCount, 0))     AS enrollmentCount,
         COUNT(a.attendanceDate)                AS attendedDays,
         SUM(CASE WHEN a.attendanceDate >= CAST(DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1) AS DATE) THEN 1 ELSE 0 END) AS monthlyAttendedDays,
@@ -103,7 +104,8 @@ module.exports = async (req, res) => {
         COALESCE(e.status,      s.status),
         COALESCE(e.commenced,   s.commenced),
         COALESCE(e.expectedEnd, s.expectedEnd),
-        COALESCE(e.isPrimary, 1)
+        COALESCE(e.isPrimary, 1),
+        s.cohortLabel
       ORDER BY s.name, COALESCE(e.isPrimary, 1) DESC
     `);
 

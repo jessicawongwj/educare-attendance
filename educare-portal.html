@@ -2457,6 +2457,16 @@
                 <label style="font-size:0.82rem;font-weight:600;color:var(--text-primary);display:block;margin-bottom:0.4rem;">Select new trainer</label>
                 <select id="reassignTrainerSelect" style="width:100%;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:7px;font-size:0.85rem;background:var(--bg-primary);color:var(--text-primary);">
                 </select>
+                <div id="reassignCohortWrap" style="display:none;margin-top:0.9rem;">
+                    <label style="font-size:0.82rem;font-weight:600;color:var(--text-primary);display:block;margin-bottom:0.4rem;">Cohort</label>
+                    <select id="reassignCohortSelect" style="width:100%;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:7px;font-size:0.85rem;background:var(--bg-primary);color:var(--text-primary);">
+                        <option value="">Normal progression (Foundation → Week 8)</option>
+                        <option value="saturday">Saturday</option>
+                        <option value="fasttrack">Fast Track</option>
+                        <option value="rama">Rama's class (White Card → direct entry)</option>
+                    </select>
+                    <div style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.35rem;">Carpentry/Tiling only. Determines which trainer this student automatically shows under as they progress — see Settings for the full rule.</div>
+                </div>
                 <div style="display:flex;gap:0.75rem;margin-top:1.25rem;">
                     <button onclick="confirmReassignTrainer()" style="flex:1;padding:0.5rem;background:var(--brand);color:white;border:none;border-radius:7px;font-size:0.85rem;font-weight:600;cursor:pointer;">Save</button>
                     <button onclick="closeReassignTrainer()" style="flex:1;padding:0.5rem;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:7px;font-size:0.85rem;cursor:pointer;">Cancel</button>
@@ -2995,7 +3005,8 @@
                                 commenced: s.commenced ? String(s.commenced).slice(0,10) : null,
                                 expectedEnd: s.expectedEnd ? String(s.expectedEnd).slice(0,10) : null,
                                 status: s.status || 'active',
-                                withdrawn: !!(s.withdrawn)
+                                withdrawn: !!(s.withdrawn),
+                                cohortLabel: s.cohortLabel || null
                             };
                         }).filter(s => s.id && s.name);
                         console.log('Roster loaded:', window._dynamicRoster.length, 'enrolments');
@@ -3126,15 +3137,24 @@
                 const c = parseCommenced(s.commenced);
                 return c && c > todayStr;
             });
+            // Foundation → Post-Foundation progression (Carpentry/Tiling): compute each student's
+            // CURRENT effective trainer for display purposes only — the stored `trainer` field is
+            // never modified, so historical/attendance data and pre-cutover students are untouched.
+            const applyProgression = roster => roster.map(s => {
+                const eff = resolveEffectiveTrainer(s);
+                return eff && eff !== s.trainer ? { ...s, trainer: eff } : s;
+            });
             // Correct each student's campus to match their trainer's TRAINER_SCHEDULE entry.
             // Students may be imported with the wrong campus — this ensures the dashboard
-            // and campus tabs always group students by their trainer's actual campus.
+            // and campus tabs always group students by their trainer's actual campus. Runs
+            // AFTER progression so a student moved onto a new trainer also gets that trainer's
+            // real campus/class-day lookups for free.
             const correctCampus = roster => roster.map(s => {
                 const sched = Object.values(TRAINER_SCHEDULE).find(e => e.t === s.trainer);
                 return sched && sched.c ? { ...s, campus: sched.c } : s;
             });
-            const correctedActive = correctCampus(activeRoster);
-            const correctedFuture = correctCampus(futureRoster);
+            const correctedActive = correctCampus(applyProgression(activeRoster));
+            const correctedFuture = correctCampus(applyProgression(futureRoster));
 
             if (isTrainer) {
                 allStudents = filterTrainerStudents(correctedActive, currentUser.trainer);
@@ -3391,7 +3411,7 @@
                 const attended = r?.attended || 0;
                 const rate = (() => {
                     if (!liveRatesCache || !r || attended === 0) return null;
-                    const classDays = getClassDays(s.trainer, s.campus, s.course, s.courseCode);
+                    const classDays = getClassDaysForStudent(s);
                     const spw = getSessionsPerWeek(s.trainer, s.campus, s.course, s.courseCode);
                     const sessions = calcExpectedSessionsBetween(r.firstCheckin, today, s.campus, spw, getCourseCalendarType(s.course), classDays);
                     return sessions > 0 ? Math.min(100, Math.round(attended / sessions * 100)) : null;
@@ -3576,10 +3596,95 @@
             "Nati Belen||Southport GC":        {"t":"Nati Belen","c":"Southport GC","courses":{"CHC30121 Certificate III in Early Childhood Education and Care":[0,3],"CHC50121 Diploma of Early Childhood Education and Care":[0,3],"CHC50125 Diploma of Early Childhood Education and Care":[0,3]}},
             "Vijeta Srivastava||Southport GC": {"t":"Vijeta Srivastava","c":"Southport GC","courses":{"CHC43015 Certificate IV in Ageing Support":[0,1,2,3],"CHC43121 Certificate IV in Disability Support":[0,1,2,3],"CHC52021 Diploma of Community Services":[0,1,2,3],"CHC52025 Diploma of Community Services":[0,1,2,3]}},
             "Toriqul Mozumder||Southport GC":  {"t":"Toriqul Mozumder","c":"Southport GC","courses":{"CHC33021 Certificate III in Individual Support":[0,2]}},
-            "Alessandro Tavian||Woolloongabba":{"t":"Alessandro Tavian","c":"Woolloongabba","courses":{"CPC30220 Certificate III in Carpentry":[0,1,2,3,4],"CPC31320 Certificate III in Wall and Floor Tiling":[0,1,2,3,4],"CPC40120 Certificate IV in Building and Construction":[0,1,2,3,4]}}
+            "Alessandro Tavian||Woolloongabba":{"t":"Alessandro Tavian","c":"Woolloongabba","courses":{"CPC30220 Certificate III in Carpentry":[0,1,2,3,4],"CPC31320 Certificate III in Wall and Floor Tiling":[0,1,2,3,4],"CPC40120 Certificate IV in Building and Construction":[0,1,2,3,4]}},
+            // Post-Foundation (week 8+) — see PROGRESSION below. Mirrors api/_schedule.js — keep in sync.
+            // "Sandro" is Alessandro Tavian himself, not a separate trainer — his post-Foundation
+            // Tiling students stay under his own entry above; no separate schedule entry needed.
+            "Malcolm Lange||Woolloongabba":     {"t":"Malcolm Lange","c":"Woolloongabba","courses":{"CPC30220 Certificate III in Carpentry":[0,1]}},
+            "Rama||Woolloongabba":              {"t":"Rama","c":"Woolloongabba","courses":{"CPC30220 Certificate III in Carpentry":[5],"CPC31320 Certificate III in Wall and Floor Tiling — 34wk":[]}}
         };
 
         const TRAINER_SCHEDULE_DEFAULT = JSON.parse(JSON.stringify(TRAINER_SCHEDULE));
+
+        // ── Foundation → Post-Foundation progression (Carpentry/Tiling only) ───────
+        // Mirrors api/_schedule.js's PROGRESSION/getTrainingWeek/resolveEffectiveTrainer —
+        // keep both copies in sync. This never touches stored data: it only computes which
+        // trainer a student should CURRENTLY show under, for display/grouping purposes.
+        const PROGRESSION = {
+            FOUNDATION_WEEKS: 7,
+            FOUNDATION_TRAINER: "Alessandro Tavian",
+            POST_FOUNDATION_TRAINER: { "CPC30220": "Malcolm Lange", "CPC31320": "Alessandro Tavian" },
+            // Tiling stays with the same trainer at week 8, so there's no name change to key a day
+            // lookup off — this explicit override narrows his Tiling days for post-Foundation
+            // students specifically (Mon–Fri during Foundation). 0=Mon..6=Sun.
+            TILING_POST_FOUNDATION_DAYS: [2, 3], // Wed/Thu
+            RAMA_TRAINER: "Rama",
+            RAMA_ACTIVE_FROM: "2026-09-10",
+            RAMA_TILING_GROUP_ACTIVE: false,
+            // Only students who commenced on/after this date get the new automatic progression —
+            // anyone already enrolled keeps whatever trainer is already on their record, untouched.
+            PROGRESSION_CUTOVER_DATE: "2026-08-28",
+        };
+
+        function getTrainingWeek(commencedDate, todayDate) {
+            if (!commencedDate) return null;
+            const c = new Date(commencedDate + 'T00:00:00');
+            const t = new Date((todayDate || todayAEST()) + 'T00:00:00');
+            if (isNaN(c) || isNaN(t)) return null;
+            const days = Math.floor((t - c) / 86400000);
+            if (days < 0) return null;
+            return Math.floor(days / 7) + 1;
+        }
+
+        // Returns the trainer a Carpentry/Tiling student should currently show under, or null if
+        // this logic doesn't apply (wrong course, pre-cutover student, Saturday/Fast Track label,
+        // Rama not yet active) — callers fall back to the student's own stored trainer in that case.
+        function resolveEffectiveTrainer(student, todayDate) {
+            const today = todayDate || todayAEST();
+            const code = student.courseCode;
+            if (!PROGRESSION.POST_FOUNDATION_TRAINER[code]) return null;
+
+            if (student.cohortLabel === 'rama') {
+                if (today < PROGRESSION.RAMA_ACTIVE_FROM) return null;
+                if (code === 'CPC30220') return PROGRESSION.RAMA_TRAINER; // Saturday Carpentry
+                if (code === 'CPC31320') return PROGRESSION.RAMA_TILING_GROUP_ACTIVE ? PROGRESSION.RAMA_TRAINER : null;
+                return null;
+            }
+            if (student.cohortLabel === 'saturday' || student.cohortLabel === 'fasttrack') return null;
+
+            if (!student.commenced || student.commenced < PROGRESSION.PROGRESSION_CUTOVER_DATE) return null;
+            const week = getTrainingWeek(student.commenced, today);
+            if (week === null) return null;
+            return week <= PROGRESSION.FOUNDATION_WEEKS
+                ? PROGRESSION.FOUNDATION_TRAINER
+                : PROGRESSION.POST_FOUNDATION_TRAINER[code];
+        }
+
+        // Companion to resolveEffectiveTrainer(): only meaningful for Tiling, where the trainer
+        // doesn't change at week 8 but the days should. Returns a days array to override the
+        // normal TRAINER_SCHEDULE lookup, or null to use that lookup as normal (every other case,
+        // Carpentry included — Malcolm Lange's own TRAINER_SCHEDULE entry already has the right days).
+        function resolveEffectiveClassDays(student, todayDate) {
+            if (student.courseCode !== 'CPC31320') return null;
+            if (student.cohortLabel) return null; // Saturday/Fast Track/Rama Tiling all have their own schedule entries
+            const today = todayDate || todayAEST();
+            if (!student.commenced || student.commenced < PROGRESSION.PROGRESSION_CUTOVER_DATE) return null;
+            const week = getTrainingWeek(student.commenced, today);
+            if (week === null || week <= PROGRESSION.FOUNDATION_WEEKS) return null;
+            return PROGRESSION.TILING_POST_FOUNDATION_DAYS;
+        }
+
+        // Prefer a student's progression-aware day override (Tiling post-Foundation) over the
+        // generic trainer/course lookup. Use this wherever code needs "this specific student's
+        // class days" — getClassDays() itself stays generic for non-student-scoped lookups.
+        function getClassDaysForStudent(s, todayDate) {
+            const override = resolveEffectiveClassDays(s, todayDate);
+            return override || getClassDays(s.trainer, s.campus, s.course, s.courseCode);
+        }
+        function getSessionsPerWeekForStudent(s, todayDate) {
+            const days = getClassDaysForStudent(s, todayDate);
+            return days && days.length ? days.length : 2;
+        }
 
         // Co-trainer groups — trainers in the same array share the same student cohort.
         // Each trainer sees all students assigned to any member of their group.
@@ -3597,7 +3702,9 @@
             "Nati Belen":         "nati.belen@educare.edu.au",
             "Toriqul Mozumder":   "toriqul.mozumder@educare.edu.au",
             "Vijeta Srivastava":  "vijeta@educare.edu.au",
-            "Alessandro Tavian":  "alessandro.tavian@educare.edu.au"
+            "Alessandro Tavian":  "alessandro.tavian@educare.edu.au",
+            "Malcolm Lange":      "malcolm.lange@educare.edu.au",
+            "Rama":               "rama.b@educare.edu.au"
         };
         const STUDENT_ROSTER = [];
 
@@ -4267,7 +4374,7 @@
                         <td><span class="student-id">${s.id}</span></td>
                         <td><span class="student-name" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})'>${escapeHtml(s.name)}</span></td>
                         <td><span style='font-size:0.7rem;font-weight:700;color:var(--text-secondary);display:block;'>${escapeHtml(s.courseCode || '')}</span>${escapeHtml(s.course)}</td>
-                        ${isTrainerView ? '' : `<td>${`<span style="cursor:pointer;border-bottom:1px dashed var(--text-secondary);font-size:0.85rem;" title="Click to reassign trainer" onclick='openReassignTrainer("${s.id}", "${s.name.replace(/'/g,"\\'")}", "${s.trainer.replace(/'/g,"\\'")}", "${s.campus}")'>${escapeHtml(s.trainer)}</span>`}</td>`}
+                        ${isTrainerView ? '' : `<td>${`<span style="cursor:pointer;border-bottom:1px dashed var(--text-secondary);font-size:0.85rem;" title="Click to reassign trainer" onclick='openReassignTrainer("${s.id}", "${s.name.replace(/'/g,"\\'")}", "${s.trainer.replace(/'/g,"\\'")}", "${s.campus}", "${s.courseCode || ''}", ${s.cohortLabel ? `"${s.cohortLabel}"` : 'null'})'>${escapeHtml(s.trainer)}</span>`}</td>`}
                         <td>${escapeHtml(s.campus)}</td>
                         <td>${att?.checkIn || '--:--'}</td>
                         <td>${att?.checkOut || '--:--'}</td>
@@ -4646,7 +4753,7 @@
                 if (isFuture) return { ...s, rate: null, attended: 0, isFuture: true };
                 if (!liveRatesCache) return { ...s, rate: null, attended: 0, isFuture: false };
                 if (!r || r.attended === 0) return { ...s, rate: 0, attended: 0, isFuture: false };
-                const classDays = getClassDays(s.trainer, s.campus, s.course, s.courseCode);
+                const classDays = getClassDaysForStudent(s);
                 const spw = getSessionsPerWeek(s.trainer, s.campus, s.course, s.courseCode);
                 const sessions = calcExpectedSessionsBetween(r.firstCheckin, today, s.campus, spw, getCourseCalendarType(s.course), classDays);
                 const rate = sessions > 0 ? Math.min(100, Math.round(r.attended / sessions * 100)) : null;
@@ -5026,7 +5133,7 @@
                 const actionBtn = isTentative
                     ? `<button onclick='openUpdateStartDateModal(${sJson})' style="padding:0.25rem 0.6rem;font-size:0.72rem;background:var(--brand);color:white;border:none;border-radius:4px;cursor:pointer;font-weight:600;white-space:nowrap;">Update / Add to Class</button>`
                     : `<div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-                        <button onclick='openReassignTrainer("${s.id}","${s.name.replace(/"/g,'&quot;')}","${s.trainer.replace(/"/g,'&quot;')}","${s.campus}")' style="padding:0.25rem 0.6rem;font-size:0.72rem;background:#eff6ff;color:#2563eb;border:1.5px solid #bfdbfe;border-radius:4px;cursor:pointer;font-weight:600;white-space:nowrap;">Move to Class</button>
+                        <button onclick='openReassignTrainer("${s.id}","${s.name.replace(/"/g,'&quot;')}","${s.trainer.replace(/"/g,'&quot;')}","${s.campus}","${s.courseCode || ''}",${s.cohortLabel ? `"${s.cohortLabel}"` : 'null'})' style="padding:0.25rem 0.6rem;font-size:0.72rem;background:#eff6ff;color:#2563eb;border:1.5px solid #bfdbfe;border-radius:4px;cursor:pointer;font-weight:600;white-space:nowrap;">Move to Class</button>
                         <span style="font-size:0.72rem;cursor:pointer;color:var(--text-secondary);text-decoration:underline;padding:0.25rem 0;" onclick='openStudentAttendanceDates(${sJson})'>View →</span>
                       </div>`;
                 return `<tr>
@@ -5269,7 +5376,7 @@
         function getStudentsScheduledOnDay(students, schedDay) {
             if (schedDay >= 5) return [];
             return students.filter(s => {
-                const days = getClassDays(s.trainer, s.campus, s.course, s.courseCode);
+                const days = getClassDaysForStudent(s);
                 if (!days || !days.length) return true; // no schedule info → assume they may attend
                 return days.includes(schedDay);
             });
@@ -5456,7 +5563,7 @@
             const atRisk = campusStudents.filter(s => {
                 const r = rateSource[rateKey(s.id, s.course)];
                 if (!r || r.attended === 0) return false;
-                const classDaysRisk = getClassDays(s.trainer, s.campus, s.course, s.courseCode);
+                const classDaysRisk = getClassDaysForStudent(s);
                 const spwRisk = getSessionsPerWeek(s.trainer, s.campus, s.course, s.courseCode);
                 const sessions = calcExpectedSessionsBetween(r.firstCheckin, today, s.campus, spwRisk, getCourseCalendarType(s.course), classDaysRisk);
                 const rate = sessions > 0 ? Math.min(100, Math.round(r.attended / sessions * 100)) : 100;
@@ -5890,8 +5997,8 @@
                 const trainer = student ? student.trainer : '';
                 const campus = data.campus || (student ? student.campus : '');
                 const calType = getCourseCalendarType(course);
-                const classDays = getClassDays(trainer, campus, course, courseCode);
-                const spw = getSessionsPerWeek(trainer, campus, course, courseCode);
+                const classDays = student ? getClassDaysForStudent(student) : getClassDays(trainer, campus, course, courseCode);
+                const spw = student ? getSessionsPerWeekForStudent(student) : getSessionsPerWeek(trainer, campus, course, courseCode);
                 const commenced = student ? parseCommenced(student.commenced) : null;
                 const startDate = firstCheckin || commenced;
                 const expected = calcExpectedSessionsBetween(startDate, today, campus, spw, calType, classDays);
@@ -5916,7 +6023,7 @@
                 const commenced = parseCommenced(s.commenced);
                 if (!commenced || commenced > today) return; // not yet started
                 const calType = getCourseCalendarType(s.course);
-                const classDays = getClassDays(s.trainer, s.campus, s.course, s.courseCode);
+                const classDays = getClassDaysForStudent(s);
                 const spw = getSessionsPerWeek(s.trainer, s.campus, s.course, s.courseCode);
                 const expected = calcExpectedSessionsBetween(commenced, today, s.campus, spw, calType, classDays);
                 const fn = getEffectiveMonthlyWindow(calType);
@@ -6235,7 +6342,7 @@
                 const lastCheckin = r.lastCheckin || null;
 
                 // Expected sessions from first check-in date to today
-                const classDays = getClassDays(s.trainer, s.campus, s.course, s.courseCode);
+                const classDays = getClassDaysForStudent(s);
                 const spw = getSessionsPerWeek(s.trainer, s.campus, s.course, s.courseCode);
                 const sessions = calcExpectedSessionsBetween(firstCheckin, today, s.campus, spw, getCourseCalendarType(s.course), classDays);
                 const rate = sessions > 0 ? Math.min(100, Math.round(attended / sessions * 100)) : null;
@@ -6331,7 +6438,7 @@
                     <td><span class="student-name" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})'>${s.name}</span></td>
                     <td><span style='font-size:0.7rem;font-weight:700;color:var(--text-secondary);display:block;'>${s.courseCode || ''}</span>${s.course}</td>
                     <td>
-                        <div>${currentUser?.role === 'admin' ? `<span style="cursor:pointer;border-bottom:1px dashed var(--text-secondary);" title="Click to reassign trainer" onclick='openReassignTrainer("${s.id}", "${s.name.replace(/'/g,"\\'")}", "${s.trainer.replace(/'/g,"\\'")}", "${s.campus}")'>${s.trainer}</span>` : s.trainer}</div>
+                        <div>${currentUser?.role === 'admin' ? `<span style="cursor:pointer;border-bottom:1px dashed var(--text-secondary);" title="Click to reassign trainer" onclick='openReassignTrainer("${s.id}", "${s.name.replace(/'/g,"\\'")}", "${s.trainer.replace(/'/g,"\\'")}", "${s.campus}", "${s.courseCode || ''}", ${s.cohortLabel ? `"${s.cohortLabel}"` : 'null'})'>${s.trainer}</span>` : s.trainer}</div>
                     </td>
                     <td>${s.campus}</td>
                     <td style='font-size:0.8rem;'>${fmtDate(s.lastCheckin)}</td>
@@ -6452,7 +6559,7 @@
             const multiCourse = isMultiCourseTrained(s.trainer, s.campus);
 
             // Class days for this specific student's course
-            const classDays = getClassDays(s.trainer, s.campus, s.course, s.courseCode);
+            const classDays = getClassDaysForStudent(s);
             const classDaysStr = classDays ? classDays.map(d => DAY_NAMES[d]).join(', ') : 'Unknown';
             const upcoming = getUpcomingClassDates(s.trainer, s.campus, s.course, 5);
             const upcomingHtml = upcoming.length
@@ -6474,7 +6581,7 @@
                 <div class="info-row"><div class="info-label">Student ID</div><div class="info-value">${s.id}</div></div>
                 <div class="info-row"><div class="info-label">Name</div><div class="info-value">${s.name}</div></div>
                 <div class="info-row"><div class="info-label">Course</div><div class="info-value"><span style='font-size:0.7rem;font-weight:700;color:var(--text-secondary);display:block;'>${s.courseCode || ''}</span>${s.course}</div></div>
-                <div class="info-row"><div class="info-label">Trainer</div><div class="info-value">${currentUser?.role === 'admin' ? `<span style="cursor:pointer;border-bottom:1px dashed var(--text-secondary);" title="Click to reassign trainer" onclick='closeModal();openReassignTrainer("${s.id}", "${s.name.replace(/'/g,"\\'")}", "${s.trainer.replace(/'/g,"\\'")}", "${s.campus}")'>${s.trainer} <span style="font-size:0.72rem;color:var(--brand);">(reassign)</span></span>` : s.trainer}</div></div>
+                <div class="info-row"><div class="info-label">Trainer</div><div class="info-value">${currentUser?.role === 'admin' ? `<span style="cursor:pointer;border-bottom:1px dashed var(--text-secondary);" title="Click to reassign trainer" onclick='closeModal();openReassignTrainer("${s.id}", "${s.name.replace(/'/g,"\\'")}", "${s.trainer.replace(/'/g,"\\'")}", "${s.campus}", "${s.courseCode || ''}", ${s.cohortLabel ? `"${s.cohortLabel}"` : 'null'})'>${s.trainer} <span style="font-size:0.72rem;color:var(--brand);">(reassign)</span></span>` : s.trainer}</div></div>
                 <div class="info-row"><div class="info-label">Campus</div><div class="info-value">${s.campus}</div></div>
                 <div class="info-row"><div class="info-label">Class Days</div><div class="info-value" style="font-weight:700;color:var(--brand);">${classDaysStr}</div></div>
                 ${multiCourseHtml ? `<div class="info-row"><div class="info-label" style="align-self:flex-start;padding-top:0.2rem;">All Courses<br><span style="font-size:0.68rem;font-weight:500;color:var(--text-secondary);">(this trainer)</span></div><div class="info-value">${multiCourseHtml}</div></div>` : ''}
@@ -7130,7 +7237,7 @@
                 const statusColor = r.status === 'Absent' ? 'var(--danger)' : '#16a34a';
                 const sessionTag = r._session ? '<span style="font-size:0.65rem;background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:4px;padding:1px 4px;margin-left:4px;">pending</span>' : '';
                 const trainerCell = isAdmin && r.studentId
-                    ? `<span style="cursor:pointer;border-bottom:1px dashed var(--text-secondary);font-size:0.78rem;" title="Click to reassign trainer" onclick='openReassignTrainer("${String(r.studentId)}", "${(r.studentName||'').replace(/'/g,"\\'")}", "${(r.trainer||'').replace(/'/g,"\\'")}", "${(r.campus||'').replace(/'/g,"\\'")}")'>${r.trainer || '—'}</span>`
+                    ? `<span style="cursor:pointer;border-bottom:1px dashed var(--text-secondary);font-size:0.78rem;" title="Click to reassign trainer" onclick='openReassignTrainer("${String(r.studentId)}", "${(r.studentName||'').replace(/'/g,"\\'")}", "${(r.trainer||'').replace(/'/g,"\\'")}", "${(r.campus||'').replace(/'/g,"\\'")}", "${r.courseCode || ''}", null)'>${r.trainer || '—'}</span>`
                     : `<span style="font-size:0.78rem;">${r.trainer || '—'}</span>`;
                 const rJson = JSON.stringify(r).replace(/'/g,"&#39;");
                 const editBtn = isAdmin && !absenceSelectMode
@@ -7869,7 +7976,7 @@
             const overallRate = r?.rate ?? '';
 
             const calType = getCourseCalendarType(s.course);
-            const classDays = getClassDays(s.trainer, s.campus, s.course, s.courseCode);
+            const classDays = getClassDaysForStudent(s);
             const spw = getSessionsPerWeek(s.trainer, s.campus, s.course, s.courseCode);
             const fn = getEffectiveMonthlyWindow(calType);
             const monthlyAttended = sortedDates.filter(d => d >= fn.from && d <= fn.to).length;
@@ -7928,7 +8035,7 @@
             const overallRate = r?.rate ?? '';
 
             const calType = getCourseCalendarType(s.course);
-            const classDays = getClassDays(s.trainer, s.campus, s.course, s.courseCode);
+            const classDays = getClassDaysForStudent(s);
             const spw = getSessionsPerWeek(s.trainer, s.campus, s.course, s.courseCode);
             const fn = getEffectiveMonthlyWindow(calType);
             const monthlyAttended = sortedDates.filter(d => d >= fn.from && d <= fn.to).length;
@@ -8076,7 +8183,7 @@
                     expectedCompletion = d.toLocaleDateString('en-AU', {day:'2-digit',month:'short',year:'numeric'});
                 }
                 const trainerCell = isAdmin
-                    ? `<span style="cursor:pointer;border-bottom:1px dashed var(--text-secondary);" title="Reassign trainer" onclick='openReassignTrainer("${s.id}","${s.name.replace(/'/g,"\\'")}","${s.trainer.replace(/'/g,"\\'")}","${s.campus}")'>${s.trainer}</span>`
+                    ? `<span style="cursor:pointer;border-bottom:1px dashed var(--text-secondary);" title="Reassign trainer" onclick='openReassignTrainer("${s.id}","${s.name.replace(/'/g,"\\'")}","${s.trainer.replace(/'/g,"\\'")}","${s.campus}","${s.courseCode || ''}",${s.cohortLabel ? `"${s.cohortLabel}"` : 'null'})'>${s.trainer}</span>`
                     : s.trainer;
                 const removeBtn = isAdmin
                     ? `<button onclick="removeStudentFromClassById('${s.id}','${s.name.replace(/'/g,"\\'")}',true)" style="padding:0.2rem 0.5rem;font-size:0.7rem;background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;">Remove</button>`
@@ -8158,7 +8265,10 @@
         }
 
         let _reassignStudentId = null;
-        function openReassignTrainer(studentId, studentName, currentTrainer, campus) {
+        // courseCode/cohortLabel are optional (older call sites omit them) — the Cohort field
+        // only applies to Carpentry/Tiling (see PROGRESSION.POST_FOUNDATION_TRAINER), so it stays
+        // hidden unless the student's course matches.
+        function openReassignTrainer(studentId, studentName, currentTrainer, campus, courseCode, cohortLabel) {
             _reassignStudentId = studentId;
             document.getElementById('reassignStudentName').textContent = studentName;
             const select = document.getElementById('reassignTrainerSelect');
@@ -8172,23 +8282,40 @@
             select.innerHTML = trainerList.map(t =>
                 `<option value="${t}" ${t === currentTrainer ? 'selected' : ''}>${t}</option>`
             ).join('');
+            const cohortWrap = document.getElementById('reassignCohortWrap');
+            const isTrade = courseCode && PROGRESSION.POST_FOUNDATION_TRAINER[courseCode];
+            cohortWrap.style.display = isTrade ? '' : 'none';
+            document.getElementById('reassignCohortSelect').value = cohortLabel || '';
             document.getElementById('reassignTrainerModal').classList.add('show');
         }
         function closeReassignTrainer() {
             document.getElementById('reassignTrainerModal').classList.remove('show');
             _reassignStudentId = null;
         }
-        function confirmReassignTrainer() {
+        async function confirmReassignTrainer() {
             const newTrainer = document.getElementById('reassignTrainerSelect').value;
+            const cohortWrap = document.getElementById('reassignCohortWrap');
+            const showsCohort = cohortWrap.style.display !== 'none';
+            const newCohortLabel = showsCohort ? (document.getElementById('reassignCohortSelect').value || null) : undefined;
             const roster = window._dynamicRoster || STUDENT_ROSTER;
             const student = roster.find(s => s.id === _reassignStudentId);
             if (!student) return closeReassignTrainer();
             const oldTrainer = student.trainer;
+            const cohortChanged = showsCohort && newCohortLabel !== (student.cohortLabel || null);
             student.trainer = newTrainer;
+            if (cohortChanged) student.cohortLabel = newCohortLabel;
             const as = allStudents.find(s => s.id === _reassignStudentId);
-            if (as) as.trainer = newTrainer;
+            if (as) { as.trainer = newTrainer; if (cohortChanged) as.cohortLabel = newCohortLabel; }
             window._dynamicRoster = roster;
             saveSingleStudent(student).then(ok => { if (!ok) showToast('Warning: could not save trainer change', true); });
+            if (cohortChanged) {
+                try {
+                    await apiFetch('/api/students', {
+                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: student.id, cohortLabel: newCohortLabel })
+                    });
+                } catch { showToast('Warning: could not save cohort change', true); }
+            }
             closeReassignTrainer();
             filterData();
             if (document.getElementById('notStartedView')?.style.display !== 'none') renderNotStarted();

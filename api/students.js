@@ -49,7 +49,7 @@ module.exports = async (req, res) => {
       }
 
       const result = await request.query(`
-        SELECT id, name, course, courseCode, trainer, campus, commenced, expectedEnd, status, withdrawn
+        SELECT id, name, course, courseCode, trainer, campus, commenced, expectedEnd, status, withdrawn, cohortLabel
                ${pageClause ? ', COUNT(*) OVER() AS totalCount' : ''}
         FROM students
         ${where}
@@ -59,43 +59,67 @@ module.exports = async (req, res) => {
       return res.status(200).json(result.recordset);
     }
 
-    // PATCH — mark student active (admin only)
+    // PATCH — mark student active, or set their cohort label (admin only)
     if (req.method === 'PATCH') {
       const email = (user.mail || user.userPrincipalName || '').toLowerCase();
       if (!isAdminUser(email)) return res.status(403).json({ error: 'Admin only' });
-      const { id, status } = req.body || {};
-      if (!id || !status) return res.status(400).json({ error: 'Missing id or status' });
+      const { id, status, cohortLabel } = req.body || {};
+      if (!id || (!status && cohortLabel === undefined)) {
+        return res.status(400).json({ error: 'Missing id, and status or cohortLabel' });
+      }
+      const VALID_COHORT_LABELS = new Set(['saturday', 'fasttrack', 'rama']);
+      if (cohortLabel !== undefined && cohortLabel !== null && !VALID_COHORT_LABELS.has(cohortLabel)) {
+        return res.status(400).json({ error: 'Invalid cohortLabel' });
+      }
 
       const tx = new sql.Transaction(pool);
       await tx.begin();
       try {
         const beforeStudent = await tx.request()
           .input('id', sql.VarChar(20), id).query('SELECT * FROM students WHERE id = @id');
-        const beforeEnr = await tx.request()
-          .input('id', sql.VarChar(20), id)
-          .query(`SELECT * FROM enrollments WHERE studentId = @id AND status = 'not-started'`);
 
-        const updStudent = await tx.request()
-          .input('id',     sql.VarChar(20), id)
-          .input('status', sql.VarChar(20), status)
-          .query('UPDATE students SET status = @status OUTPUT INSERTED.* WHERE id = @id');
-        const updEnr = await tx.request()
-          .input('id',     sql.VarChar(20), id)
-          .input('status', sql.VarChar(20), status)
-          .query(`UPDATE enrollments SET status = @status OUTPUT INSERTED.* WHERE studentId = @id AND status = 'not-started'`);
+        if (status) {
+          const beforeEnr = await tx.request()
+            .input('id', sql.VarChar(20), id)
+            .query(`SELECT * FROM enrollments WHERE studentId = @id AND status = 'not-started'`);
+          const updStudent = await tx.request()
+            .input('id',     sql.VarChar(20), id)
+            .input('status', sql.VarChar(20), status)
+            .query('UPDATE students SET status = @status OUTPUT INSERTED.* WHERE id = @id');
+          const updEnr = await tx.request()
+            .input('id',     sql.VarChar(20), id)
+            .input('status', sql.VarChar(20), status)
+            .query(`UPDATE enrollments SET status = @status OUTPUT INSERTED.* WHERE studentId = @id AND status = 'not-started'`);
 
-        if (beforeStudent.recordset[0]) {
-          await writeAudit(tx, {
-            entityType: 'student', entityId: id, action: 'update',
-            changedBy: email, before: beforeStudent.recordset[0], after: updStudent.recordset[0],
-          });
+          if (beforeStudent.recordset[0]) {
+            await writeAudit(tx, {
+              entityType: 'student', entityId: id, action: 'update',
+              changedBy: email, before: beforeStudent.recordset[0], after: updStudent.recordset[0],
+            });
+          }
+          for (let i = 0; i < beforeEnr.recordset.length; i++) {
+            await writeAudit(tx, {
+              entityType: 'enrollment', entityId: beforeEnr.recordset[i].id, action: 'update',
+              changedBy: email, before: beforeEnr.recordset[i], after: updEnr.recordset[i],
+            });
+          }
         }
-        for (let i = 0; i < beforeEnr.recordset.length; i++) {
-          await writeAudit(tx, {
-            entityType: 'enrollment', entityId: beforeEnr.recordset[i].id, action: 'update',
-            changedBy: email, before: beforeEnr.recordset[i], after: updEnr.recordset[i],
-          });
+
+        if (cohortLabel !== undefined) {
+          const before = status ? beforeStudent : await tx.request()
+            .input('id', sql.VarChar(20), id).query('SELECT * FROM students WHERE id = @id');
+          const updCohort = await tx.request()
+            .input('id', sql.VarChar(20), id)
+            .input('cohortLabel', sql.VarChar(20), cohortLabel)
+            .query('UPDATE students SET cohortLabel = @cohortLabel OUTPUT INSERTED.* WHERE id = @id');
+          if (before.recordset[0]) {
+            await writeAudit(tx, {
+              entityType: 'student', entityId: id, action: 'update',
+              changedBy: email, before: before.recordset[0], after: updCohort.recordset[0],
+            });
+          }
         }
+
         await tx.commit();
       } catch (txErr) {
         try { await tx.rollback(); } catch (_) {}

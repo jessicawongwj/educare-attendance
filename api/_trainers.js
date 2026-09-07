@@ -7,7 +7,10 @@ const _map = {
   'nati.belen@educare.edu.au':        ['Nati Belen'],
   'toriqul.mozumder@educare.edu.au':  ['Toriqul Mozumder'],
   'vijeta@educare.edu.au':            ['Vijeta Srivastava'],
+  // "Sandro" is Alessandro Tavian's own nickname, not a separate trainer/login.
   'alessandro.tavian@educare.edu.au': ['Alessandro Tavian'],
+  'malcolm.lange@educare.edu.au':     ['Malcolm Lange'],
+  'rama.b@educare.edu.au':            ['Rama'],
 };
 
 function trainersFromEmail(email) {

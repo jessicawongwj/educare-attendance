@@ -19,7 +19,87 @@ const TRAINER_SCHEDULE_DEFAULT = {
   "Vijeta Srivastava||Southport GC": { t: "Vijeta Srivastava", c: "Southport GC", courses: { "CHC43015 Certificate IV in Ageing Support": [0,1,2,3], "CHC43121 Certificate IV in Disability Support": [0,1,2,3], "CHC52021 Diploma of Community Services": [0,1,2,3], "CHC52025 Diploma of Community Services": [0,1,2,3] } },
   "Toriqul Mozumder||Southport GC":  { t: "Toriqul Mozumder", c: "Southport GC", courses: { "CHC33021 Certificate III in Individual Support": [0,2] } },
   "Alessandro Tavian||Woolloongabba":{ t: "Alessandro Tavian", c: "Woolloongabba", courses: { "CPC30220 Certificate III in Carpentry": [0,1,2,3,4], "CPC31320 Certificate III in Wall and Floor Tiling": [0,1,2,3,4], "CPC40120 Certificate IV in Building and Construction": [0,1,2,3,4] } },
+  // Post-Foundation (week 8+) trainers — see PROGRESSION below for how students move onto these.
+  // "Sandro" is Alessandro Tavian himself (not a separate person) — his post-Foundation Tiling
+  // students move to Wed/Thu, but he's the same trainer throughout, so there's no name change
+  // for Tiling, just a day-schedule change (see the "— Post-Foundation" course variant above,
+  // under his own Woolloongabba entry, rather than a second trainer entry here).
+  "Malcolm Lange||Woolloongabba":     { t: "Malcolm Lange", c: "Woolloongabba", courses: { "CPC30220 Certificate III in Carpentry": [0,1] } },              // Mon/Tue
+  // Rama: Saturday Carpentry always available from RAMA_ACTIVE_FROM; the 34-week Tiling group's
+  // days are TBC pending confirmed enrolments — added here as a placeholder (no days yet) so admins
+  // can fill them in via Settings → Trainer Schedule once confirmed, without a code change.
+  "Rama||Woolloongabba":              { t: "Rama", c: "Woolloongabba", courses: { "CPC30220 Certificate III in Carpentry": [5], "CPC31320 Certificate III in Wall and Floor Tiling — 34wk": [] } }, // Sat
 };
+
+// ── Foundation → Post-Foundation progression (Carpentry/Tiling only) ───────
+// See educare-portal.html's mirror of this block for the frontend copy — keep both in sync.
+const PROGRESSION = {
+  FOUNDATION_WEEKS: 7,               // weeks 1–7 = Foundation Stage
+  FOUNDATION_TRAINER: "Alessandro Tavian",
+  // courseCode → post-Foundation (week 8+) trainer. Tiling stays with Alessandro Tavian
+  // himself ("Sandro" is his own nickname, not a separate trainer) — see the comment on his
+  // TRAINER_SCHEDULE entry above re: the Wed/Thu day-schedule question still to be resolved.
+  POST_FOUNDATION_TRAINER: { "CPC30220": "Malcolm Lange", "CPC31320": "Alessandro Tavian" },
+  // Tiling stays with the same trainer at week 8, so there's no name change to key a day lookup
+  // off — this narrows his Tiling days for post-Foundation students specifically. 0=Mon..6=Sun.
+  TILING_POST_FOUNDATION_DAYS: [2, 3], // Wed/Thu
+  RAMA_TRAINER: "Rama",
+  RAMA_ACTIVE_FROM: "2026-09-10",    // Rama unavailable at all before this date
+  RAMA_TILING_GROUP_ACTIVE: false,   // flip once the 34-week Tiling group's enrolments are confirmed
+  // Only students who commenced on/after this date get the new automatic progression —
+  // anyone already enrolled keeps whatever trainer is already on their record, untouched.
+  // Adjust this to your actual go-live date before relying on it.
+  PROGRESSION_CUTOVER_DATE: "2026-08-28",
+};
+
+// Calendar weeks since commencement (week of commencement = week 1). Returns null if commenced is falsy.
+function getTrainingWeek(commencedDate, todayDate) {
+  if (!commencedDate) return null;
+  const c = new Date(commencedDate + 'T00:00:00');
+  const t = new Date((todayDate || new Date().toISOString().slice(0,10)) + 'T00:00:00');
+  if (isNaN(c) || isNaN(t)) return null;
+  const days = Math.floor((t - c) / 86400000);
+  if (days < 0) return null; // hasn't commenced yet
+  return Math.floor(days / 7) + 1;
+}
+
+// Computes the trainer a Carpentry/Tiling student should currently show under, given the
+// PROGRESSION rules above. Returns null for anything this logic doesn't apply to (wrong
+// course, pre-cutover student, Saturday/Fast Track label) — callers should fall back to the
+// student's own stored `trainer` field in that case, i.e. this never overrides by itself.
+function resolveEffectiveTrainer(student, todayDate) {
+  const today = todayDate || new Date().toISOString().slice(0,10);
+  const code = student.courseCode;
+  if (!PROGRESSION.POST_FOUNDATION_TRAINER[code]) return null; // not a Carpentry/Tiling course
+
+  if (student.cohortLabel === 'rama') {
+    if (today < PROGRESSION.RAMA_ACTIVE_FROM) return null; // Rama not onboard yet — leave as-is
+    if (code === 'CPC30220') return PROGRESSION.RAMA_TRAINER;               // Saturday Carpentry
+    if (code === 'CPC31320') return PROGRESSION.RAMA_TILING_GROUP_ACTIVE ? PROGRESSION.RAMA_TRAINER : null;
+    return null;
+  }
+  if (student.cohortLabel === 'saturday' || student.cohortLabel === 'fasttrack') return null; // no auto-progression
+
+  if (!student.commenced || student.commenced < PROGRESSION.PROGRESSION_CUTOVER_DATE) return null; // pre-existing student
+  const week = getTrainingWeek(student.commenced, today);
+  if (week === null) return null;
+  return week <= PROGRESSION.FOUNDATION_WEEKS
+    ? PROGRESSION.FOUNDATION_TRAINER
+    : PROGRESSION.POST_FOUNDATION_TRAINER[code];
+}
+
+// Companion to resolveEffectiveTrainer(): only meaningful for Tiling, where the trainer doesn't
+// change at week 8 but the days should. Returns a days array to override the normal
+// TRAINER_SCHEDULE lookup, or null to use that lookup as normal.
+function resolveEffectiveClassDays(student, todayDate) {
+  if (student.courseCode !== 'CPC31320') return null;
+  if (student.cohortLabel) return null; // Saturday/Fast Track/Rama Tiling have their own schedule entries
+  const today = todayDate || new Date().toISOString().slice(0,10);
+  if (!student.commenced || student.commenced < PROGRESSION.PROGRESSION_CUTOVER_DATE) return null;
+  const week = getTrainingWeek(student.commenced, today);
+  if (week === null || week <= PROGRESSION.FOUNDATION_WEEKS) return null;
+  return PROGRESSION.TILING_POST_FOUNDATION_DAYS;
+}
 
 const DEFAULT_SESSIONS_PER_WEEK = 2; // fallback when a course isn't found
 
@@ -35,6 +115,18 @@ function getClassDays(trainer, course, courseCode, schedule) {
 
 function sessionsPerWeekFor(trainer, course, courseCode, schedule) {
   const days = getClassDays(trainer, course, courseCode, schedule);
+  return days && days.length ? days.length : DEFAULT_SESSIONS_PER_WEEK;
+}
+
+// Prefer this over getClassDays()/sessionsPerWeekFor() wherever a specific student's own class
+// days are needed (expected-session/rate calcs) — it applies the Tiling post-Foundation day
+// override above; every other case falls through to the normal trainer/course lookup unchanged.
+function getClassDaysForStudent(student, schedule, todayDate) {
+  const override = resolveEffectiveClassDays(student, todayDate);
+  return override || getClassDays(student.trainer, student.course, student.courseCode, schedule);
+}
+function sessionsPerWeekForStudent(student, schedule, todayDate) {
+  const days = getClassDaysForStudent(student, schedule, todayDate);
   return days && days.length ? days.length : DEFAULT_SESSIONS_PER_WEEK;
 }
 
@@ -74,4 +166,10 @@ module.exports = {
   sessionsPerWeekFor,
   loadMergedSchedule,
   DEFAULT_SESSIONS_PER_WEEK,
+  PROGRESSION,
+  getTrainingWeek,
+  resolveEffectiveTrainer,
+  resolveEffectiveClassDays,
+  getClassDaysForStudent,
+  sessionsPerWeekForStudent,
 };
