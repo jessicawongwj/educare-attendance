@@ -3884,15 +3884,28 @@
             return true;
         }
 
-        // Returns the most recent 14-day window that wasn't a school break.
-        // If today falls inside a break, shifts the window back to end the day before the break.
-        // Returns the most recent 28-day window that wasn't a school break.
-        // If today falls inside a break, shifts to end the day before the break.
-        function getEffectiveMonthlyWindow() {
-            const today = todayAEST();
-            const d = new Date(today + 'T00:00:00');
-            const from = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
-            return { from, to: today };
+        // Trailing 28-day window ending today, not calendar-month-to-date — a month-to-date
+        // window is unreliable right after the 1st (barely any days to judge from, one absence
+        // swings it wildly) and resets to "no data" every month even for a student with months
+        // of good attendance. A rolling 28-day (exactly 4 weeks) window is always a full sample,
+        // and — since it's a whole number of weeks — always covers the same expected-session
+        // count for any fixed weekly pattern, so the denominator doesn't wobble month to month.
+        // If today falls inside a school break, anchors the window to end the day before the
+        // break started instead, so it reflects the last real teaching window rather than
+        // looking artificially empty during a break.
+        function getEffectiveMonthlyWindow(calendarType) {
+            const breaks = SCHOOL_BREAKS[calendarType] || [];
+            const todayKey = todayAEST();
+            const activeBreak = breaks.find(b => todayKey >= b.from && todayKey <= b.to);
+            let anchor = todayKey;
+            if (activeBreak) {
+                const d = new Date(activeBreak.from + 'T00:00:00');
+                d.setDate(d.getDate() - 1);
+                anchor = localDateKey(d);
+            }
+            const d2 = new Date(anchor + 'T00:00:00');
+            d2.setDate(d2.getDate() - 28);
+            return { from: localDateKey(d2), to: anchor };
         }
         // ── END PUBLIC HOLIDAYS + SCHOOL BREAKS ────────────────
 
