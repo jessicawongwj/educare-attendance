@@ -3117,7 +3117,12 @@
             if (!schedEntry) return students.filter(s => groupMembers.includes(s.trainer));
             return students.filter(s => {
                 if (!groupMembers.includes(s.trainer)) return false;
-                if (s.campus && s.campus !== schedEntry.c) return false;
+                // Use campusMatch (same normCampus-based comparison used everywhere else, e.g.
+                // "Woolloongabba" vs "Woolloongabba Studio") rather than an exact string match —
+                // this list is built from the raw roster (not the campus-corrected copy the
+                // Dashboard uses), so a naming variant here was silently dropping real students
+                // from a trainer's own "My Class" view.
+                if (s.campus && !campusMatch(s.campus, schedEntry.c)) return false;
                 if (schedEntry.excludeCodes && s.courseCode && schedEntry.excludeCodes.includes(s.courseCode)) return false;
                 return true;
             });
