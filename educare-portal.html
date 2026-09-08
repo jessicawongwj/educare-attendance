@@ -1969,8 +1969,9 @@
                         <button onclick="openAddClassStudentModal()" class="btn btn-primary">Add Student</button>
                     </div>
                 </div>
-                <!-- Sub-tabs: Current / No Check-ins Yet -->
-                <div style="display:flex;border-bottom:1px solid var(--border);background:var(--bg-secondary);">
+                <!-- Sub-tabs: Current / No Check-ins Yet — sticky so they (and the table header
+                     below) stay visible while scrolling through a long class list. -->
+                <div style="display:flex;border-bottom:1px solid var(--border);background:var(--bg-secondary);position:sticky;top:0;z-index:3;">
                     <button id="myClassTabCurrent" onclick="switchMyClassTab('current')" style="padding:0.6rem 1.25rem;font-size:0.82rem;font-weight:600;border:none;border-bottom:2.5px solid var(--brand);background:transparent;cursor:pointer;color:var(--brand);">
                         Current Students <span id="myClassCurrentBadge" style="background:var(--brand);color:white;border-radius:10px;padding:1px 7px;font-size:0.68rem;margin-left:4px;"></span>
                     </button>
@@ -1980,7 +1981,7 @@
                 </div>
                 <div style="overflow-x:auto;">
                     <table>
-                        <thead>
+                        <thead style="position:sticky;top:42px;">
                             <tr id="myClassTableHead">
                                 <th>Student ID</th>
                                 <th>Name</th>
