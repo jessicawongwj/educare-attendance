@@ -2084,13 +2084,14 @@
                                 <th>Trainer</th>
                                 <th>Campus</th>
                                 <th>Last Check-In</th>
+                                <th>Monthly Rate</th>
                                 <th>Attendance Rate</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="rateTableBody">
-                            <tr><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:30%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:60%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:70%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:50%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:45%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:25%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:25%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:20%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:35%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:60%;border-radius:4px;">&nbsp;</div></td></tr></tr></tr>
+                            <tr><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:30%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:60%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:70%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:50%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:45%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:25%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:25%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:25%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:20%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:35%;border-radius:4px;">&nbsp;</div></td><td style="padding:0.75rem 1rem;"><div class="skeleton" style="height:14px;width:60%;border-radius:4px;">&nbsp;</div></td></tr></tr></tr>
                         </tbody>
                     </table>
                 </div>
@@ -6446,6 +6447,17 @@
             rateRows = filtered.map(s => {
                 const sc = s.future ? 'status-warn' : s.rate === null && !liveRatesCache ? '' : s.attended === 0 ? '' : s.rate === null ? '' : s.rate < 80 ? 'status-risk' : 'status-ok';
                 const sl = s.future ? 'Upcoming' : s.rate === null && !liveRatesCache ? 'Loading' : s.attended === 0 ? 'Not Started' : s.rate === null ? 'No Schedule' : s.rate < 80 ? 'At Risk' : 'On Track';
+                // Monthly (trailing 28-day) rate, alongside the lifetime rate above — a lifetime
+                // average alone can hide a recent decline (or unfairly flag a rocky start that's
+                // since turned around), so show both before acting on either one.
+                const rData = liveRatesCache ? liveRatesCache[rateKey(s.id, s.course)] : null;
+                const f14 = rData?.monthly28 ?? null;
+                const f14Exp = rData?.monthly28Expected ?? 4;
+                const f14Pct = (s.future || f14 === null) ? null : Math.min(100, Math.round(f14 / f14Exp * 100));
+                const f14Color = f14Pct === null ? 'var(--text-secondary)' : f14Pct < 60 ? 'var(--danger)' : f14Pct < 80 ? '#d97706' : '#16a34a';
+                const f14Cell = f14Pct === null
+                    ? `<span style="color:var(--text-secondary);font-size:0.75rem;">—</span>`
+                    : `<span style="font-size:0.78rem;font-weight:700;color:${f14Color};">${f14Pct}%</span>`;
                 return `<tr class="${s.rate < 80 && s.attended > 0 && !s.future ? 'risk-row' : ''}">
                     <td><span class="student-id">${s.id}</span></td>
                     <td><span class="student-name" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})'>${s.name}</span></td>
@@ -6455,6 +6467,7 @@
                     </td>
                     <td>${s.campus}</td>
                     <td style='font-size:0.8rem;'>${fmtDate(s.lastCheckin)}</td>
+                    <td>${f14Cell}</td>
                     <td style="cursor:pointer;" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})' title="Click to see attendance dates">${rateBar(s)}</td>
                     <td><span class="status-badge ${sc}">${sl}</span></td>
                     <td>
@@ -6481,7 +6494,7 @@
                     const rows = byCampus[campus];
                     const color = campusColors[campus] || 'var(--brand)';
                     groupedHtml += `<tr style="background:var(--bg-secondary);border-top:2px solid ${color};">
-                        <td colspan="9" style="padding:0.4rem 0.75rem;font-size:0.78rem;font-weight:700;color:${color};">${campus} — ${rows.length} student${rows.length !== 1 ? 's' : ''} with no check-in</td>
+                        <td colspan="10" style="padding:0.4rem 0.75rem;font-size:0.78rem;font-weight:700;color:${color};">${campus} — ${rows.length} student${rows.length !== 1 ? 's' : ''} with no check-in</td>
                     </tr>`;
                     groupedHtml += rows.join('');
                 });
