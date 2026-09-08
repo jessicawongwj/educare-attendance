@@ -25,10 +25,11 @@ const TRAINER_SCHEDULE_DEFAULT = {
   // for Tiling, just a day-schedule change (see the "— Post-Foundation" course variant above,
   // under his own Woolloongabba entry, rather than a second trainer entry here).
   "Malcolm Lange||Woolloongabba":     { t: "Malcolm Lange", c: "Woolloongabba", courses: { "CPC30220 Certificate III in Carpentry": [0,1] } },              // Mon/Tue
-  // Rama: Saturday Carpentry always available from RAMA_ACTIVE_FROM; the 34-week Tiling group's
-  // days are TBC pending confirmed enrolments — added here as a placeholder (no days yet) so admins
-  // can fill them in via Settings → Trainer Schedule once confirmed, without a code change.
-  "Rama||Woolloongabba":              { t: "Rama", c: "Woolloongabba", courses: { "CPC30220 Certificate III in Carpentry": [5], "CPC31320 Certificate III in Wall and Floor Tiling — 34wk": [] } }, // Sat
+  // Rama: Saturday Carpentry, and his 34-week Tiling group (Thu/Fri) — this is the same group
+  // referred to as "Fast Track" in ops conversation; still confirming with the user whether that's
+  // literally the same cohort as cohortLabel='rama' Tiling or a distinct-but-identically-scheduled
+  // one (see PROGRESSION comment below) before wiring 'fasttrack' to route here too.
+  "Rama||Woolloongabba":              { t: "Rama", c: "Woolloongabba", courses: { "CPC30220 Certificate III in Carpentry": [5], "CPC31320 Certificate III in Wall and Floor Tiling — 34wk": [3,4] } }, // Sat / Thu+Fri
 };
 
 // ── Foundation → Post-Foundation progression (Carpentry/Tiling only) ───────
@@ -43,6 +44,13 @@ const PROGRESSION = {
   // Tiling stays with the same trainer at week 8, so there's no name change to key a day lookup
   // off — this narrows his Tiling days for post-Foundation students specifically. 0=Mon..6=Sun.
   TILING_POST_FOUNDATION_DAYS: [2, 3], // Wed/Thu
+  // Saturday Carpentry students' real compliance requirement is Tue+Sat (2 days/week), not
+  // Mon-Fri (or the 2/week default landing on the wrong days) — confirmed with Maria. This is a
+  // baseline correction, not a new business rule, so — unlike the week-based progression above —
+  // it applies immediately to every Saturday-labelled student regardless of commencement date or
+  // PROGRESSION_CUTOVER_DATE. A student attending only one of the two still shows as genuinely
+  // under-attending — this fixes the denominator, it doesn't erase a real attendance gap.
+  SATURDAY_CARPENTRY_DAYS: [1, 5], // Tue + Sat
   RAMA_TRAINER: "Rama",
   RAMA_ACTIVE_FROM: "2026-09-10",    // Rama unavailable at all before this date
   RAMA_TILING_GROUP_ACTIVE: false,   // flip once the 34-week Tiling group's enrolments are confirmed
@@ -88,10 +96,15 @@ function resolveEffectiveTrainer(student, todayDate) {
     : PROGRESSION.POST_FOUNDATION_TRAINER[code];
 }
 
-// Companion to resolveEffectiveTrainer(): only meaningful for Tiling, where the trainer doesn't
-// change at week 8 but the days should. Returns a days array to override the normal
+// Companion to resolveEffectiveTrainer(): covers cases where the correct expected class days
+// for a student aren't just "look up their trainer's course" — either because the trainer
+// doesn't change (Tiling at week 8) or because the cohort has its own fixed schedule regardless
+// of trainer/week (Saturday Carpentry). Returns a days array to override the normal
 // TRAINER_SCHEDULE lookup, or null to use that lookup as normal.
 function resolveEffectiveClassDays(student, todayDate) {
+  if (student.cohortLabel === 'saturday' && student.courseCode === 'CPC30220') {
+    return PROGRESSION.SATURDAY_CARPENTRY_DAYS;
+  }
   if (student.courseCode !== 'CPC31320') return null;
   if (student.cohortLabel) return null; // Saturday/Fast Track/Rama Tiling have their own schedule entries
   const today = todayDate || new Date().toISOString().slice(0,10);
