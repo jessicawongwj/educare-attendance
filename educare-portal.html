@@ -3705,6 +3705,41 @@
             return days && days.length ? days.length : 2;
         }
 
+        // Human-readable progression/cohort label for a Carpentry/Tiling student — null for
+        // anything this doesn't apply to (other courses, or a pre-cutover student we're not
+        // computing a stage for). Shown next to the student's name so it's clear at a glance
+        // which group they're in, since trainer assignment for these courses is now partly
+        // automatic rather than purely who's stored on their record.
+        function getStageLabel(student, todayDate) {
+            const today = todayDate || todayAEST();
+            const code = student.courseCode;
+            if (!PROGRESSION.POST_FOUNDATION_TRAINER[code]) return null;
+
+            if (student.cohortLabel === 'rama') {
+                return today < PROGRESSION.RAMA_ACTIVE_FROM ? 'Rama (from 10 Sep)' : 'Rama';
+            }
+            if (student.cohortLabel === 'saturday') return 'Saturday';
+            if (student.cohortLabel === 'fasttrack') return 'Fast Track';
+
+            if (!student.commenced || student.commenced < PROGRESSION.PROGRESSION_CUTOVER_DATE) return null;
+            const week = getTrainingWeek(student.commenced, today);
+            if (week === null) return null;
+            return week <= PROGRESSION.FOUNDATION_WEEKS ? `Foundation (Wk ${week})` : 'Post-Foundation';
+        }
+
+        const STAGE_LABEL_COLORS = {
+            'Saturday':   { bg: '#f3e8ff', fg: '#7e22ce', bd: '#e9d5ff' },
+            'Fast Track': { bg: '#fff7ed', fg: '#c2410c', bd: '#fed7aa' },
+            'Rama':       { bg: '#ecfeff', fg: '#0e7490', bd: '#a5f3fc' },
+            'Post-Foundation': { bg: '#f0fdf4', fg: '#15803d', bd: '#bbf7d0' },
+        };
+        function stageLabelBadge(label) {
+            if (!label) return '';
+            const c = STAGE_LABEL_COLORS[label] || STAGE_LABEL_COLORS[label.startsWith('Rama') ? 'Rama' : ''] ||
+                { bg: '#eff6ff', fg: '#1d4ed8', bd: '#bfdbfe' }; // default: Foundation (Wk N)
+            return `<span style="display:inline-block;margin-left:6px;font-size:0.65rem;font-weight:700;color:${c.fg};background:${c.bg};border:1px solid ${c.bd};border-radius:4px;padding:1px 6px;vertical-align:middle;white-space:nowrap;">${label}</span>`;
+        }
+
         // Co-trainer groups — trainers in the same array share the same student cohort.
         // Each trainer sees all students assigned to any member of their group.
         const TRAINER_GROUPS = [];
@@ -4391,7 +4426,7 @@
                     <tr>
                         <td class="bulk-checkbox-cell" style="display:none;"><input type="checkbox" class="bulk-checkbox" data-id="${s.id}" onchange="updateBulkBar()" style="cursor:pointer;width:15px;height:15px;"></td>
                         <td><span class="student-id">${s.id}</span></td>
-                        <td><span class="student-name" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})'>${escapeHtml(s.name)}</span></td>
+                        <td><span class="student-name" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})'>${escapeHtml(s.name)}</span>${stageLabelBadge(getStageLabel(s))}</td>
                         <td><span style='font-size:0.7rem;font-weight:700;color:var(--text-secondary);display:block;'>${escapeHtml(s.courseCode || '')}</span>${escapeHtml(s.course)}</td>
                         ${isTrainerView ? '' : `<td>${`<span style="cursor:pointer;border-bottom:1px dashed var(--text-secondary);font-size:0.85rem;" title="Click to reassign trainer" onclick='openReassignTrainer("${s.id}", "${s.name.replace(/'/g,"\\'")}", "${s.trainer.replace(/'/g,"\\'")}", "${s.campus}", "${s.courseCode || ''}", ${s.cohortLabel ? `"${s.cohortLabel}"` : 'null'})'>${escapeHtml(s.trainer)}</span>`}</td>`}
                         <td>${escapeHtml(s.campus)}</td>
@@ -4911,7 +4946,7 @@
                 display.sort((a, b) => (a.commenced || '').localeCompare(b.commenced || ''));
                 tbody.innerHTML = display.map(s => `<tr style="opacity:0.85;">
                     <td><span class="student-id">${s.id}</span></td>
-                    <td><span class="student-name" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})'>${s.name}</span>${pendingBadge(s)}</td>
+                    <td><span class="student-name" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})'>${s.name}</span>${pendingBadge(s)}${stageLabelBadge(getStageLabel(s))}</td>
                     <td><span style="font-size:0.7rem;font-weight:700;color:var(--text-secondary);display:block;">${s.courseCode||''}</span>${s.course}</td>
                     <td style="font-size:0.8rem;color:#d97706;font-weight:600;">${fmtDate(s.commenced)}</td>
                     <td style="font-size:0.8rem;color:var(--text-secondary);">${s.expectedEnd ? fmtDate(s.expectedEnd) : '—'}</td>
@@ -4928,7 +4963,7 @@
                 tbody.innerHTML = display.map(s => `<tr>
                     <td><span class="student-id">${s.id}</span></td>
                     <td>
-                        <span class="student-name" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})'>${s.name}</span>${pendingBadge(s)}
+                        <span class="student-name" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})'>${s.name}</span>${pendingBadge(s)}${stageLabelBadge(getStageLabel(s))}
                     </td>
                     <td><span style="font-size:0.7rem;font-weight:700;color:var(--text-secondary);display:block;">${s.courseCode||''}</span>${s.course}</td>
                     <td style="font-size:0.8rem;">${fmtDate(s.commenced)}</td>
@@ -4967,7 +5002,7 @@
                 return `<tr class="${s.rate !== null && s.rate < 80 ? 'risk-row' : ''}">
                     <td><span class="student-id">${s.id}</span></td>
                     <td>
-                        <span class="student-name" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})'>${s.name}</span>
+                        <span class="student-name" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})'>${s.name}</span>${stageLabelBadge(getStageLabel(s))}
                         ${lastCheckin ? `<span style="display:block;font-size:0.7rem;color:var(--text-secondary);margin-top:2px;">Last: ${fmtDate(lastCheckin)}</span>` : ''}
                     </td>
                     <td><span style="font-size:0.7rem;font-weight:700;color:var(--text-secondary);display:block;">${s.courseCode||''}</span>${s.course}</td>
@@ -6465,7 +6500,7 @@
                     : `<span style="font-size:0.78rem;font-weight:700;color:${f14Color};">${f14Pct}%</span>`;
                 return `<tr class="${s.rate < 80 && s.attended > 0 && !s.future ? 'risk-row' : ''}">
                     <td><span class="student-id">${s.id}</span></td>
-                    <td><span class="student-name" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})'>${s.name}</span></td>
+                    <td><span class="student-name" onclick='openStudentAttendanceDates(${JSON.stringify(s).replace(/'/g,"&#39;")})'>${s.name}</span>${stageLabelBadge(getStageLabel(s))}</td>
                     <td><span style='font-size:0.7rem;font-weight:700;color:var(--text-secondary);display:block;'>${s.courseCode || ''}</span>${s.course}</td>
                     <td>
                         <div>${currentUser?.role === 'admin' ? `<span style="cursor:pointer;border-bottom:1px dashed var(--text-secondary);" title="Click to reassign trainer" onclick='openReassignTrainer("${s.id}", "${s.name.replace(/'/g,"\\'")}", "${s.trainer.replace(/'/g,"\\'")}", "${s.campus}", "${s.courseCode || ''}", ${s.cohortLabel ? `"${s.cohortLabel}"` : 'null'})'>${s.trainer}</span>` : s.trainer}</div>
