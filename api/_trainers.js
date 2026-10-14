@@ -11,6 +11,11 @@ const _map = {
   'alessandro.tavian@educare.edu.au': ['Alessandro Tavian'],
   'malcolm.lange@educare.edu.au':     ['Malcolm Lange'],
   'rama.b@educare.edu.au':            ['Rama'],
+  // Charlton Brown / NIET sign-in addresses for people who teach for both — same person as
+  // the Educare address above, so either account works in this portal too.
+  'nati.belen@charltonbrown.edu.au':      ['Nati Belen'],
+  'toriqul.mozumder@charltonbrown.edu.au':['Toriqul Mozumder'],
+  'sherwin.thiarhia@niet.edu.au':         ['Sherwin Thiarhia'],
 };
 
 function trainersFromEmail(email) {
