@@ -3601,7 +3601,7 @@
             "Nicole Hicks||Brisbane CBD":      {"t":"Nicole Hicks","c":"Brisbane CBD","courses":{"CHC30121 Certificate III in Early Childhood Education and Care":[3],"CHC50121 Diploma of Early Childhood Education and Care":[3],"CHC50125 Diploma of Early Childhood Education and Care":[3]}},
             "Zeyun Ma||Brisbane CBD":          {"t":"Zeyun Ma","c":"Brisbane CBD","courses":{"CHC33021 Certificate III in Individual Support":[2]}},
             "Nati Belen||Southport GC":        {"t":"Nati Belen","c":"Southport GC","courses":{"CHC30121 Certificate III in Early Childhood Education and Care":[0,3],"CHC50121 Diploma of Early Childhood Education and Care":[0,3],"CHC50125 Diploma of Early Childhood Education and Care":[0,3]}},
-            "Vijeta Srivastava||Southport GC": {"t":"Vijeta Srivastava","c":"Southport GC","courses":{"CHC43015 Certificate IV in Ageing Support":[2,3],"CHC43121 Certificate IV in Disability Support":[0,1,2,3],"CHC52021 Diploma of Community Services":[2,3],"CHC52025 Diploma of Community Services":[2,3]}},
+            "Vijeta Srivastava||Southport GC": {"t":"Vijeta Srivastava","c":"Southport GC","courses":{"CHC43015 Certificate IV in Ageing Support":[2,3],"CHC43121 Certificate IV in Disability Support":[2,3],"CHC52021 Diploma of Community Services":[2,3],"CHC52025 Diploma of Community Services":[2,3]}},
             "Toriqul Mozumder||Southport GC":  {"t":"Toriqul Mozumder","c":"Southport GC","courses":{"CHC33021 Certificate III in Individual Support":[0,2]}},
             "Alessandro Tavian||Woolloongabba":{"t":"Alessandro Tavian","c":"Woolloongabba","courses":{"CPC30220 Certificate III in Carpentry":[0,1,2,3,4],"CPC31320 Certificate III in Wall and Floor Tiling":[0,1,2,3,4],"CPC40120 Certificate IV in Building and Construction":[0,1,2,3,4]}},
             // Post-Foundation (week 8+) — see PROGRESSION below. Mirrors api/_schedule.js — keep in sync.
@@ -7566,8 +7566,44 @@
             }
         }
 
+        // Oct 2026 timetable (V4): Maggie and Sherwin left Educare; their students go to the trainers who
+        // took their classes (Maggie's Brisbane ECEC classes -> Nicole, Sherwin's C3IS/C4AS -> Carol).
+        // Uses the same /api/enroll?type=migrate the Reassign Trainer button uses (transactional, audited
+        // per student). Safe to repeat — once the old trainer has no students left it moves nothing.
+        const OCT2026_EDUCARE_HANDOVER = [
+            ['Maggie Yu Huang', 'Nicole Hicks'],
+            ['Sherwin Thiarhia', 'Carol Ly'],
+        ];
+        async function migrateTrainerCount(from, to) {
+            const resp = await apiFetch('/api/enroll?type=migrate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ from, to })
+            });
+            const d = await resp.json().catch(() => ({}));
+            if (!resp.ok) throw new Error(d.error || `HTTP ${resp.status}`);
+            if (d.studentsUpdated > 0) {
+                (window._dynamicRoster || []).forEach(s => { if (s.trainer === from) s.trainer = to; });
+            }
+            return d.studentsUpdated || 0;
+        }
+        async function runOct2026EducareHandover() {
+            let done = false;
+            try { done = localStorage.getItem('educareHandoverOct2026') === 'done'; } catch (e) {}
+            if (done) return;
+            let moved = 0;
+            try {
+                for (const [from, to] of OCT2026_EDUCARE_HANDOVER) moved += await migrateTrainerCount(from, to);
+            } catch (e) {
+                console.error('Educare trainer hand-over failed:', e.message);
+                return; // not marked done — it will try again next load
+            }
+            if (moved > 0 && typeof showToast === 'function') showToast(`Timetable change: ${moved} student${moved === 1 ? '' : 's'} moved to their new trainer`);
+            try { localStorage.setItem('educareHandoverOct2026', 'done'); } catch (e) {}
+        }
+
         async function runRosterMigrations() {
-            // No automatic migrations for Educare
+            await runOct2026EducareHandover();
         }
 
         async function restoreArchivedByCourse(courseCode, excludeTrainer) {
